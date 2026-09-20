@@ -134,7 +134,7 @@ Obscure-Desktop/
 │   ├── io.github.talesam.Obscure.gschema.xml.in
 │   └── io.github.talesam.Obscure.policy.in       # polkit (fase 4)
 ├── po/  (POTFILES.in, LINGUAS, pt_BR.po, en.po)
-├── packaging/arch/PKGBUILD
+├── pkgbuild/PKGBUILD + pkgbuild.install   # padrão BigCommunity (pkgver por data, usado pelo CI/CD)
 ├── docs/PLANO.md  (este)
 └── .github/workflows/ (ci.yml: fmt+clippy+test; flatpak.yml)
 ```
@@ -268,7 +268,7 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ### Fase 5 — Distribuição (1 semana)
 - [~] Ícone final (escudo-prisma, feito em 2026-09-20) + simbólico; faltam screenshots e metainfo completo (releases).
 - [ ] Flathub (modo proxy) — verificar com `flatpak-builder-lint`.
-- [ ] AUR: `obscure-desktop` (PKGBUILD com cargo + meson, `options=(!lto)`).
+- [~] Arch: `pkgbuild/PKGBUILD` (padrão BigCommunity, versão por data, usado pelo CI/CD) com cargo + meson e `options=(!lto)`; publicação no AUR pendente.
 - [ ] Release GitHub com tarball vendorizado.
 
 ---

@@ -1,0 +1,56 @@
+# Maintainer: Tales A. Mendonça <talesam@gmail.com>
+
+pkgname=obscure-desktop
+_repo=Obscure-Desktop
+pkgdesc="Simple Linux client for the Xray-core engine (GTK4 + libadwaita)"
+depends=('gtk4>=4.22' 'libadwaita>=1.9' 'glib2' 'hicolor-icon-theme')
+makedepends=('rust' 'cargo' 'meson' 'ninja' 'blueprint-compiler' 'gettext' 'desktop-file-utils' 'appstream' 'pkgconf' 'git')
+optdepends=('kconfig: system proxy on KDE Plasma (kwriteconfig6)'
+            'xdg-desktop-portal: autostart and QR code from the screen'
+            'gnome-shell-extension-appindicator: tray icon on GNOME')
+#conflicts=('')
+provides=('obscure')
+#replaces=('')
+pkgver=$(date +%y.%m.%d)
+pkgrel=$(date +%H%M)
+arch=('x86_64' 'aarch64')
+license=('GPL-3.0-or-later')
+url="https://github.com/talesam/${_repo}"
+source=("git+${url}.git")
+md5sums=('SKIP')
+options=(!lto)
+
+# Automatically detect and use the correct install file
+if [ -e "${pkgname}.install" ]; then
+    install=${pkgname}.install
+elif [ -e "pkgbuild.install" ]; then
+    install=pkgbuild.install
+fi
+
+prepare() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    arch-meson . build -Dprofile=default
+    meson compile -C build
+}
+
+check() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    meson test -C build --print-errorlogs
+}
+
+package() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    meson install -C build --destdir "${pkgdir}"
+
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+}
