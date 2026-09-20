@@ -1,0 +1,14 @@
+option(
+  'profile',
+  type: 'combo',
+  choices: ['default', 'development'],
+  value: 'default',
+  description: 'The build profile. "development" appends .Devel to the app ID and a git hash to the version.',
+)
+
+option(
+  'offline',
+  type: 'boolean',
+  value: false,
+  description: 'Pass --offline to cargo (for distro packaging and Flatpak builds).',
+)

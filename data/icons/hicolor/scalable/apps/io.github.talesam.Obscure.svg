@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Provisional icon. Replace in phase 5. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3584e4"/>
+      <stop offset="1" stop-color="#1a5fb4"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#deddda"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bg)"/>
+  <path d="M64 24 L96 36 V64 C96 84 82 98 64 106 C46 98 32 84 32 64 V36 Z" fill="url(#shield)"/>
+  <circle cx="64" cy="60" r="10" fill="#1a5fb4"/>
+  <path d="M60 66 H68 L70 84 H58 Z" fill="#1a5fb4"/>
+</svg>

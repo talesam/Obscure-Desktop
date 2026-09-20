@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2026 Tales A. Mendonça -->
+<component type="desktop-application">
+  <id>@app-id@</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Obscure</name>
+  <summary>Conecte-se. Só isso.</summary>
+  <description>
+    <p>
+      O Obscure é um cliente simples para o motor Xray-core. Cole um link ou
+      uma assinatura, toque em Conectar e pronto.
+    </p>
+    <p>Recursos:</p>
+    <ul>
+      <li>Um botão Conectar, sem termos técnicos na tela principal</li>
+      <li>Importa links vless, vmess, trojan e shadowsocks, além de assinaturas</li>
+      <li>Aplica o proxy de sistema no GNOME e no KDE, sem precisar de root</li>
+      <li>Baixa e atualiza o Xray-core automaticamente, com verificação de integridade</li>
+    </ul>
+  </description>
+  <developer id="io.github.talesam">
+    <name translate="no">Tales A. Mendonça</name>
+  </developer>
+  <launchable type="desktop-id">@app-id@.desktop</launchable>
+  <translation type="gettext">@gettext-package@</translation>
+  <url type="homepage">https://github.com/talesam/Obscure-Desktop</url>
+  <url type="bugtracker">https://github.com/talesam/Obscure-Desktop/issues</url>
+  <url type="vcs-browser">https://github.com/talesam/Obscure-Desktop</url>
+  <content_rating type="oars-1.1" />
+  <branding>
+    <color type="primary" scheme_preference="light">#99c1f1</color>
+    <color type="primary" scheme_preference="dark">#1a5fb4</color>
+  </branding>
+  <requires>
+    <display_length compare="ge">360</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <provides>
+    <binary>obscure</binary>
+  </provides>
+  <releases>
+    <release version="0.1.0" date="2026-09-19" type="development">
+      <description>
+        <p>Esqueleto inicial do projeto.</p>
+      </description>
+    </release>
+  </releases>
+</component>

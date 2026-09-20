@@ -1,0 +1,8 @@
+data/io.github.talesam.Obscure.desktop.in.in
+data/io.github.talesam.Obscure.metainfo.xml.in.in
+data/io.github.talesam.Obscure.gschema.xml.in
+crates/obscure-app/src/ui/window.blp
+crates/obscure-app/src/ui/shortcuts-dialog.blp
+crates/obscure-app/src/ui/preferences-dialog.blp
+crates/obscure-app/src/application.rs
+crates/obscure-app/src/window.rs

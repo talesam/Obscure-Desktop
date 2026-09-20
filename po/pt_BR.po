@@ -1,0 +1,155 @@
+# Portuguese translations for obscure package
+# Traduções em português brasileiro para o pacote PACKAGE.
+# Copyright (C) 2026 Tales A. Mendonça
+# This file is distributed under the same license as the obscure package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: obscure 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-19 23:24-0300\n"
+"PO-Revision-Date: 2026-09-19 23:24-0300\n"
+"Last-Translator: Tales A. Mendonça\n"
+"Language-Team: none\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9
+msgid "Preferências"
+msgstr ""
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:10
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
+msgid "Geral"
+msgstr ""
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:14
+msgid "Conexão"
+msgstr ""
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:15
+msgid "As opções de conexão ficam disponíveis na próxima etapa do projeto."
+msgstr ""
+
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:14
+msgid "Atalhos de teclado"
+msgstr ""
+
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
+msgid "Fechar janela"
+msgstr ""
+
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
+msgid "Sair"
+msgstr ""
+
+#: crates/obscure-app/src/ui/window.blp:5
+#: crates/obscure-app/src/ui/window.blp:15
+#: data/io.github.talesam.Obscure.desktop.in.in:2
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
+msgid "Obscure"
+msgstr ""
+
+#: crates/obscure-app/src/ui/window.blp:25
+msgid "Menu principal"
+msgstr ""
+
+#. Translators: the slogan of the app
+#: crates/obscure-app/src/ui/window.blp:32
+#: data/io.github.talesam.Obscure.desktop.in.in:4
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:8
+msgid "Conecte-se. Só isso."
+msgstr ""
+
+#: crates/obscure-app/src/ui/window.blp:33
+msgid "Adicione um servidor e toque em Conectar."
+msgstr ""
+
+#: crates/obscure-app/src/ui/window.blp:41
+msgid "Conectar"
+msgstr ""
+
+#: crates/obscure-app/src/ui/window.blp:56
+msgid "_Preferências"
+msgstr ""
+
+#: crates/obscure-app/src/ui/window.blp:61
+msgid "_Atalhos de teclado"
+msgstr ""
+
+#: crates/obscure-app/src/ui/window.blp:66
+msgid "_Sobre o Obscure"
+msgstr ""
+
+#. Translators: replace with your name and, optionally, e-mail.
+#: crates/obscure-app/src/application.rs:151
+msgid "translator-credits"
+msgstr ""
+
+#: crates/obscure-app/src/application.rs:153
+msgid ""
+"Conecte-se. Só isso.\n"
+"\n"
+"O Obscure usa o Xray-core, baixado separadamente na primeira execução."
+msgstr ""
+
+#: crates/obscure-app/src/application.rs:159
+msgid "Plano do projeto"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.desktop.in.in:5
+msgid "Cliente de proxy"
+msgstr ""
+
+#. Translators: search terms, keep the trailing semicolon
+#: data/io.github.talesam.Obscure.desktop.in.in:12
+msgid "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:10
+msgid ""
+"O Obscure é um cliente simples para o motor Xray-core. Cole um link ou uma "
+"assinatura, toque em Conectar e pronto."
+msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:14
+msgid "Recursos:"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:16
+msgid "Um botão Conectar, sem termos técnicos na tela principal"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:17
+msgid "Importa links vless, vmess, trojan e shadowsocks, além de assinaturas"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:18
+msgid "Aplica o proxy de sistema no GNOME e no KDE, sem precisar de root"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:19
+msgid ""
+"Baixa e atualiza o Xray-core automaticamente, com verificação de integridade"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:49
+msgid "Esqueleto inicial do projeto."
+msgstr ""
+
+#: data/io.github.talesam.Obscure.gschema.xml.in:6
+msgid "Window width"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.gschema.xml.in:10
+msgid "Window height"
+msgstr ""
+
+#: data/io.github.talesam.Obscure.gschema.xml.in:14
+msgid "Whether the window is maximized"
+msgstr ""

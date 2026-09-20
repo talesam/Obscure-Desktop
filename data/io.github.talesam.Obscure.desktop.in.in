@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Obscure
+# Translators: the slogan of the app
+Comment=Conecte-se. Só isso.
+GenericName=Cliente de proxy
+Exec=obscure %U
+Icon=@app-id@
+Terminal=false
+Type=Application
+Categories=Network;
+# Translators: search terms, keep the trailing semicolon
+Keywords=proxy;vpn;xray;vless;vmess;trojan;shadowsocks;
+StartupNotify=true
+X-GNOME-UsesNotifications=true
