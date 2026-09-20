@@ -1,6 +1,6 @@
 global_conf = configuration_data()
 global_conf.set_quoted('APP_ID', application_id)
-global_conf.set_quoted('VERSION', version + version_suffix)
+global_conf.set_quoted('APP_VERSION', version)
 global_conf.set_quoted('PROFILE', get_option('profile'))
 global_conf.set_quoted('GETTEXT_PACKAGE', gettext_package)
 global_conf.set_quoted('LOCALEDIR', localedir)

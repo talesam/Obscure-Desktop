@@ -10,6 +10,7 @@ blueprint_files = [
   'import-dialog',
   'log-dialog',
   'server-dialog',
+  'connections-dialog',
 ]
 
 blueprints = []

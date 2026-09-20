@@ -10,6 +10,7 @@ use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib::clone};
+use obscure_core::access::{AccessEvent, parse_access_line};
 use obscure_core::config::{ConfigOptions, build};
 use obscure_core::core_manager::{CoreManager, Progress};
 use obscure_core::links::Server;
@@ -25,6 +26,12 @@ use crate::server_object::{LATENCY_FAILED, LATENCY_TESTING, ServerObject};
 use crate::subscription_object::SubscriptionObject;
 
 const MAX_LOG_LINES: usize = 500;
+const MAX_ACCESS_EVENTS: usize = 1000;
+
+/// Boxed access event so it can travel through a GLib signal.
+#[derive(Clone, Debug, glib::Boxed)]
+#[boxed_type(name = "ObscureAccessEventBox")]
+pub struct AccessEventBox(pub AccessEvent);
 
 /// Messages from the tokio side to the UI.
 #[derive(Debug)]
@@ -106,6 +113,7 @@ mod imp {
         /// Last latency result per server id (survives list rebuilds).
         pub latency: RefCell<HashMap<String, i32>>,
         pub log: RefCell<VecDeque<String>>,
+        pub access: RefCell<VecDeque<AccessEvent>>,
         pub cmd_tx: RefCell<Option<tokio::sync::mpsc::Sender<Cmd>>>,
         pub last_error: RefCell<Option<String>>,
     }
@@ -131,6 +139,7 @@ mod imp {
                 subscriptions: gio::ListStore::new::<SubscriptionObject>(),
                 latency: RefCell::new(HashMap::new()),
                 log: RefCell::new(VecDeque::new()),
+                access: RefCell::new(VecDeque::new()),
                 cmd_tx: RefCell::new(None),
                 last_error: RefCell::new(None),
             }
@@ -154,6 +163,10 @@ mod imp {
                     // Emitted for every new log line (String).
                     glib::subclass::Signal::builder("log-line")
                         .param_types([String::static_type()])
+                        .build(),
+                    // One parsed access-log record.
+                    glib::subclass::Signal::builder("access-event")
+                        .param_types([AccessEventBox::static_type()])
                         .build(),
                     // Something worth a desktop notification: (title, body, important).
                     glib::subclass::Signal::builder("notification")
@@ -323,7 +336,7 @@ impl ConnectionManager {
     // -- subscriptions -------------------------------------------------------
 
     fn http_client() -> obscure_core::HttpClient {
-        obscure_core::http_client(&obscure_core::user_agent(crate::config::VERSION))
+        obscure_core::http_client(&obscure_core::user_agent(crate::config::APP_VERSION))
     }
 
     /// Fetches `url` and adds it as a subscription. `done` receives the
@@ -596,7 +609,21 @@ impl ConnectionManager {
         self.imp().last_error.borrow().clone()
     }
 
+    pub fn access_events(&self) -> Vec<AccessEvent> {
+        self.imp().access.borrow().iter().cloned().collect()
+    }
+
     fn push_log(&self, line: String) {
+        if let Some(ev) = parse_access_line(&line) {
+            {
+                let mut access = self.imp().access.borrow_mut();
+                if access.len() >= MAX_ACCESS_EVENTS {
+                    access.pop_front();
+                }
+                access.push_back(ev.clone());
+            }
+            self.emit_by_name::<()>("access-event", &[&AccessEventBox(ev)]);
+        }
         {
             let mut log = self.imp().log.borrow_mut();
             if log.len() >= MAX_LOG_LINES {
@@ -723,7 +750,7 @@ impl ConnectionManager {
         let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel::<Cmd>(4);
         *self.imp().cmd_tx.borrow_mut() = Some(cmd_tx);
 
-        let user_agent = obscure_core::user_agent(crate::config::VERSION);
+        let user_agent = obscure_core::user_agent(crate::config::APP_VERSION);
         runtime().spawn(actor(params, user_agent, ui_tx, cmd_rx));
 
         glib::spawn_future_local(clone!(

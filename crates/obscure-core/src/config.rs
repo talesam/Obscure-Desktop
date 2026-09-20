@@ -37,7 +37,9 @@ impl<'a> ConfigOptions<'a> {
 /// Builds the full Xray configuration as JSON.
 pub fn build(opts: &ConfigOptions) -> Value {
     let mut cfg = json!({
-        "log": { "loglevel": opts.log_level },
+        // `access: ""` sends one line per connection to stdout, which feeds
+        // the connections view; DNS chatter stays off.
+        "log": { "loglevel": opts.log_level, "access": "", "dnsLog": false },
         "dns": dns(opts),
         "inbounds": [ {
             "tag": "mixed-in",
@@ -329,6 +331,7 @@ mod tests {
         opts.api_port = Some(10085);
         let cfg = build(&opts);
         assert_eq!(cfg["inbounds"][0]["port"], 2080);
+        assert_eq!(cfg["log"]["access"], "");
         assert_eq!(cfg["inbounds"][0]["protocol"], "mixed");
         assert_eq!(cfg["outbounds"][0]["tag"], "proxy");
         assert_eq!(cfg["outbounds"][1]["tag"], "direct");

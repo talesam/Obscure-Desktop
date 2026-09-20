@@ -3,7 +3,7 @@ use adw::subclass::prelude::*;
 use gettextrs::gettext;
 use gtk::{gio, glib};
 
-use crate::config::{APP_ID, PROFILE, VERSION};
+use crate::config::{APP_ID, APP_VERSION, PROFILE};
 use crate::connection::ConnectionManager;
 use crate::tray::{ObscureTray, TrayCmd};
 use crate::window::ObscureWindow;
@@ -39,6 +39,7 @@ mod imp {
             app.set_accels_for_action("app.quit", &["<primary>q"]);
             app.set_accels_for_action("app.preferences", &["<primary>comma"]);
             app.set_accels_for_action("app.shortcuts", &["<primary>question"]);
+            app.set_accels_for_action("win.show-connections", &["<primary>l"]);
             app.set_accels_for_action("window.close", &["<primary>w"]);
         }
     }
@@ -386,7 +387,7 @@ impl ObscureApplication {
             .application_name("Obscure")
             .application_icon(APP_ID)
             .developer_name("Tales A. Mendonça")
-            .version(VERSION)
+            .version(APP_VERSION)
             .website("https://github.com/talesam/Obscure-Desktop")
             .issue_url("https://github.com/talesam/Obscure-Desktop/issues")
             .license_type(gtk::License::Gpl30)

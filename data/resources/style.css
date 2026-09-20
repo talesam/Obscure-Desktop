@@ -35,3 +35,11 @@ statuspage.obscure-hero .icon {
 .obscure-latency {
   font-weight: 600;
 }
+
+.obscure-terminal {
+  font-size: 0.95em;
+}
+
+.obscure-out-proxy { color: #3584e4; }
+.obscure-out-direct { color: #9a9996; }
+.obscure-out-block { color: #e01b24; }

@@ -6,7 +6,7 @@ use gtk::{gio, glib};
 use obscure_core::links::looks_like_link;
 use obscure_core::sysproxy::env_snippet;
 
-use crate::config::{APP_ID, PROFILE};
+use crate::config::APP_ID;
 use crate::connection::ConnectionManager;
 use crate::import_dialog::{ImportDialog, ServersBox};
 use crate::log_dialog::LogDialog;
@@ -74,6 +74,9 @@ mod imp {
             });
             klass.install_action("win.copy-env", None, |win, _, _| win.copy_env());
             klass.install_action("win.show-log", None, |win, _, _| win.show_log());
+            klass.install_action("win.show-connections", None, |win, _, _| {
+                win.show_connections()
+            });
             klass.install_action("win.import-file", None, |win, _, _| win.import_from_file());
         }
 
@@ -131,9 +134,6 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             let obj = self.obj();
-            if PROFILE == "development" {
-                obj.add_css_class("devel");
-            }
             self.status_page
                 .set_icon_name(Some(&format!("{APP_ID}-symbolic")));
             obj.bind_settings();
@@ -228,6 +228,10 @@ impl ObscureWindow {
     /// (URL scheme handler or file).
     pub fn import_text(&self, text: &str) {
         self.show_import_dialog(Some(text));
+    }
+
+    fn show_connections(&self) {
+        crate::connections_dialog::ConnectionsDialog::new(self.manager()).present(Some(self));
     }
 
     fn show_log(&self) {

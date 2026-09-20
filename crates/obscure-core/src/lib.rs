@@ -1,5 +1,6 @@
 //! Core library of Obscure. Must never depend on GTK.
 
+pub mod access;
 pub mod config;
 pub mod core_manager;
 pub mod error;

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 18:29\n"
-"PO-Revision-Date: 2026-09-20 18:29\n"
+"POT-Creation-Date: 2026-09-20 19:07\n"
+"PO-Revision-Date: 2026-09-20 19:07\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: עברית\n"
 "Language: he\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:398
+#: crates/obscure-app/src/application.rs:399
 msgid "Connect. That's it."
 msgstr "להתחבר. זה הכול."
 
@@ -109,7 +109,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "כדי להתחיל, יש להדביק קישור או מינוי."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:581 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/window.rs:578 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "התחברות"
 
@@ -190,22 +190,26 @@ msgid "_Import from File…"
 msgstr "_ייבוא מקובץ…"
 
 #: crates/obscure-app/src/ui/window.blp:270
+msgid "_Live Connections"
+msgstr "_חיבורים בזמן אמת"
+
+#: crates/obscure-app/src/ui/window.blp:275
 msgid "_Connection Log"
 msgstr "_יומן החיבור"
 
-#: crates/obscure-app/src/ui/window.blp:275
+#: crates/obscure-app/src/ui/window.blp:280
 msgid "_Copy Environment Variables"
 msgstr "_העתקת משתני סביבה"
 
-#: crates/obscure-app/src/ui/window.blp:282
+#: crates/obscure-app/src/ui/window.blp:287
 msgid "_Preferences"
 msgstr "_העדפות"
 
-#: crates/obscure-app/src/ui/window.blp:287
+#: crates/obscure-app/src/ui/window.blp:292
 msgid "_Keyboard Shortcuts"
 msgstr "_צירופי מקשים"
 
-#: crates/obscure-app/src/ui/window.blp:292
+#: crates/obscure-app/src/ui/window.blp:297
 msgid "_About Obscure"
 msgstr "_על אודות Obscure"
 
@@ -224,10 +228,15 @@ msgid "Keyboard Shortcuts"
 msgstr "צירופי מקשים"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
+#: crates/obscure-app/src/ui/connections-dialog.blp:5
+msgid "Live Connections"
+msgstr "חיבורים בזמן אמת"
+
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
 msgid "Close Window"
 msgstr "סגירת החלון"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29
 #: crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "יציאה"
@@ -285,8 +294,8 @@ msgid "Newer features, but less tested. Off is the safe choice."
 msgstr "תכונות חדשות יותר, אך פחות נבדקו. כבוי הוא הבחירה הבטוחה."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:544 crates/obscure-app/src/window.rs:573
-#: crates/obscure-app/src/window.rs:665
+#: crates/obscure-app/src/window.rs:541 crates/obscure-app/src/window.rs:570
+#: crates/obscure-app/src/window.rs:662
 msgid "Cancel"
 msgstr "ביטול"
 
@@ -318,20 +327,20 @@ msgstr "צילום המסך וקריאת קוד ה‑QR שבו"
 msgid "QR from Screen"
 msgstr "QR מהמסך"
 
-#: crates/obscure-app/src/application.rs:95
+#: crates/obscure-app/src/application.rs:96
 msgid "The system proxy settings from a previous session were restored."
 msgstr "הגדרות פרוקסי המערכת מההפעלה הקודמת שוחזרו."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:395
+#: crates/obscure-app/src/application.rs:396
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:399
+#: crates/obscure-app/src/application.rs:400
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure משתמש ב‑Xray-core, שמורד בנפרד בהפעלה הראשונה."
 
-#: crates/obscure-app/src/application.rs:405
+#: crates/obscure-app/src/application.rs:406
 msgid "Project plan"
 msgstr "תוכנית הפרויקט"
 
@@ -339,135 +348,135 @@ msgstr "תוכנית הפרויקט"
 msgid "The clipboard does not contain a server link."
 msgstr "הלוח אינו מכיל קישור לשרת."
 
-#: crates/obscure-app/src/window.rs:239
+#: crates/obscure-app/src/window.rs:243
 msgid "Text files"
 msgstr "קובצי טקסט"
 
-#: crates/obscure-app/src/window.rs:246
+#: crates/obscure-app/src/window.rs:250
 msgid "Import servers from a file"
 msgstr "ייבוא שרתים מקובץ"
 
-#: crates/obscure-app/src/window.rs:266
+#: crates/obscure-app/src/window.rs:270
 msgid "Could not read that file."
 msgstr "לא ניתן לקרוא את הקובץ הזה."
 
-#: crates/obscure-app/src/window.rs:354
+#: crates/obscure-app/src/window.rs:358
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "משתני הסביבה הועתקו. יש להדביק אותם במסוף."
 
-#: crates/obscure-app/src/window.rs:484
+#: crates/obscure-app/src/window.rs:488
 msgid "Update now"
 msgstr "עדכון עכשיו"
 
-#: crates/obscure-app/src/window.rs:505 crates/obscure-app/src/window.rs:699
-msgid "Subscription updated: %n server."
-msgid_plural "Subscription updated: %n servers."
-msgstr[0] "המינוי עודכן: שרת %n."
-msgstr[1] "המינוי עודכן: %n שרתים."
-
-#: crates/obscure-app/src/window.rs:521
+#: crates/obscure-app/src/window.rs:518
 msgid "Remove subscription"
 msgstr "הסרת המינוי"
 
-#: crates/obscure-app/src/window.rs:538
+#: crates/obscure-app/src/window.rs:535
 msgid "Remove “%s” and all its servers?"
 msgstr "להסיר את „%s” ואת כל השרתים שלו?"
 
-#: crates/obscure-app/src/window.rs:540
+#: crates/obscure-app/src/window.rs:537
 msgid "You can add the subscription again later by pasting its address."
 msgstr "אפשר להוסיף את המינוי שוב מאוחר יותר על ידי הדבקת הכתובת שלו."
 
-#: crates/obscure-app/src/window.rs:545 crates/obscure-app/src/window.rs:666
+#: crates/obscure-app/src/window.rs:542 crates/obscure-app/src/window.rs:663
 #: crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "הסרה"
 
-#: crates/obscure-app/src/window.rs:565 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:562 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "התנתקות"
 
-#: crates/obscure-app/src/window.rs:644
+#: crates/obscure-app/src/window.rs:641
 msgid "Server details"
 msgstr "פרטי השרת"
 
-#: crates/obscure-app/src/window.rs:661
+#: crates/obscure-app/src/window.rs:658
 msgid "Remove “%s”?"
 msgstr "להסיר את „%s”?"
 
-#: crates/obscure-app/src/window.rs:662
+#: crates/obscure-app/src/window.rs:659
 msgid "You can add it again later by pasting its link."
 msgstr "אפשר להוסיף אותו שוב מאוחר יותר על ידי הדבקת הקישור שלו."
 
-#: crates/obscure-app/src/window.rs:686
+#: crates/obscure-app/src/window.rs:683
 msgid "These servers were already added."
 msgstr "השרתים האלה כבר נוספו."
 
-#: crates/obscure-app/src/window.rs:688
+#: crates/obscure-app/src/window.rs:685
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "נוסף שרת %n."
 msgstr[1] "נוספו %n שרתים."
 
-#: crates/obscure-app/src/window.rs:694
+#: crates/obscure-app/src/window.rs:691
 msgid "Downloading the subscription…"
 msgstr "המינוי בהורדה…"
 
-#: crates/obscure-app/src/connection.rs:186
-#: crates/obscure-app/src/connection.rs:828
+#: crates/obscure-app/src/window.rs:696
+msgid "Subscription updated: %n server."
+msgid_plural "Subscription updated: %n servers."
+msgstr[0] "המינוי עודכן: שרת %n."
+msgstr[1] "המינוי עודכן: %n שרתים."
+
+#: crates/obscure-app/src/connection.rs:199
+#: crates/obscure-app/src/connection.rs:855
 msgid "Disconnected"
 msgstr "מנותק"
 
-#: crates/obscure-app/src/connection.rs:667
+#: crates/obscure-app/src/connection.rs:694
 msgid "Finding the fastest server…"
 msgstr "מחפש את השרת המהיר ביותר…"
 
-#: crates/obscure-app/src/connection.rs:693
+#: crates/obscure-app/src/connection.rs:720
 msgid "Choose a server to connect"
 msgstr "יש לבחור שרת להתחברות"
 
-#: crates/obscure-app/src/connection.rs:710
-#: crates/obscure-app/src/connection.rs:800
+#: crates/obscure-app/src/connection.rs:737
+#: crates/obscure-app/src/connection.rs:827
 msgid "Connecting…"
 msgstr "מתחבר…"
 
-#: crates/obscure-app/src/connection.rs:744
+#: crates/obscure-app/src/connection.rs:771
 msgid "Disconnecting…"
 msgstr "מתנתק…"
 
-#: crates/obscure-app/src/connection.rs:767
+#: crates/obscure-app/src/connection.rs:794
 msgid "Preparing the connection engine…"
 msgstr "מנוע החיבור בהכנה…"
 
-#: crates/obscure-app/src/connection.rs:778
+#: crates/obscure-app/src/connection.rs:805
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "מנוע החיבור בהורדה: %a מתוך %b MB"
 
-#: crates/obscure-app/src/connection.rs:781
+#: crates/obscure-app/src/connection.rs:808
 msgid "Downloading the connection engine: %a MB"
 msgstr "מנוע החיבור בהורדה: %a MB"
 
-#: crates/obscure-app/src/connection.rs:786
+#: crates/obscure-app/src/connection.rs:813
 msgid "Verifying the download…"
 msgstr "ההורדה באימות…"
 
-#: crates/obscure-app/src/connection.rs:788
+#: crates/obscure-app/src/connection.rs:815
 msgid "Installing the connection engine…"
 msgstr "מנוע החיבור בהתקנה…"
 
-#: crates/obscure-app/src/connection.rs:817
+#: crates/obscure-app/src/connection.rs:844
 msgid "Connected · system proxy active"
 msgstr "מחובר · פרוקסי המערכת פעיל"
 
-#: crates/obscure-app/src/connection.rs:818
+#: crates/obscure-app/src/connection.rs:845
 msgid "Connected · local proxy only"
 msgstr "מחובר · פרוקסי מקומי בלבד"
 
-#: crates/obscure-app/src/connection.rs:819
-#: crates/obscure-app/src/connection.rs:823
+#: crates/obscure-app/src/connection.rs:846
+#: crates/obscure-app/src/connection.rs:850
 msgid "Connected"
 msgstr "מחובר"
 
-#: crates/obscure-app/src/connection.rs:840
+#: crates/obscure-app/src/connection.rs:867
 msgid "Connection failed"
 msgstr "ההתחברות נכשלה"
 
@@ -662,3 +671,52 @@ msgstr "פג תוקף ב‑%d"
 #: crates/obscure-app/src/autostart.rs:11
 msgid "Obscure keeps your connection available from the tray."
 msgstr "Obscure שומר על החיבור שלך זמין מהמגש."
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:15
+msgid "Pause"
+msgstr "השהיה"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:21
+msgid "Copy"
+msgstr "העתקה"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:28
+msgid "Clear"
+msgstr "ניקוי"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:45
+msgid "Connect to see the traffic as it happens."
+msgstr "יש להתחבר כדי לראות את התעבורה בזמן אמת."
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:56
+msgid "→ via server"
+msgstr "→ דרך השרת"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:65
+msgid "→ direct"
+msgstr "→ ישיר"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:74
+msgid "✕ blocked"
+msgstr "✕ חסום"
+
+#: crates/obscure-app/src/connections_dialog.rs:157
+msgid "rejected"
+msgstr "נדחה"
+
+#: crates/obscure-app/src/connections_dialog.rs:158
+msgid "blocked"
+msgstr "חסום"
+
+#: crates/obscure-app/src/connections_dialog.rs:159
+msgid "direct"
+msgstr "ישיר"
+
+#: crates/obscure-app/src/connections_dialog.rs:160
+msgid "via server"
+msgstr "דרך השרת"
+
+#. DNS-over-HTTPS lookups are logged as `[local]`.
+#: crates/obscure-app/src/connections_dialog.rs:162
+msgid "DNS lookup"
+msgstr "שאילתת DNS"

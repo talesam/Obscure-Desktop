@@ -299,6 +299,15 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 
 ## 8. Registro de progresso e pendências
 
+### Ajustes pedidos em 2026-09-20 (branch `dev-talesam`)
+- **Conexões ao vivo** (menu e Ctrl+L): fluxo estilo terminal com hora, protocolo, destino e rota
+  (pelo servidor / direto / bloqueado / DNS), a partir do access log do Xray (`log.access = ""`;
+  parser em `obscure-core/src/access.rs`). Pausar, copiar, limpar, contador.
+- Constante de versão renomeada para `APP_VERSION`; a versão exibida é sempre `0.1.0` (sem hash) e
+  o perfil development não desenha mais as faixas `.devel` no header. O app ID `.Devel` continua.
+- Ícones candidatos do app estão em `~/Servidor/GitHub/talesam/obscure/docs/assets/icones/`
+  (escudo-prisma, eclipse, anel-o, túnel, escudo-sinal); troca do ícone pendente de escolha.
+
 ### Fase 3 (2026-09-20)
 Feito: assinaturas (núcleo + tela), latência com badges e modo automático, notificações, autostart
 (portal Background) e `--start-minimized`, QR por imagem/área de transferência/tela, WireGuard e

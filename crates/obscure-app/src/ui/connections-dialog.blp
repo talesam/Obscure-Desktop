@@ -1,0 +1,103 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObscureConnectionsDialog: Adw.Dialog {
+  title: _("Live Connections");
+  content-width: 720;
+  content-height: 520;
+
+  child: Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {
+      [start]
+      ToggleButton pause_button {
+        icon-name: "media-playback-pause-symbolic";
+        tooltip-text: _("Pause");
+      }
+
+      [start]
+      Button {
+        icon-name: "edit-copy-symbolic";
+        tooltip-text: _("Copy");
+        clicked => $on_copy_clicked() swapped;
+      }
+
+      [start]
+      Button {
+        icon-name: "edit-clear-all-symbolic";
+        tooltip-text: _("Clear");
+        clicked => $on_clear_clicked() swapped;
+      }
+
+      [end]
+      Label counter_label {
+        styles [
+          "numeric",
+          "dim-label",
+        ]
+      }
+    }
+
+    content: Box {
+      orientation: vertical;
+
+      Adw.Banner banner {
+        title: _("Connect to see the traffic as it happens.");
+      }
+
+      Box legend {
+        orientation: horizontal;
+        spacing: 18;
+        halign: center;
+        margin-top: 6;
+        margin-bottom: 6;
+
+        Label {
+          label: _("→ via server");
+
+          styles [
+            "caption",
+            "obscure-out-proxy",
+          ]
+        }
+
+        Label {
+          label: _("→ direct");
+
+          styles [
+            "caption",
+            "obscure-out-direct",
+          ]
+        }
+
+        Label {
+          label: _("✕ blocked");
+
+          styles [
+            "caption",
+            "obscure-out-block",
+          ]
+        }
+      }
+
+      ScrolledWindow scrolled {
+        vexpand: true;
+
+        TextView text_view {
+          editable: false;
+          cursor-visible: false;
+          monospace: true;
+          wrap-mode: none;
+          top-margin: 8;
+          bottom-margin: 8;
+          left-margin: 12;
+          right-margin: 12;
+
+          styles [
+            "obscure-terminal",
+          ]
+        }
+      }
+    };
+  };
+}

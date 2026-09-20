@@ -2,6 +2,7 @@ mod application;
 mod autostart;
 mod config;
 mod connection;
+mod connections_dialog;
 mod humanize;
 mod import_dialog;
 mod log_dialog;
@@ -19,7 +20,7 @@ use gtk::prelude::*;
 use gtk::{gio, glib};
 
 use self::application::ObscureApplication;
-use self::config::{APP_ID, GETTEXT_PACKAGE, LOCALEDIR, PKGDATADIR, PROFILE, VERSION};
+use self::config::{APP_ID, APP_VERSION, GETTEXT_PACKAGE, LOCALEDIR, PKGDATADIR, PROFILE};
 
 fn main() -> glib::ExitCode {
     tracing_subscriber::fmt()
@@ -29,7 +30,7 @@ fn main() -> glib::ExitCode {
         )
         .init();
 
-    tracing::info!("Obscure {VERSION} ({PROFILE}), app id {APP_ID}");
+    tracing::info!("Obscure {APP_VERSION} ({PROFILE}), app id {APP_ID}");
 
     let (resources, uninstalled) = load_resources();
 

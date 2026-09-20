@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 18:29\n"
-"PO-Revision-Date: 2026-09-20 18:29\n"
+"POT-Creation-Date: 2026-09-20 19:07\n"
+"PO-Revision-Date: 2026-09-20 19:07\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Eesti\n"
 "Language: et\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:398
+#: crates/obscure-app/src/application.rs:399
 msgid "Connect. That's it."
 msgstr "Ühendu. See on kõik."
 
@@ -109,7 +109,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "Alustamiseks kleebi link või tellimus."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:581 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/window.rs:578 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Ühenda"
 
@@ -190,22 +190,26 @@ msgid "_Import from File…"
 msgstr "_Impordi failist…"
 
 #: crates/obscure-app/src/ui/window.blp:270
+msgid "_Live Connections"
+msgstr "_Reaalajas ühendused"
+
+#: crates/obscure-app/src/ui/window.blp:275
 msgid "_Connection Log"
 msgstr "_Ühenduse logi"
 
-#: crates/obscure-app/src/ui/window.blp:275
+#: crates/obscure-app/src/ui/window.blp:280
 msgid "_Copy Environment Variables"
 msgstr "_Kopeeri keskkonnamuutujad"
 
-#: crates/obscure-app/src/ui/window.blp:282
+#: crates/obscure-app/src/ui/window.blp:287
 msgid "_Preferences"
 msgstr "_Eelistused"
 
-#: crates/obscure-app/src/ui/window.blp:287
+#: crates/obscure-app/src/ui/window.blp:292
 msgid "_Keyboard Shortcuts"
 msgstr "_Kiirklahvid"
 
-#: crates/obscure-app/src/ui/window.blp:292
+#: crates/obscure-app/src/ui/window.blp:297
 msgid "_About Obscure"
 msgstr "_Obscure'i teave"
 
@@ -224,10 +228,15 @@ msgid "Keyboard Shortcuts"
 msgstr "Kiirklahvid"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
+#: crates/obscure-app/src/ui/connections-dialog.blp:5
+msgid "Live Connections"
+msgstr "Reaalajas ühendused"
+
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
 msgid "Close Window"
 msgstr "Sulge aken"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29
 #: crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Välju"
@@ -285,8 +294,8 @@ msgid "Newer features, but less tested. Off is the safe choice."
 msgstr "Uuemad võimalused, aga vähem testitud. Väljas on turvaline valik."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:544 crates/obscure-app/src/window.rs:573
-#: crates/obscure-app/src/window.rs:665
+#: crates/obscure-app/src/window.rs:541 crates/obscure-app/src/window.rs:570
+#: crates/obscure-app/src/window.rs:662
 msgid "Cancel"
 msgstr "Loobu"
 
@@ -318,20 +327,20 @@ msgstr "Tee ekraanipilt ja loe sellel olev QR-kood"
 msgid "QR from Screen"
 msgstr "QR ekraanilt"
 
-#: crates/obscure-app/src/application.rs:95
+#: crates/obscure-app/src/application.rs:96
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Eelmise seansi süsteemi puhverserveri seaded taastati."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:395
+#: crates/obscure-app/src/application.rs:396
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:399
+#: crates/obscure-app/src/application.rs:400
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure kasutab Xray-core mootorit, mis laaditakse esimesel käivitusel eraldi alla."
 
-#: crates/obscure-app/src/application.rs:405
+#: crates/obscure-app/src/application.rs:406
 msgid "Project plan"
 msgstr "Projekti plaan"
 
@@ -339,135 +348,135 @@ msgstr "Projekti plaan"
 msgid "The clipboard does not contain a server link."
 msgstr "Lõikelaual pole serveri linki."
 
-#: crates/obscure-app/src/window.rs:239
+#: crates/obscure-app/src/window.rs:243
 msgid "Text files"
 msgstr "Tekstifailid"
 
-#: crates/obscure-app/src/window.rs:246
+#: crates/obscure-app/src/window.rs:250
 msgid "Import servers from a file"
 msgstr "Impordi serverid failist"
 
-#: crates/obscure-app/src/window.rs:266
+#: crates/obscure-app/src/window.rs:270
 msgid "Could not read that file."
 msgstr "Seda faili ei õnnestunud lugeda."
 
-#: crates/obscure-app/src/window.rs:354
+#: crates/obscure-app/src/window.rs:358
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Keskkonnamuutujad kopeeritud. Kleebi need terminali."
 
-#: crates/obscure-app/src/window.rs:484
+#: crates/obscure-app/src/window.rs:488
 msgid "Update now"
 msgstr "Uuenda kohe"
 
-#: crates/obscure-app/src/window.rs:505 crates/obscure-app/src/window.rs:699
-msgid "Subscription updated: %n server."
-msgid_plural "Subscription updated: %n servers."
-msgstr[0] "Tellimus uuendatud: %n server."
-msgstr[1] "Tellimus uuendatud: %n serverit."
-
-#: crates/obscure-app/src/window.rs:521
+#: crates/obscure-app/src/window.rs:518
 msgid "Remove subscription"
 msgstr "Eemalda tellimus"
 
-#: crates/obscure-app/src/window.rs:538
+#: crates/obscure-app/src/window.rs:535
 msgid "Remove “%s” and all its servers?"
 msgstr "Kas eemaldada „%s” ja kõik selle serverid?"
 
-#: crates/obscure-app/src/window.rs:540
+#: crates/obscure-app/src/window.rs:537
 msgid "You can add the subscription again later by pasting its address."
 msgstr "Tellimuse saab hiljem aadressi kleepimisega uuesti lisada."
 
-#: crates/obscure-app/src/window.rs:545 crates/obscure-app/src/window.rs:666
+#: crates/obscure-app/src/window.rs:542 crates/obscure-app/src/window.rs:663
 #: crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Eemalda"
 
-#: crates/obscure-app/src/window.rs:565 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:562 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Katkesta ühendus"
 
-#: crates/obscure-app/src/window.rs:644
+#: crates/obscure-app/src/window.rs:641
 msgid "Server details"
 msgstr "Serveri üksikasjad"
 
-#: crates/obscure-app/src/window.rs:661
+#: crates/obscure-app/src/window.rs:658
 msgid "Remove “%s”?"
 msgstr "Kas eemaldada „%s”?"
 
-#: crates/obscure-app/src/window.rs:662
+#: crates/obscure-app/src/window.rs:659
 msgid "You can add it again later by pasting its link."
 msgstr "Selle saab hiljem lingi kleepimisega uuesti lisada."
 
-#: crates/obscure-app/src/window.rs:686
+#: crates/obscure-app/src/window.rs:683
 msgid "These servers were already added."
 msgstr "Need serverid olid juba lisatud."
 
-#: crates/obscure-app/src/window.rs:688
+#: crates/obscure-app/src/window.rs:685
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "%n server lisatud."
 msgstr[1] "%n serverit lisatud."
 
-#: crates/obscure-app/src/window.rs:694
+#: crates/obscure-app/src/window.rs:691
 msgid "Downloading the subscription…"
 msgstr "Tellimuse allalaadimine…"
 
-#: crates/obscure-app/src/connection.rs:186
-#: crates/obscure-app/src/connection.rs:828
+#: crates/obscure-app/src/window.rs:696
+msgid "Subscription updated: %n server."
+msgid_plural "Subscription updated: %n servers."
+msgstr[0] "Tellimus uuendatud: %n server."
+msgstr[1] "Tellimus uuendatud: %n serverit."
+
+#: crates/obscure-app/src/connection.rs:199
+#: crates/obscure-app/src/connection.rs:855
 msgid "Disconnected"
 msgstr "Ühendus puudub"
 
-#: crates/obscure-app/src/connection.rs:667
+#: crates/obscure-app/src/connection.rs:694
 msgid "Finding the fastest server…"
 msgstr "Otsitakse kiireimat serverit…"
 
-#: crates/obscure-app/src/connection.rs:693
+#: crates/obscure-app/src/connection.rs:720
 msgid "Choose a server to connect"
 msgstr "Vali server, millega ühenduda"
 
-#: crates/obscure-app/src/connection.rs:710
-#: crates/obscure-app/src/connection.rs:800
+#: crates/obscure-app/src/connection.rs:737
+#: crates/obscure-app/src/connection.rs:827
 msgid "Connecting…"
 msgstr "Ühendamine…"
 
-#: crates/obscure-app/src/connection.rs:744
+#: crates/obscure-app/src/connection.rs:771
 msgid "Disconnecting…"
 msgstr "Ühenduse katkestamine…"
 
-#: crates/obscure-app/src/connection.rs:767
+#: crates/obscure-app/src/connection.rs:794
 msgid "Preparing the connection engine…"
 msgstr "Ühendusmootori ettevalmistamine…"
 
-#: crates/obscure-app/src/connection.rs:778
+#: crates/obscure-app/src/connection.rs:805
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "Ühendusmootori allalaadimine: %a / %b MB"
 
-#: crates/obscure-app/src/connection.rs:781
+#: crates/obscure-app/src/connection.rs:808
 msgid "Downloading the connection engine: %a MB"
 msgstr "Ühendusmootori allalaadimine: %a MB"
 
-#: crates/obscure-app/src/connection.rs:786
+#: crates/obscure-app/src/connection.rs:813
 msgid "Verifying the download…"
 msgstr "Allalaadimise kontrollimine…"
 
-#: crates/obscure-app/src/connection.rs:788
+#: crates/obscure-app/src/connection.rs:815
 msgid "Installing the connection engine…"
 msgstr "Ühendusmootori paigaldamine…"
 
-#: crates/obscure-app/src/connection.rs:817
+#: crates/obscure-app/src/connection.rs:844
 msgid "Connected · system proxy active"
 msgstr "Ühendatud · süsteemi puhverserver aktiivne"
 
-#: crates/obscure-app/src/connection.rs:818
+#: crates/obscure-app/src/connection.rs:845
 msgid "Connected · local proxy only"
 msgstr "Ühendatud · ainult kohalik puhverserver"
 
-#: crates/obscure-app/src/connection.rs:819
-#: crates/obscure-app/src/connection.rs:823
+#: crates/obscure-app/src/connection.rs:846
+#: crates/obscure-app/src/connection.rs:850
 msgid "Connected"
 msgstr "Ühendatud"
 
-#: crates/obscure-app/src/connection.rs:840
+#: crates/obscure-app/src/connection.rs:867
 msgid "Connection failed"
 msgstr "Ühendumine nurjus"
 
@@ -662,3 +671,52 @@ msgstr "aegub %d"
 #: crates/obscure-app/src/autostart.rs:11
 msgid "Obscure keeps your connection available from the tray."
 msgstr "Obscure hoiab ühenduse salvest kättesaadavana."
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:15
+msgid "Pause"
+msgstr "Paus"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:21
+msgid "Copy"
+msgstr "Kopeeri"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:28
+msgid "Clear"
+msgstr "Tühjenda"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:45
+msgid "Connect to see the traffic as it happens."
+msgstr "Ühendu, et näha liiklust reaalajas."
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:56
+msgid "→ via server"
+msgstr "→ serveri kaudu"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:65
+msgid "→ direct"
+msgstr "→ otse"
+
+#: crates/obscure-app/src/ui/connections-dialog.blp:74
+msgid "✕ blocked"
+msgstr "✕ blokeeritud"
+
+#: crates/obscure-app/src/connections_dialog.rs:157
+msgid "rejected"
+msgstr "tagasi lükatud"
+
+#: crates/obscure-app/src/connections_dialog.rs:158
+msgid "blocked"
+msgstr "blokeeritud"
+
+#: crates/obscure-app/src/connections_dialog.rs:159
+msgid "direct"
+msgstr "otse"
+
+#: crates/obscure-app/src/connections_dialog.rs:160
+msgid "via server"
+msgstr "serveri kaudu"
+
+#. DNS-over-HTTPS lookups are logged as `[local]`.
+#: crates/obscure-app/src/connections_dialog.rs:162
+msgid "DNS lookup"
+msgstr "DNS-päring"

@@ -20,3 +20,5 @@ crates/obscure-app/src/subscription_object.rs
 crates/obscure-app/src/qr.rs
 crates/obscure-app/src/autostart.rs
 crates/obscure-app/src/server_object.rs
+crates/obscure-app/src/ui/connections-dialog.blp
+crates/obscure-app/src/connections_dialog.rs
