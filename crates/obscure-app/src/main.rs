@@ -1,5 +1,10 @@
 mod application;
 mod config;
+mod connection;
+mod humanize;
+mod import_dialog;
+mod runtime;
+mod server_object;
 mod window;
 
 use gettextrs::{LocaleCategory, bindtextdomain, setlocale, textdomain};

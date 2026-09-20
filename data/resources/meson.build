@@ -7,6 +7,7 @@ blueprint_files = [
   'window',
   'shortcuts-dialog',
   'preferences-dialog',
+  'import-dialog',
 ]
 
 blueprints = []

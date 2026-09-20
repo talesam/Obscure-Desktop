@@ -1,0 +1,91 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObscureImportDialog: Adw.Dialog {
+  title: _("Add Server");
+  content-width: 480;
+  content-height: 420;
+
+  child: Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {
+      show-start-title-buttons: false;
+      show-end-title-buttons: false;
+
+      [start]
+      Button {
+        label: _("Cancel");
+        action-name: "window.close";
+      }
+
+      [end]
+      Button import_button {
+        label: _("Add");
+        sensitive: false;
+        clicked => $on_import_clicked() swapped;
+
+        styles [
+          "suggested-action",
+        ]
+      }
+    }
+
+    content: Box {
+      orientation: vertical;
+      spacing: 12;
+      margin-top: 12;
+      margin-bottom: 12;
+      margin-start: 12;
+      margin-end: 12;
+
+      Label {
+        label: _("Paste the server link below, or the links from your subscription, one per line.");
+        wrap: true;
+        xalign: 0;
+
+        styles [
+          "dim-label",
+        ]
+      }
+
+      ScrolledWindow {
+        vexpand: true;
+        hscrollbar-policy: never;
+
+        styles [
+          "card",
+        ]
+
+        TextView text_view {
+          wrap-mode: char;
+          top-margin: 8;
+          bottom-margin: 8;
+          left-margin: 8;
+          right-margin: 8;
+          monospace: true;
+        }
+      }
+
+      Button paste_button {
+        halign: center;
+        clicked => $on_paste_clicked() swapped;
+
+        Adw.ButtonContent {
+          icon-name: "edit-paste-symbolic";
+          label: _("Paste from Clipboard");
+        }
+      }
+
+      Label hint_label {
+        wrap: true;
+        xalign: 0;
+        visible: false;
+
+        styles [
+          "caption",
+          "dim-label",
+        ]
+      }
+    };
+  };
+}

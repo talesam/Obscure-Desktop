@@ -4,6 +4,7 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="ui/window.ui">window.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="ui/shortcuts-dialog.ui">shortcuts-dialog.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="ui/preferences-dialog.ui">preferences-dialog.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="ui/import-dialog.ui">import-dialog.ui</file>
     <file compressed="true">style.css</file>
   </gresource>
 </gresources>

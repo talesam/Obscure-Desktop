@@ -8,49 +8,177 @@ template $ObscureWindow: Adw.ApplicationWindow {
   width-request: 360;
   height-request: 294;
 
-  Adw.Breakpoint {
-    condition ("max-width: 400sp")
-
-    setters {
-      status_page.title: _("Obscure");
-    }
-  }
-
   content: Adw.ToolbarView toolbar_view {
     [top]
     Adw.HeaderBar {
+      [start]
+      Button {
+        icon-name: "list-add-symbolic";
+        tooltip-text: _("Add Server");
+        action-name: "win.add-server";
+      }
+
       [end]
       MenuButton {
         icon-name: "open-menu-symbolic";
-        tooltip-text: _("Menu principal");
+        tooltip-text: _("Main Menu");
         primary: true;
         menu-model: primary_menu;
       }
     }
 
     content: Adw.ToastOverlay toast_overlay {
-      Adw.StatusPage status_page {
-      title: _("Conecte-se. Só isso.");
-      description: _("Cole um link ou uma assinatura para começar.");
+      Stack stack {
+        transition-type: crossfade;
 
-      styles [
-        "obscure-hero",
-      ]
+        StackPage {
+          name: "empty";
 
-      Button add_server_button {
-        halign: center;
-        clicked => $on_add_server_clicked() swapped;
+          child: Adw.StatusPage status_page {
+            title: _("Connect. That's it.");
+            description: _("Paste a link or a subscription to get started.");
 
-        Adw.ButtonContent {
-          icon-name: "list-add-symbolic";
-          label: _("Adicionar servidor");
+            styles [
+              "obscure-hero",
+            ]
+
+            Button {
+              halign: center;
+              action-name: "win.add-server";
+
+              Adw.ButtonContent {
+                icon-name: "list-add-symbolic";
+                label: _("Add Server");
+              }
+
+              styles [
+                "pill",
+                "suggested-action",
+              ]
+            }
+          };
         }
 
-        styles [
-          "pill",
-          "suggested-action",
-        ]
-      }
+        StackPage {
+          name: "main";
+
+          child: ScrolledWindow {
+            hscrollbar-policy: never;
+
+            Adw.Clamp {
+              maximum-size: 560;
+              tightening-threshold: 400;
+
+              Box {
+                orientation: vertical;
+                spacing: 24;
+                margin-top: 24;
+                margin-bottom: 24;
+                margin-start: 12;
+                margin-end: 12;
+
+                Box hero {
+                  orientation: vertical;
+                  spacing: 12;
+                  halign: center;
+
+                  Image status_icon {
+                    icon-name: "network-vpn-disconnected-symbolic";
+                    pixel-size: 96;
+
+                    styles [
+                      "obscure-status-icon",
+                      "dim-label",
+                    ]
+                  }
+
+                  Label server_label {
+                    wrap: true;
+                    justify: center;
+
+                    styles [
+                      "title-1",
+                    ]
+                  }
+
+                  Label status_label {
+                    wrap: true;
+                    justify: center;
+
+                    styles [
+                      "dim-label",
+                    ]
+                  }
+
+                  ProgressBar progress_bar {
+                    visible: false;
+                    width-request: 260;
+                    margin-top: 6;
+                  }
+
+                  Button connect_button {
+                    halign: center;
+                    margin-top: 12;
+                    width-request: 200;
+                    clicked => $on_connect_clicked() swapped;
+
+                    Adw.ButtonContent connect_content {
+                      icon-name: "network-vpn-symbolic";
+                      label: _("Connect");
+                    }
+
+                    styles [
+                      "pill",
+                      "suggested-action",
+                      "obscure-connect",
+                    ]
+                  }
+                }
+
+                Adw.PreferencesGroup {
+                  title: _("How to apply");
+
+                  Adw.ToggleGroup mode_group {
+                    homogeneous: true;
+                    notify::active-name => $on_mode_changed() swapped;
+
+                    Adw.Toggle {
+                      name: "system_proxy";
+                      label: _("System proxy");
+                      tooltip: _("Browsers and most apps use the connection. No administrator password needed.");
+                    }
+
+                    Adw.Toggle {
+                      name: "local_only";
+                      label: _("Local proxy only");
+                      tooltip: _("Nothing changes on the system. Point the programs you want at 127.0.0.1:2080.");
+                    }
+
+                    Adw.Toggle {
+                      name: "tunnel";
+                      label: _("Tunnel");
+                      enabled: false;
+                      tooltip: _("All traffic from this computer. Coming in a future version.");
+                    }
+                  }
+                }
+
+                Adw.PreferencesGroup {
+                  title: _("Servers");
+
+                  ListBox servers_list {
+                    selection-mode: none;
+                    row-activated => $on_server_activated() swapped;
+
+                    styles [
+                      "boxed-list",
+                    ]
+                  }
+                }
+              }
+            }
+          };
+        }
       }
     };
   };
@@ -59,17 +187,24 @@ template $ObscureWindow: Adw.ApplicationWindow {
 menu primary_menu {
   section {
     item {
-      label: _("_Preferências");
+      label: _("_Copy Environment Variables");
+      action: "win.copy-env";
+    }
+  }
+
+  section {
+    item {
+      label: _("_Preferences");
       action: "app.preferences";
     }
 
     item {
-      label: _("_Atalhos de teclado");
+      label: _("_Keyboard Shortcuts");
       action: "app.shortcuts";
     }
 
     item {
-      label: _("_Sobre o Obscure");
+      label: _("_About Obscure");
       action: "app.about";
     }
   }

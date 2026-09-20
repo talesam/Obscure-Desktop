@@ -4,5 +4,9 @@ data/io.github.talesam.Obscure.gschema.xml.in
 crates/obscure-app/src/ui/window.blp
 crates/obscure-app/src/ui/shortcuts-dialog.blp
 crates/obscure-app/src/ui/preferences-dialog.blp
+crates/obscure-app/src/ui/import-dialog.blp
 crates/obscure-app/src/application.rs
 crates/obscure-app/src/window.rs
+crates/obscure-app/src/connection.rs
+crates/obscure-app/src/humanize.rs
+crates/obscure-app/src/import_dialog.rs

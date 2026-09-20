@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=Obscure
 # Translators: the slogan of the app
-Comment=Conecte-se. Só isso.
-GenericName=Cliente de proxy
+Comment=Connect. That's it.
+GenericName=Proxy Client
 Exec=obscure %U
 Icon=@app-id@
 Terminal=false

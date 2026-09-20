@@ -5,18 +5,18 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <name>Obscure</name>
-  <summary>Conecte-se ao seu proxy com um botão</summary>
+  <summary>Connect to your proxy with one button</summary>
   <description>
     <p>
-      O Obscure é um cliente simples para o motor Xray-core. Cole um link ou
-      uma assinatura, toque em Conectar e pronto.
+      Obscure is a simple client for the Xray-core engine. Paste a link or a
+      subscription, tap Connect and you are done.
     </p>
-    <p>Recursos:</p>
+    <p>Features:</p>
     <ul>
-      <li>Um botão Conectar, sem termos técnicos na tela principal</li>
-      <li>Importa links vless, vmess, trojan e shadowsocks, além de assinaturas</li>
-      <li>Aplica o proxy de sistema no GNOME e no KDE, sem precisar de root</li>
-      <li>Baixa e atualiza o Xray-core automaticamente, com verificação de integridade</li>
+      <li>One Connect button, no technical terms on the main screen</li>
+      <li>Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions</li>
+      <li>Applies the system proxy on GNOME and KDE, no root required</li>
+      <li>Downloads and updates Xray-core automatically, with integrity checks</li>
     </ul>
   </description>
   <developer id="io.github.talesam">
@@ -46,7 +46,7 @@
   <releases>
     <release version="0.1.0" date="2026-09-19" type="development">
       <description>
-        <p>Esqueleto inicial do projeto.</p>
+        <p>Initial project skeleton.</p>
       </description>
     </release>
   </releases>

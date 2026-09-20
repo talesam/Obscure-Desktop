@@ -4,13 +4,17 @@ use gettextrs::gettext;
 use gtk::{gio, glib};
 
 use crate::config::{APP_ID, PROFILE, VERSION};
+use crate::connection::ConnectionManager;
 use crate::window::ObscureWindow;
 
 mod imp {
     use super::*;
 
-    #[derive(Debug, Default)]
-    pub struct ObscureApplication;
+    #[derive(Default)]
+    pub struct ObscureApplication {
+        pub manager: std::cell::OnceCell<ConnectionManager>,
+        pub recovered: std::cell::Cell<bool>,
+    }
 
     #[glib::object_subclass]
     impl ObjectSubclass for ObscureApplication {
@@ -36,15 +40,33 @@ mod imp {
             self.parent_startup();
             self.obj().setup_uninstalled_icons();
             self.obj().load_css();
+            let manager = ConnectionManager::new();
+            self.recovered.set(manager.recover_from_crash());
+            self.manager.set(manager).expect("manager set once");
         }
 
         fn activate(&self) {
             let app = self.obj();
             let window = match app.active_window() {
                 Some(window) => window,
-                None => ObscureWindow::new(&*app).upcast(),
+                None => {
+                    let win = ObscureWindow::new(&*app, app.manager());
+                    if self.recovered.replace(false) {
+                        win.toast(&gettext(
+                            "The system proxy settings from a previous session were restored.",
+                        ));
+                    }
+                    win.upcast()
+                }
             };
             window.present();
+        }
+
+        fn shutdown(&self) {
+            if let Some(m) = self.manager.get() {
+                m.shutdown();
+            }
+            self.parent_shutdown();
         }
     }
 
@@ -65,6 +87,13 @@ impl Default for ObscureApplication {
 }
 
 impl ObscureApplication {
+    pub fn manager(&self) -> &ConnectionManager {
+        self.imp()
+            .manager
+            .get()
+            .expect("manager exists after startup")
+    }
+
     pub fn new() -> Self {
         glib::Object::builder()
             .property("application-id", APP_ID)
@@ -150,13 +179,13 @@ impl ObscureApplication {
             // Translators: replace with your name and, optionally, e-mail.
             .translator_credits(gettext("translator-credits"))
             .comments(gettext(
-                "Conecte-se. Só isso.\n\nO Obscure usa o Xray-core, baixado separadamente na primeira execução.",
+                "Connect. That's it.\n\nObscure uses Xray-core, downloaded separately on first run.",
             ))
             .build();
 
         if PROFILE == "development" {
             dialog.add_link(
-                &gettext("Plano do projeto"),
+                &gettext("Project plan"),
                 "https://github.com/talesam/Obscure-Desktop/blob/main/docs/PLANO.md",
             );
         }

@@ -8,3 +8,12 @@ statuspage.obscure-hero .icon {
 @media (prefers-color-scheme: dark) {
   /* Dark-only tweaks go here. */
 }
+
+.obscure-connect {
+  font-size: 1.2em;
+  padding: 12px 32px;
+}
+
+.obscure-status-icon.success {
+  color: var(--success-color);
+}

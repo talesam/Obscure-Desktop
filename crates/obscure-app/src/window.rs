@@ -1,9 +1,15 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use gettextrs::gettext;
+use gettextrs::{gettext, ngettext};
+use gtk::glib::clone;
 use gtk::{gio, glib};
+use obscure_core::links::looks_like_link;
+use obscure_core::sysproxy::env_snippet;
 
 use crate::config::{APP_ID, PROFILE};
+use crate::connection::ConnectionManager;
+use crate::import_dialog::{ImportDialog, ServersBox};
+use crate::server_object::ServerObject;
 
 mod imp {
     use super::*;
@@ -16,9 +22,27 @@ mod imp {
         #[template_child]
         pub toast_overlay: TemplateChild<adw::ToastOverlay>,
         #[template_child]
+        pub stack: TemplateChild<gtk::Stack>,
+        #[template_child]
         pub status_page: TemplateChild<adw::StatusPage>,
         #[template_child]
-        pub add_server_button: TemplateChild<gtk::Button>,
+        pub status_icon: TemplateChild<gtk::Image>,
+        #[template_child]
+        pub server_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub status_label: TemplateChild<gtk::Label>,
+        #[template_child]
+        pub progress_bar: TemplateChild<gtk::ProgressBar>,
+        #[template_child]
+        pub connect_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub connect_content: TemplateChild<adw::ButtonContent>,
+        #[template_child]
+        pub mode_group: TemplateChild<adw::ToggleGroup>,
+        #[template_child]
+        pub servers_list: TemplateChild<gtk::ListBox>,
+
+        pub manager: std::cell::OnceCell<ConnectionManager>,
     }
 
     #[glib::object_subclass]
@@ -30,6 +54,10 @@ mod imp {
         fn class_init(klass: &mut Self::Class) {
             klass.bind_template();
             klass.bind_template_callbacks();
+            klass.install_action("win.add-server", None, |win, _, _| {
+                win.show_import_dialog(None)
+            });
+            klass.install_action("win.copy-env", None, |win, _, _| win.copy_env());
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -40,13 +68,26 @@ mod imp {
     #[gtk::template_callbacks]
     impl ObscureWindow {
         #[template_callback]
-        fn on_add_server_clicked(&self, _button: &gtk::Button) {
-            // Phase 2 opens the import dialog here. The Connect button only
-            // appears once at least one server exists.
-            tracing::info!("add server requested (not implemented yet)");
-            self.toast_overlay.add_toast(adw::Toast::new(&gettext(
-                "Importar servidores chega na próxima versão.",
-            )));
+        fn on_connect_clicked(&self, _button: &gtk::Button) {
+            self.obj().manager().toggle();
+        }
+
+        #[template_callback]
+        fn on_mode_changed(&self, _pspec: glib::ParamSpec, _group: &adw::ToggleGroup) {
+            if let Some(name) = self.mode_group.active_name() {
+                self.obj().manager().set_apply_mode_from_ui(&name);
+            }
+        }
+
+        #[template_callback]
+        fn on_server_activated(&self, row: &gtk::ListBoxRow, _list: &gtk::ListBox) {
+            let Some(row) = row.downcast_ref::<adw::ActionRow>() else {
+                return;
+            };
+            if let Some(id) = unsafe { row.data::<String>("server-id") } {
+                let id = unsafe { id.as_ref() }.clone();
+                self.obj().manager().select_server(&id);
+            }
         }
     }
 
@@ -60,6 +101,7 @@ mod imp {
             self.status_page
                 .set_icon_name(Some(&format!("{APP_ID}-symbolic")));
             obj.bind_settings();
+            obj.setup_paste_shortcut();
         }
     }
 
@@ -77,14 +119,23 @@ glib::wrapper! {
 }
 
 impl ObscureWindow {
-    pub fn new<P: IsA<gtk::Application>>(application: &P) -> Self {
-        glib::Object::builder()
+    pub fn new<P: IsA<gtk::Application>>(application: &P, manager: &ConnectionManager) -> Self {
+        let win: Self = glib::Object::builder()
             .property("application", application)
-            .build()
+            .build();
+        win.imp()
+            .manager
+            .set(manager.clone())
+            .expect("manager set once");
+        win.bind_manager();
+        win
     }
 
-    /// Persists window geometry in the gschema (`window-width`,
-    /// `window-height`, `window-maximized`).
+    fn manager(&self) -> &ConnectionManager {
+        self.imp().manager.get().expect("manager is set in new()")
+    }
+
+    /// Persists window geometry in the gschema.
     fn bind_settings(&self) {
         let settings = gio::Settings::new(APP_ID);
         settings.bind("window-width", self, "default-width").build();
@@ -92,5 +143,243 @@ impl ObscureWindow {
             .bind("window-height", self, "default-height")
             .build();
         settings.bind("window-maximized", self, "maximized").build();
+    }
+
+    /// Ctrl+V anywhere in the window imports a link from the clipboard.
+    fn setup_paste_shortcut(&self) {
+        let controller = gtk::ShortcutController::new();
+        controller.set_scope(gtk::ShortcutScope::Global);
+        let action = gtk::CallbackAction::new(|widget, _| {
+            let win = widget.downcast_ref::<ObscureWindow>().expect("window");
+            // Do not steal Ctrl+V from text fields.
+            if GtkWindowExt::focus(win)
+                .is_some_and(|f| f.is::<gtk::Text>() || f.is::<gtk::TextView>())
+            {
+                return glib::Propagation::Proceed;
+            }
+            tracing::debug!("Ctrl+V shortcut triggered");
+            win.import_from_clipboard();
+            glib::Propagation::Stop
+        });
+        controller.add_shortcut(gtk::Shortcut::new(
+            gtk::ShortcutTrigger::parse_string("<Control>v"),
+            Some(action),
+        ));
+        self.add_controller(controller);
+    }
+
+    fn import_from_clipboard(&self) {
+        let clipboard = self.clipboard();
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to = win)]
+            self,
+            async move {
+                match clipboard.read_text_future().await {
+                    Ok(Some(text))
+                        if looks_like_link(&text) || text.lines().any(looks_like_link) =>
+                    {
+                        win.show_import_dialog(Some(&text));
+                    }
+                    _ => win.toast(&gettext("The clipboard does not contain a server link.")),
+                }
+            }
+        ));
+    }
+
+    fn show_import_dialog(&self, prefill: Option<&str>) {
+        tracing::debug!("opening import dialog (prefilled: {})", prefill.is_some());
+        let dialog = match prefill {
+            Some(text) => ImportDialog::with_text(text),
+            None => ImportDialog::new(),
+        };
+        dialog.connect_closure(
+            "servers-parsed",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = win)]
+                self,
+                move |_dialog: ImportDialog, servers: ServersBox| {
+                    let added = win.manager().add_servers(servers.0);
+                    let msg = if added == 0 {
+                        gettext("These servers were already added.")
+                    } else {
+                        ngettext("%n server added.", "%n servers added.", added as u32)
+                            .replace("%n", &added.to_string())
+                    };
+                    win.toast(&msg);
+                }
+            ),
+        );
+        dialog.present(Some(self));
+    }
+
+    fn copy_env(&self) {
+        self.clipboard()
+            .set_text(&env_snippet(obscure_core::DEFAULT_LOCAL_PORT));
+        self.toast(&gettext(
+            "Environment variables copied. Paste them in a terminal.",
+        ));
+    }
+
+    pub fn toast(&self, text: &str) {
+        self.imp().toast_overlay.add_toast(adw::Toast::new(text));
+    }
+
+    /// Wires manager properties to widgets.
+    fn bind_manager(&self) {
+        let imp = self.imp();
+        let m = self.manager();
+
+        m.bind_property("selected_name", &*imp.server_label, "label")
+            .sync_create()
+            .build();
+        m.bind_property("status_text", &*imp.status_label, "label")
+            .sync_create()
+            .build();
+        m.bind_property("progress", &*imp.progress_bar, "fraction")
+            .sync_create()
+            .build();
+        m.bind_property("progress_visible", &*imp.progress_bar, "visible")
+            .sync_create()
+            .build();
+        m.bind_property("has_servers", &*imp.stack, "visible-child-name")
+            .transform_to(|_, has: bool| Some(if has { "main" } else { "empty" }))
+            .sync_create()
+            .build();
+        m.bind_property("apply_mode", &*imp.mode_group, "active-name")
+            .sync_create()
+            .build();
+
+        let update_button = clone!(
+            #[weak(rename_to = win)]
+            self,
+            move |m: &ConnectionManager| win.update_connect_button(m)
+        );
+        m.connect_connected_notify(update_button.clone());
+        m.connect_busy_notify(update_button.clone());
+        update_button(m);
+
+        m.connect_closure(
+            "failed",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = win)]
+                self,
+                move |m: ConnectionManager| {
+                    if let Some(msg) = m.last_error() {
+                        win.toast(&msg);
+                    }
+                }
+            ),
+        );
+
+        imp.servers_list.bind_model(
+            Some(m.servers()),
+            clone!(
+                #[weak(rename_to = win)]
+                self,
+                #[upgrade_or_panic]
+                move |item| win.build_server_row(item)
+            ),
+        );
+    }
+
+    fn update_connect_button(&self, m: &ConnectionManager) {
+        let imp = self.imp();
+        let (label, icon, status_icon, css_add, css_remove) = if m.connected() {
+            (
+                gettext("Disconnect"),
+                "network-vpn-disabled-symbolic",
+                "network-vpn-symbolic",
+                "destructive-action",
+                "suggested-action",
+            )
+        } else if m.busy() {
+            (
+                gettext("Cancel"),
+                "process-stop-symbolic",
+                "network-vpn-acquiring-symbolic",
+                "destructive-action",
+                "suggested-action",
+            )
+        } else {
+            (
+                gettext("Connect"),
+                "network-vpn-symbolic",
+                "network-vpn-disconnected-symbolic",
+                "suggested-action",
+                "destructive-action",
+            )
+        };
+        imp.connect_content.set_label(&label);
+        imp.connect_content.set_icon_name(icon);
+        imp.status_icon.set_icon_name(Some(status_icon));
+        imp.connect_button.remove_css_class(css_remove);
+        imp.connect_button.add_css_class(css_add);
+        if m.connected() {
+            imp.status_icon.remove_css_class("dim-label");
+            imp.status_icon.add_css_class("success");
+        } else {
+            imp.status_icon.remove_css_class("success");
+            imp.status_icon.add_css_class("dim-label");
+        }
+    }
+
+    fn build_server_row(&self, item: &glib::Object) -> gtk::Widget {
+        let server = item.downcast_ref::<ServerObject>().expect("ServerObject");
+        let row = adw::ActionRow::builder()
+            .title(server.name())
+            .subtitle(server.subtitle())
+            .activatable(true)
+            .build();
+        // Stash the id on the row for `on_server_activated`.
+        unsafe { row.set_data("server-id", server.id()) };
+
+        let check = gtk::Image::from_icon_name("object-select-symbolic");
+        server
+            .bind_property("selected", &check, "visible")
+            .sync_create()
+            .build();
+        row.add_suffix(&check);
+
+        let remove = gtk::Button::builder()
+            .icon_name("user-trash-symbolic")
+            .tooltip_text(gettext("Remove server"))
+            .valign(gtk::Align::Center)
+            .css_classes(["flat"])
+            .build();
+        let id = server.id();
+        let name = server.name();
+        remove.connect_clicked(clone!(
+            #[weak(rename_to = win)]
+            self,
+            move |_| win.confirm_remove(&id, &name)
+        ));
+        row.add_suffix(&remove);
+        row.upcast()
+    }
+
+    fn confirm_remove(&self, id: &str, name: &str) {
+        tracing::debug!("confirm removal of {id}");
+        let dialog = adw::AlertDialog::builder()
+            .heading(gettext("Remove “%s”?").replace("%s", name))
+            .body(gettext("You can add it again later by pasting its link."))
+            .build();
+        dialog.add_responses(&[
+            ("cancel", &gettext("Cancel")),
+            ("remove", &gettext("Remove")),
+        ]);
+        dialog.set_response_appearance("remove", adw::ResponseAppearance::Destructive);
+        dialog.set_default_response(Some("cancel"));
+        let id = id.to_owned();
+        dialog.connect_response(
+            Some("remove"),
+            clone!(
+                #[weak(rename_to = win)]
+                self,
+                move |_, _| win.manager().remove_server(&id)
+            ),
+        );
+        dialog.present(Some(self));
     }
 }
