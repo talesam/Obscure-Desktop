@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 19:07\n"
-"PO-Revision-Date: 2026-09-20 19:07\n"
+"POT-Creation-Date: 2026-09-20 19:19\n"
+"PO-Revision-Date: 2026-09-20 19:19\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Nederlands\n"
 "Language: nl\n"
@@ -169,47 +169,51 @@ msgstr "Abonnementen"
 msgid "Servers"
 msgstr "Servers"
 
-#: crates/obscure-app/src/ui/window.blp:216
-msgid "Measure the response time of every server"
-msgstr "Reactietijd van elke server meten"
+#: crates/obscure-app/src/ui/window.blp:220
+msgid "Automatic"
+msgstr "Automatisch"
 
 #: crates/obscure-app/src/ui/window.blp:221
-msgid "Test All"
-msgstr "Alles testen"
-
-#: crates/obscure-app/src/ui/window.blp:238
-msgid "Automatic: fastest server"
-msgstr "Automatisch: snelste server"
-
-#: crates/obscure-app/src/ui/window.blp:239
 msgid "Tests all servers when you connect and picks the quickest one."
 msgstr "Test alle servers bij het verbinden en kiest de snelste."
 
-#: crates/obscure-app/src/ui/window.blp:265
+#: crates/obscure-app/src/ui/window.blp:231
+msgid "Automatic: fastest server"
+msgstr "Automatisch: snelste server"
+
+#: crates/obscure-app/src/ui/window.blp:237
+msgid "Measure the response time of every server"
+msgstr "Reactietijd van elke server meten"
+
+#: crates/obscure-app/src/ui/window.blp:242
+msgid "Test All"
+msgstr "Alles testen"
+
+#: crates/obscure-app/src/ui/window.blp:272
 msgid "_Import from File…"
 msgstr "_Importeren uit bestand…"
 
-#: crates/obscure-app/src/ui/window.blp:270
+#: crates/obscure-app/src/ui/window.blp:277
 msgid "_Live Connections"
 msgstr "_Live verbindingen"
 
-#: crates/obscure-app/src/ui/window.blp:275
+#: crates/obscure-app/src/ui/window.blp:282
 msgid "_Connection Log"
 msgstr "_Verbindingslogboek"
 
-#: crates/obscure-app/src/ui/window.blp:280
+#: crates/obscure-app/src/ui/window.blp:287
 msgid "_Copy Environment Variables"
 msgstr "Omgevingsvariabelen _kopiëren"
 
-#: crates/obscure-app/src/ui/window.blp:287
+#: crates/obscure-app/src/ui/window.blp:294
 msgid "_Preferences"
 msgstr "_Voorkeuren"
 
-#: crates/obscure-app/src/ui/window.blp:292
+#: crates/obscure-app/src/ui/window.blp:299
 msgid "_Keyboard Shortcuts"
 msgstr "_Sneltoetsen"
 
-#: crates/obscure-app/src/ui/window.blp:297
+#: crates/obscure-app/src/ui/window.blp:304
 msgid "_About Obscure"
 msgstr "_Over Obscure"
 

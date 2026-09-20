@@ -55,7 +55,7 @@ mod imp {
         #[template_child]
         pub test_all_button: TemplateChild<gtk::Button>,
         #[template_child]
-        pub auto_row: TemplateChild<adw::SwitchRow>,
+        pub auto_switch: TemplateChild<gtk::Switch>,
 
         pub manager: std::cell::OnceCell<ConnectionManager>,
     }
@@ -442,7 +442,7 @@ impl ObscureWindow {
         m.bind_property("has_subscriptions", &*imp.subscriptions_group, "visible")
             .sync_create()
             .build();
-        m.bind_property("auto_select", &*imp.auto_row, "active")
+        m.bind_property("auto_select", &*imp.auto_switch, "active")
             .sync_create()
             .build();
         m.bind_property("testing", &*imp.test_all_button, "sensitive")

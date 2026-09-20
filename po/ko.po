@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 19:07\n"
-"PO-Revision-Date: 2026-09-20 19:07\n"
+"POT-Creation-Date: 2026-09-20 19:19\n"
+"PO-Revision-Date: 2026-09-20 19:19\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: 한국어\n"
 "Language: ko\n"
@@ -169,47 +169,51 @@ msgstr "구독"
 msgid "Servers"
 msgstr "서버"
 
-#: crates/obscure-app/src/ui/window.blp:216
-msgid "Measure the response time of every server"
-msgstr "모든 서버의 응답 시간 측정"
+#: crates/obscure-app/src/ui/window.blp:220
+msgid "Automatic"
+msgstr "자동"
 
 #: crates/obscure-app/src/ui/window.blp:221
-msgid "Test All"
-msgstr "모두 테스트"
-
-#: crates/obscure-app/src/ui/window.blp:238
-msgid "Automatic: fastest server"
-msgstr "자동: 가장 빠른 서버"
-
-#: crates/obscure-app/src/ui/window.blp:239
 msgid "Tests all servers when you connect and picks the quickest one."
 msgstr "연결할 때 모든 서버를 테스트하고 가장 빠른 서버를 선택합니다."
 
-#: crates/obscure-app/src/ui/window.blp:265
+#: crates/obscure-app/src/ui/window.blp:231
+msgid "Automatic: fastest server"
+msgstr "자동: 가장 빠른 서버"
+
+#: crates/obscure-app/src/ui/window.blp:237
+msgid "Measure the response time of every server"
+msgstr "모든 서버의 응답 시간 측정"
+
+#: crates/obscure-app/src/ui/window.blp:242
+msgid "Test All"
+msgstr "모두 테스트"
+
+#: crates/obscure-app/src/ui/window.blp:272
 msgid "_Import from File…"
 msgstr "파일에서 가져오기(_I)…"
 
-#: crates/obscure-app/src/ui/window.blp:270
+#: crates/obscure-app/src/ui/window.blp:277
 msgid "_Live Connections"
 msgstr "실시간 연결(_L)"
 
-#: crates/obscure-app/src/ui/window.blp:275
+#: crates/obscure-app/src/ui/window.blp:282
 msgid "_Connection Log"
 msgstr "연결 로그(_C)"
 
-#: crates/obscure-app/src/ui/window.blp:280
+#: crates/obscure-app/src/ui/window.blp:287
 msgid "_Copy Environment Variables"
 msgstr "환경 변수 복사(_C)"
 
-#: crates/obscure-app/src/ui/window.blp:287
+#: crates/obscure-app/src/ui/window.blp:294
 msgid "_Preferences"
 msgstr "기본 설정(_P)"
 
-#: crates/obscure-app/src/ui/window.blp:292
+#: crates/obscure-app/src/ui/window.blp:299
 msgid "_Keyboard Shortcuts"
 msgstr "키보드 바로 가기(_K)"
 
-#: crates/obscure-app/src/ui/window.blp:297
+#: crates/obscure-app/src/ui/window.blp:304
 msgid "_About Obscure"
 msgstr "Obscure 정보(_A)"
 

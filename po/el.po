@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 19:07\n"
-"PO-Revision-Date: 2026-09-20 19:07\n"
+"POT-Creation-Date: 2026-09-20 19:19\n"
+"PO-Revision-Date: 2026-09-20 19:19\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Ελληνικά\n"
 "Language: el\n"
@@ -169,47 +169,51 @@ msgstr "Συνδρομές"
 msgid "Servers"
 msgstr "Διακομιστές"
 
-#: crates/obscure-app/src/ui/window.blp:216
-msgid "Measure the response time of every server"
-msgstr "Μέτρηση του χρόνου απόκρισης κάθε διακομιστή"
+#: crates/obscure-app/src/ui/window.blp:220
+msgid "Automatic"
+msgstr "Αυτόματα"
 
 #: crates/obscure-app/src/ui/window.blp:221
-msgid "Test All"
-msgstr "Δοκιμή όλων"
-
-#: crates/obscure-app/src/ui/window.blp:238
-msgid "Automatic: fastest server"
-msgstr "Αυτόματα: ο ταχύτερος διακομιστής"
-
-#: crates/obscure-app/src/ui/window.blp:239
 msgid "Tests all servers when you connect and picks the quickest one."
 msgstr "Δοκιμάζει όλους τους διακομιστές κατά τη σύνδεση και επιλέγει τον ταχύτερο."
 
-#: crates/obscure-app/src/ui/window.blp:265
+#: crates/obscure-app/src/ui/window.blp:231
+msgid "Automatic: fastest server"
+msgstr "Αυτόματα: ο ταχύτερος διακομιστής"
+
+#: crates/obscure-app/src/ui/window.blp:237
+msgid "Measure the response time of every server"
+msgstr "Μέτρηση του χρόνου απόκρισης κάθε διακομιστή"
+
+#: crates/obscure-app/src/ui/window.blp:242
+msgid "Test All"
+msgstr "Δοκιμή όλων"
+
+#: crates/obscure-app/src/ui/window.blp:272
 msgid "_Import from File…"
 msgstr "_Εισαγωγή από αρχείο…"
 
-#: crates/obscure-app/src/ui/window.blp:270
+#: crates/obscure-app/src/ui/window.blp:277
 msgid "_Live Connections"
 msgstr "_Ζωντανές συνδέσεις"
 
-#: crates/obscure-app/src/ui/window.blp:275
+#: crates/obscure-app/src/ui/window.blp:282
 msgid "_Connection Log"
 msgstr "_Καταγραφή σύνδεσης"
 
-#: crates/obscure-app/src/ui/window.blp:280
+#: crates/obscure-app/src/ui/window.blp:287
 msgid "_Copy Environment Variables"
 msgstr "_Αντιγραφή μεταβλητών περιβάλλοντος"
 
-#: crates/obscure-app/src/ui/window.blp:287
+#: crates/obscure-app/src/ui/window.blp:294
 msgid "_Preferences"
 msgstr "_Προτιμήσεις"
 
-#: crates/obscure-app/src/ui/window.blp:292
+#: crates/obscure-app/src/ui/window.blp:299
 msgid "_Keyboard Shortcuts"
 msgstr "_Συντομεύσεις πληκτρολογίου"
 
-#: crates/obscure-app/src/ui/window.blp:297
+#: crates/obscure-app/src/ui/window.blp:304
 msgid "_About Obscure"
 msgstr "_Περί του Obscure"
 
