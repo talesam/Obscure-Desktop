@@ -1,0 +1,14 @@
+[package]
+name = "obscure-helper"
+description = "Minimal privileged helper for Obscure (TUN mode, phase 4). Placeholder for now."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "obscure-helper"
+path = "src/main.rs"
+
+[dependencies]

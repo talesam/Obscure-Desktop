@@ -1,0 +1,24 @@
+[workspace]
+resolver = "3"
+members = ["crates/obscure-core", "crates/obscure-app", "crates/obscure-helper"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/talesam/Obscure-Desktop"
+rust-version = "1.92"
+
+[workspace.dependencies]
+gtk = { package = "gtk4", version = "0.11", features = ["v4_22"] }
+adw = { package = "libadwaita", version = "0.9", features = ["v1_9"] }
+glib = "0.22"
+gio = "0.22"
+gettext-rs = { version = "0.8", features = ["gettext-system"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
