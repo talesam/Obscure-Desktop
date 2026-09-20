@@ -25,6 +25,9 @@ hex = "0.4"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 gio = { workspace = true }
 zbus = { version = "5", default-features = false, features = ["tokio"] }
+tonic = { version = "0.14", default-features = false, features = ["codegen", "transport", "channel"] }
+prost = "0.14"
+tonic-prost = "0.14"
 
 [dev-dependencies]
 tempfile = "3"

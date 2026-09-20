@@ -283,3 +283,75 @@ while True: time.sleep(1)'
         core.stop().await;
     }
 }
+
+/// Restart policy after an unexpected exit: exponential backoff with a cap
+/// on the number of attempts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RestartPolicy {
+    pub max_restarts: u32,
+    pub base_delay: Duration,
+    pub max_delay: Duration,
+    attempts: u32,
+}
+
+impl Default for RestartPolicy {
+    fn default() -> Self {
+        Self {
+            max_restarts: 3,
+            base_delay: Duration::from_secs(1),
+            max_delay: Duration::from_secs(8),
+            attempts: 0,
+        }
+    }
+}
+
+impl RestartPolicy {
+    /// Returns how long to wait before the next restart, or `None` when the
+    /// budget is exhausted.
+    pub fn next_delay(&mut self) -> Option<Duration> {
+        if self.attempts >= self.max_restarts {
+            return None;
+        }
+        let delay = self
+            .base_delay
+            .checked_mul(2u32.saturating_pow(self.attempts))
+            .unwrap_or(self.max_delay)
+            .min(self.max_delay);
+        self.attempts += 1;
+        Some(delay)
+    }
+
+    pub fn attempts(&self) -> u32 {
+        self.attempts
+    }
+
+    /// Call after the core has been up long enough to be considered stable.
+    pub fn reset(&mut self) {
+        self.attempts = 0;
+    }
+}
+
+#[cfg(test)]
+mod backoff_tests {
+    use super::*;
+
+    #[test]
+    fn exponential_with_cap() {
+        let mut p = RestartPolicy::default();
+        assert_eq!(p.next_delay(), Some(Duration::from_secs(1)));
+        assert_eq!(p.next_delay(), Some(Duration::from_secs(2)));
+        assert_eq!(p.next_delay(), Some(Duration::from_secs(4)));
+        assert_eq!(p.next_delay(), None);
+        assert_eq!(p.attempts(), 3);
+        p.reset();
+        assert_eq!(p.next_delay(), Some(Duration::from_secs(1)));
+        let mut big = RestartPolicy {
+            max_restarts: 10,
+            base_delay: Duration::from_secs(5),
+            max_delay: Duration::from_secs(8),
+            attempts: 0,
+        };
+        assert_eq!(big.next_delay(), Some(Duration::from_secs(5)));
+        assert_eq!(big.next_delay(), Some(Duration::from_secs(8)));
+    }
+}

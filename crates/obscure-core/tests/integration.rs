@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use obscure_core::config::{ConfigOptions, build};
 use obscure_core::links::parse_link;
+use obscure_core::stats::StatsClient;
 use obscure_core::supervisor::{Supervisor, write_config};
 
 #[tokio::test]
@@ -34,8 +35,10 @@ async fn connect_and_fetch_through_proxy() {
     );
 
     let port = 28080;
+    let api_port = 28081;
     let mut opts = ConfigOptions::new(&server);
     opts.local_port = port;
+    opts.api_port = Some(api_port);
     opts.log_level = "info";
     let cfg = build(&opts);
 
@@ -72,6 +75,21 @@ async fn connect_and_fetch_through_proxy() {
         .await
         .unwrap();
     assert_eq!(resp.status().as_u16(), 204);
+
+    // Stats through the gRPC API.
+    let mut stats = StatsClient::new(api_port).expect("stats client");
+    let traffic = stats.proxy_traffic().await.expect("query stats");
+    eprintln!("traffic: {traffic:?}");
+    assert!(
+        traffic.uplink > 0 && traffic.downlink > 0,
+        "traffic counters must be non-zero"
+    );
+
+    // Quick TCP latency to the server itself.
+    let ms = obscure_core::latency::tcp_ping(&server.address, server.port, Duration::from_secs(5))
+        .await
+        .expect("tcp ping");
+    eprintln!("tcp ping: {ms} ms");
 
     while let Ok(ev) = core.events.try_recv() {
         eprintln!("xray: {ev:?}");

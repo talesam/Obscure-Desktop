@@ -13,8 +13,9 @@ use gtk::{gio, glib::clone};
 use obscure_core::config::{ConfigOptions, build};
 use obscure_core::core_manager::{CoreManager, Progress};
 use obscure_core::links::Server;
-use obscure_core::profile::{ApplyMode, Profiles};
-use obscure_core::supervisor::{CoreEvent, RunningCore, Supervisor, write_config};
+use obscure_core::profile::{ApplyMode, Profiles, RoutePreset};
+use obscure_core::stats::{RateMeter, StatsClient, TrafficSample, format_bytes, format_rate};
+use obscure_core::supervisor::{CoreEvent, RestartPolicy, RunningCore, Supervisor, write_config};
 use obscure_core::sysproxy::SysProxy;
 use obscure_core::{Error, paths};
 
@@ -30,8 +31,21 @@ enum UiEvent {
     Progress(Progress),
     Log(String),
     Connected,
+    /// The core died and is being restarted (attempt number).
+    Restarting(u32),
+    Traffic(TrafficSample),
     Disconnected,
     Failed(Error),
+}
+
+/// Everything the actor needs to (re)build the Xray configuration.
+#[derive(Debug, Clone)]
+struct SessionParams {
+    server: Server,
+    local_port: u16,
+    route_preset: RoutePreset,
+    listed_domains: Vec<String>,
+    apply_mode: ApplyMode,
 }
 
 /// Commands from the UI to the actor.
@@ -68,6 +82,9 @@ mod imp {
         /// `local_only`, `system_proxy` or `tunnel` (mirrors ApplyMode).
         #[property(get, set)]
         pub apply_mode: RefCell<String>,
+        /// "↑ 1.2 kB/s · ↓ 3.4 MB/s · 12 MB" while connected, else "".
+        #[property(get, set)]
+        pub traffic_text: RefCell<String>,
 
         pub profiles: RefCell<Profiles>,
         pub servers: gio::ListStore,
@@ -87,6 +104,7 @@ mod imp {
                 selected_name: RefCell::new(String::new()),
                 has_servers: Cell::new(false),
                 apply_mode: RefCell::new("system_proxy".into()),
+                traffic_text: RefCell::new(String::new()),
                 profiles: RefCell::new(Profiles::default()),
                 servers: gio::ListStore::new::<ServerObject>(),
                 log: RefCell::new(VecDeque::new()),
@@ -310,12 +328,12 @@ impl ConnectionManager {
         *self.imp().last_error.borrow_mut() = None;
         self.set_status_text(gettext("Connecting…"));
 
-        let cfg = {
-            let mut opts = ConfigOptions::new(&entry.server);
-            opts.local_port = local_port;
-            opts.route_preset = preset;
-            opts.listed_domains = &listed;
-            build(&opts)
+        let params = SessionParams {
+            server: entry.server.clone(),
+            local_port,
+            route_preset: preset,
+            listed_domains: listed,
+            apply_mode,
         };
 
         let (ui_tx, ui_rx) = async_channel::unbounded::<UiEvent>();
@@ -323,9 +341,7 @@ impl ConnectionManager {
         *self.imp().cmd_tx.borrow_mut() = Some(cmd_tx);
 
         let user_agent = obscure_core::user_agent(crate::config::VERSION);
-        runtime().spawn(actor(
-            cfg, local_port, apply_mode, user_agent, ui_tx, cmd_rx,
-        ));
+        runtime().spawn(actor(params, user_agent, ui_tx, cmd_rx));
 
         glib::spawn_future_local(clone!(
             #[weak(rename_to = this)]
@@ -394,6 +410,21 @@ impl ConnectionManager {
                 }
             },
             UiEvent::Log(line) => self.push_log(line),
+            UiEvent::Restarting(attempt) => {
+                self.set_connected(false);
+                self.set_busy(true);
+                self.set_traffic_text(String::new());
+                self.set_status_text(gettext("Connecting…"));
+                self.push_log(format!("restarting core (attempt {attempt})"));
+            }
+            UiEvent::Traffic(sample) => {
+                self.set_traffic_text(format!(
+                    "↑ {} · ↓ {} · {}",
+                    format_rate(sample.up_rate),
+                    format_rate(sample.down_rate),
+                    format_bytes(sample.total.uplink + sample.total.downlink)
+                ));
+            }
             UiEvent::Connected => {
                 self.set_progress_visible(false);
                 self.set_busy(false);
@@ -423,6 +454,7 @@ impl ConnectionManager {
 
     fn finish_disconnected(&self) {
         *self.imp().cmd_tx.borrow_mut() = None;
+        self.set_traffic_text(String::new());
         self.set_progress_visible(false);
         self.set_busy(false);
         self.set_connected(false);
@@ -450,12 +482,11 @@ fn str_to_mode(s: &str) -> Option<ApplyMode> {
 // tokio side
 
 /// Owns the Xray process for one session. Ensures the core is installed,
-/// starts it, applies the system proxy, then waits for a stop command or
-/// an unexpected exit. Always restores the system proxy on the way out.
+/// starts it, applies the system proxy, polls traffic stats, restarts the
+/// core with backoff if it dies, and always restores the system proxy on
+/// the way out.
 async fn actor(
-    cfg: serde_json::Value,
-    local_port: u16,
-    apply_mode: ApplyMode,
+    params: SessionParams,
     user_agent: String,
     ui: async_channel::Sender<UiEvent>,
     mut cmds: tokio::sync::mpsc::Receiver<Cmd>,
@@ -482,6 +513,21 @@ async fn actor(
         return;
     }
 
+    let api_port = match obscure_core::latency::free_port().await {
+        Ok(p) => p,
+        Err(e) => {
+            send(UiEvent::Failed(e));
+            return;
+        }
+    };
+    let cfg = {
+        let mut opts = ConfigOptions::new(&params.server);
+        opts.local_port = params.local_port;
+        opts.route_preset = params.route_preset;
+        opts.listed_domains = &params.listed_domains;
+        opts.api_port = Some(api_port);
+        build(&opts)
+    };
     let cfg_path = paths::runtime_config_file();
     if let Err(e) = write_config(&cfg_path, &cfg) {
         send(UiEvent::Failed(e));
@@ -489,7 +535,7 @@ async fn actor(
     }
 
     let supervisor = Supervisor::new(manager.xray_path(), manager.dir().to_path_buf());
-    let mut core: RunningCore = match supervisor.start(&cfg_path, local_port).await {
+    let mut core: RunningCore = match supervisor.start(&cfg_path, params.local_port).await {
         Ok(c) => c,
         Err(e) => {
             send(UiEvent::Failed(e));
@@ -499,8 +545,8 @@ async fn actor(
 
     let sysproxy = SysProxy::new(paths::state_file());
     let mut proxy_applied = false;
-    if apply_mode == ApplyMode::SystemProxy {
-        match sysproxy.apply(local_port).await {
+    if params.apply_mode == ApplyMode::SystemProxy {
+        match sysproxy.apply(params.local_port).await {
             Ok(()) => proxy_applied = true,
             Err(e) => {
                 // Not fatal: the local proxy works; tell the user via log/status.
@@ -511,7 +557,28 @@ async fn actor(
     }
     send(UiEvent::Connected);
 
+    // Refresh geo data in the background at most once a day.
+    if manager.geo_needs_update() {
+        let manager = manager.clone();
+        let ui_geo = ui.clone();
+        tokio::spawn(async move {
+            match manager.update_geo().await {
+                Ok(()) => {
+                    let _ = ui_geo.send_blocking(UiEvent::Log("geo data updated".into()));
+                }
+                Err(e) => {
+                    let _ = ui_geo.send_blocking(UiEvent::Log(format!("geo update failed: {e}")));
+                }
+            }
+        });
+    }
+
+    let mut stats = StatsClient::new(api_port).ok();
+    let mut meter = RateMeter::default();
+    let mut policy = RestartPolicy::default();
+    let mut started_at = tokio::time::Instant::now();
     let mut tick = tokio::time::interval(Duration::from_secs(1));
+
     let outcome = loop {
         tokio::select! {
             cmd = cmds.recv() => match cmd {
@@ -519,12 +586,42 @@ async fn actor(
             },
             ev = core.events.recv() => match ev {
                 Some(CoreEvent::Log(line)) => send(UiEvent::Log(line)),
-                Some(CoreEvent::Exited { status }) => break Err(status),
-                None => {}
+                Some(CoreEvent::Exited { .. }) | None => {}
             },
             _ = tick.tick() => {
                 if let Some(status) = core.check_exit() {
-                    break Err(status);
+                    // Unexpected exit: restart with backoff or give up.
+                    let mut output = Vec::new();
+                    while let Ok(CoreEvent::Log(l)) = core.events.try_recv() {
+                        output.push(l);
+                    }
+                    if started_at.elapsed() > Duration::from_secs(60) {
+                        policy.reset();
+                    }
+                    let Some(delay) = policy.next_delay() else {
+                        break Err(Error::CoreExited { status, output: output.join("\n") });
+                    };
+                    send(UiEvent::Log(format!("core exited ({status}); restarting in {delay:?}")));
+                    send(UiEvent::Restarting(policy.attempts()));
+                    tokio::select! {
+                        _ = tokio::time::sleep(delay) => {}
+                        _ = cmds.recv() => break Ok(()),
+                    }
+                    match supervisor.start(&cfg_path, params.local_port).await {
+                        Ok(c) => {
+                            core = c;
+                            started_at = tokio::time::Instant::now();
+                            meter = RateMeter::default();
+                            send(UiEvent::Connected);
+                        }
+                        Err(e) => break Err(e),
+                    }
+                    continue;
+                }
+                if let Some(client) = stats.as_mut()
+                    && let Ok(traffic) = client.proxy_traffic().await
+                {
+                    send(UiEvent::Traffic(meter.update(traffic)));
                 }
             }
         }
@@ -540,15 +637,9 @@ async fn actor(
             core.stop().await;
             send(UiEvent::Disconnected);
         }
-        Err(status) => {
-            let mut output = Vec::new();
-            while let Ok(CoreEvent::Log(l)) = core.events.try_recv() {
-                output.push(l);
-            }
-            send(UiEvent::Failed(Error::CoreExited {
-                status,
-                output: output.join("\n"),
-            }));
+        Err(e) => {
+            core.stop().await;
+            send(UiEvent::Failed(e));
         }
     }
 }

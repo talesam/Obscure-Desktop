@@ -110,6 +110,16 @@ template $ObscureWindow: Adw.ApplicationWindow {
                     ]
                   }
 
+                  Label traffic_label {
+                    justify: center;
+
+                    styles [
+                      "caption",
+                      "numeric",
+                      "dim-label",
+                    ]
+                  }
+
                   ProgressBar progress_bar {
                     visible: false;
                     width-request: 260;

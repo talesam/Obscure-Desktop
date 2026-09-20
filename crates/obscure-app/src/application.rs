@@ -43,6 +43,7 @@ mod imp {
             let manager = ConnectionManager::new();
             self.recovered.set(manager.recover_from_crash());
             self.manager.set(manager).expect("manager set once");
+            self.obj().handle_termination_signals();
         }
 
         fn activate(&self) {
@@ -118,6 +119,32 @@ impl ObscureApplication {
             let icons = std::path::Path::new(build_datadir).join("icons");
             gtk::IconTheme::for_display(&display).add_search_path(icons);
         }
+    }
+
+    /// SIGTERM/SIGINT/SIGHUP (logout, `kill`, Ctrl+C) go through the normal
+    /// shutdown path so the system proxy is restored and Xray is stopped.
+    /// Signals are caught on the tokio runtime and forwarded to the main loop.
+    fn handle_termination_signals(&self) {
+        use tokio::signal::unix::{SignalKind, signal};
+        let (tx, rx) = async_channel::bounded::<i32>(1);
+        crate::runtime::runtime().spawn(async move {
+            let mut term = signal(SignalKind::terminate()).expect("SIGTERM handler");
+            let mut int = signal(SignalKind::interrupt()).expect("SIGINT handler");
+            let mut hup = signal(SignalKind::hangup()).expect("SIGHUP handler");
+            let signum = tokio::select! {
+                _ = term.recv() => 15,
+                _ = int.recv() => 2,
+                _ = hup.recv() => 1,
+            };
+            let _ = tx.send(signum).await;
+        });
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            if let Ok(signum) = rx.recv().await {
+                tracing::info!("signal {signum} received, shutting down cleanly");
+                app.quit();
+            }
+        });
     }
 
     fn load_css(&self) {

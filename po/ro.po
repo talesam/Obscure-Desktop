@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 01:16\n"
-"PO-Revision-Date: 2026-09-20 01:16\n"
+"POT-Creation-Date: 2026-09-20 16:41\n"
+"PO-Revision-Date: 2026-09-20 16:41\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Română\n"
 "Language: ro\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:183
+#: crates/obscure-app/src/application.rs:210
 msgid "Connect. That's it."
 msgstr "Conectează-te. Atât."
 
@@ -96,56 +96,56 @@ msgstr "Meniu principal"
 msgid "Paste a link or a subscription to get started."
 msgstr "Lipește un link sau un abonament pentru a începe."
 
-#: crates/obscure-app/src/ui/window.blp:127
-#: crates/obscure-app/src/window.rs:301
+#: crates/obscure-app/src/ui/window.blp:137
+#: crates/obscure-app/src/window.rs:310
 msgid "Connect"
 msgstr "Conectare"
 
-#: crates/obscure-app/src/ui/window.blp:139
+#: crates/obscure-app/src/ui/window.blp:149
 msgid "How to apply"
 msgstr "Mod de aplicare"
 
-#: crates/obscure-app/src/ui/window.blp:147
+#: crates/obscure-app/src/ui/window.blp:157
 msgid "System proxy"
 msgstr "Proxy de sistem"
 
-#: crates/obscure-app/src/ui/window.blp:148
+#: crates/obscure-app/src/ui/window.blp:158
 msgid "Browsers and most apps use the connection. No administrator password needed."
 msgstr "Browserele și majoritatea aplicațiilor vor folosi conexiunea. Nu este nevoie de parola de administrator."
 
-#: crates/obscure-app/src/ui/window.blp:153
+#: crates/obscure-app/src/ui/window.blp:163
 msgid "Local proxy only"
 msgstr "Doar proxy local"
 
-#: crates/obscure-app/src/ui/window.blp:154
+#: crates/obscure-app/src/ui/window.blp:164
 msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
 msgstr "Nimic nu se schimbă în sistem. Configurează programele dorite către 127.0.0.1:2080."
 
-#: crates/obscure-app/src/ui/window.blp:159
+#: crates/obscure-app/src/ui/window.blp:169
 msgid "Tunnel"
 msgstr "Tunel"
 
-#: crates/obscure-app/src/ui/window.blp:161
+#: crates/obscure-app/src/ui/window.blp:171
 msgid "All traffic from this computer. Coming in a future version."
 msgstr "Tot traficul acestui computer. Disponibil într-o versiune viitoare."
 
-#: crates/obscure-app/src/ui/window.blp:167
+#: crates/obscure-app/src/ui/window.blp:177
 msgid "Servers"
 msgstr "Servere"
 
-#: crates/obscure-app/src/ui/window.blp:190
+#: crates/obscure-app/src/ui/window.blp:200
 msgid "_Copy Environment Variables"
 msgstr "_Copiază variabilele de mediu"
 
-#: crates/obscure-app/src/ui/window.blp:197
+#: crates/obscure-app/src/ui/window.blp:207
 msgid "_Preferences"
 msgstr "_Preferințe"
 
-#: crates/obscure-app/src/ui/window.blp:202
+#: crates/obscure-app/src/ui/window.blp:212
 msgid "_Keyboard Shortcuts"
 msgstr "_Scurtături de tastatură"
 
-#: crates/obscure-app/src/ui/window.blp:207
+#: crates/obscure-app/src/ui/window.blp:217
 msgid "_About Obscure"
 msgstr "_Despre Obscure"
 
@@ -180,7 +180,7 @@ msgid "Connection options will be available in the next stage of the project."
 msgstr "Opțiunile de conexiune vor fi disponibile în etapa următoare a proiectului."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:293 crates/obscure-app/src/window.rs:363
+#: crates/obscure-app/src/window.rs:302 crates/obscure-app/src/window.rs:372
 msgid "Cancel"
 msgstr "Anulează"
 
@@ -196,108 +196,109 @@ msgstr "Lipește mai jos linkul serverului sau linkurile din abonament, câte un
 msgid "Paste from Clipboard"
 msgstr "Lipește din clipboard"
 
-#: crates/obscure-app/src/application.rs:56
+#: crates/obscure-app/src/application.rs:57
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Setările proxy-ului de sistem din sesiunea anterioară au fost restaurate."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:180
+#: crates/obscure-app/src/application.rs:207
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:184
+#: crates/obscure-app/src/application.rs:211
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure folosește Xray-core, descărcat separat la prima rulare."
 
-#: crates/obscure-app/src/application.rs:190
+#: crates/obscure-app/src/application.rs:217
 msgid "Project plan"
 msgstr "Planul proiectului"
 
-#: crates/obscure-app/src/window.rs:183
+#: crates/obscure-app/src/window.rs:185
 msgid "The clipboard does not contain a server link."
 msgstr "Clipboardul nu conține un link de server."
 
-#: crates/obscure-app/src/window.rs:214
+#: crates/obscure-app/src/window.rs:216
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Variabilele de mediu au fost copiate. Lipește-le într-un terminal."
 
-#: crates/obscure-app/src/window.rs:285
+#: crates/obscure-app/src/window.rs:294
 msgid "Disconnect"
 msgstr "Deconectare"
 
-#: crates/obscure-app/src/window.rs:341
+#: crates/obscure-app/src/window.rs:350
 msgid "Remove server"
 msgstr "Elimină serverul"
 
-#: crates/obscure-app/src/window.rs:359
+#: crates/obscure-app/src/window.rs:368
 msgid "Remove “%s”?"
 msgstr "Elimini „%s”?"
 
-#: crates/obscure-app/src/window.rs:360
+#: crates/obscure-app/src/window.rs:369
 msgid "You can add it again later by pasting its link."
 msgstr "Îl poți adăuga din nou mai târziu lipind linkul său."
 
-#: crates/obscure-app/src/window.rs:364
+#: crates/obscure-app/src/window.rs:373
 msgid "Remove"
 msgstr "Elimină"
 
-#: crates/obscure-app/src/window.rs:384
+#: crates/obscure-app/src/window.rs:393
 msgid "These servers were already added."
 msgstr "Aceste servere erau deja adăugate."
 
-#: crates/obscure-app/src/window.rs:386
+#: crates/obscure-app/src/window.rs:395
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "%n server adăugat."
 msgstr[1] "%n servere adăugate."
 msgstr[2] "%n de servere adăugate."
 
-#: crates/obscure-app/src/connection.rs:129
-#: crates/obscure-app/src/connection.rs:410
+#: crates/obscure-app/src/connection.rs:147
+#: crates/obscure-app/src/connection.rs:441
 msgid "Disconnected"
 msgstr "Deconectat"
 
-#: crates/obscure-app/src/connection.rs:296
+#: crates/obscure-app/src/connection.rs:314
 msgid "Choose a server to connect"
 msgstr "Alege un server pentru conectare"
 
-#: crates/obscure-app/src/connection.rs:311
+#: crates/obscure-app/src/connection.rs:329
+#: crates/obscure-app/src/connection.rs:417
 msgid "Connecting…"
 msgstr "Se conectează…"
 
-#: crates/obscure-app/src/connection.rs:345
+#: crates/obscure-app/src/connection.rs:361
 msgid "Disconnecting…"
 msgstr "Se deconectează…"
 
-#: crates/obscure-app/src/connection.rs:368
+#: crates/obscure-app/src/connection.rs:384
 msgid "Preparing the connection engine…"
 msgstr "Se pregătește motorul de conexiune…"
 
-#: crates/obscure-app/src/connection.rs:379
+#: crates/obscure-app/src/connection.rs:395
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "Se descarcă motorul de conexiune: %a din %b MB"
 
-#: crates/obscure-app/src/connection.rs:382
+#: crates/obscure-app/src/connection.rs:398
 msgid "Downloading the connection engine: %a MB"
 msgstr "Se descarcă motorul de conexiune: %a MB"
 
-#: crates/obscure-app/src/connection.rs:387
+#: crates/obscure-app/src/connection.rs:403
 msgid "Verifying the download…"
 msgstr "Se verifică descărcarea…"
 
-#: crates/obscure-app/src/connection.rs:389
+#: crates/obscure-app/src/connection.rs:405
 msgid "Installing the connection engine…"
 msgstr "Se instalează motorul de conexiune…"
 
-#: crates/obscure-app/src/connection.rs:403
+#: crates/obscure-app/src/connection.rs:434
 msgid "Connected · system proxy active"
 msgstr "Conectat · proxy de sistem activ"
 
-#: crates/obscure-app/src/connection.rs:404
+#: crates/obscure-app/src/connection.rs:435
 msgid "Connected · local proxy only"
 msgstr "Conectat · doar proxy local"
 
-#: crates/obscure-app/src/connection.rs:405
+#: crates/obscure-app/src/connection.rs:436
 msgid "Connected"
 msgstr "Conectat"
 
@@ -372,6 +373,22 @@ msgstr "Nu s-a putut notifica sistemul despre noul proxy."
 #: crates/obscure-app/src/humanize.rs:52
 msgid "Could not read or write Obscure's files."
 msgstr "Nu s-au putut citi sau scrie fișierele Obscure."
+
+#: crates/obscure-app/src/humanize.rs:53
+msgid "Could not read traffic statistics."
+msgstr "Nu s-au putut citi statisticile de trafic."
+
+#: crates/obscure-app/src/humanize.rs:54
+msgid "The server did not respond to the latency test."
+msgstr "Serverul nu a răspuns la testul de latență."
+
+#: crates/obscure-app/src/humanize.rs:55
+msgid "The subscription could not be read. Check the address."
+msgstr "Abonamentul nu a putut fi citit. Verifică adresa."
+
+#: crates/obscure-app/src/humanize.rs:57
+msgid "This subscription is in Clash format, which Obscure does not support yet."
+msgstr "Acest abonament este în format Clash, pe care Obscure nu îl acceptă încă."
 
 #: crates/obscure-app/src/import_dialog.rs:49
 #: crates/obscure-app/src/import_dialog.rs:159

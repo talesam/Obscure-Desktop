@@ -3,6 +3,7 @@
 
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
 use futures_util::StreamExt;
 use serde::Deserialize;
@@ -11,6 +12,11 @@ use sha2::{Digest, Sha256};
 use crate::error::{Error, Result};
 
 const RELEASES_API: &str = "https://api.github.com/repos/XTLS/Xray-core/releases";
+const GEO_BASE: &str = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download";
+const GEO_FILES: [&str; 2] = ["geoip.dat", "geosite.dat"];
+const GEO_STAMP: &str = "geo-updated";
+/// Geo files are refreshed at most once per this interval.
+pub const GEO_UPDATE_INTERVAL: Duration = Duration::from_secs(24 * 3600);
 
 /// Progress of a download/installation, for the UI.
 #[derive(Debug, Clone, PartialEq)]
@@ -224,6 +230,69 @@ impl CoreManager {
     }
 }
 
+impl CoreManager {
+    /// `true` if the geo files were never refreshed or are older than
+    /// [`GEO_UPDATE_INTERVAL`].
+    pub fn geo_needs_update(&self) -> bool {
+        let stamp = self.dir.join(GEO_STAMP);
+        match std::fs::metadata(&stamp).and_then(|m| m.modified()) {
+            Ok(modified) => SystemTime::now()
+                .duration_since(modified)
+                .map(|age| age >= GEO_UPDATE_INTERVAL)
+                .unwrap_or(true),
+            Err(_) => true,
+        }
+    }
+
+    /// Downloads `geoip.dat` and `geosite.dat` from Loyalsoldier's daily
+    /// releases, verifying each against its `.sha256sum`. Files are swapped
+    /// in atomically; on any failure the previous files stay in place.
+    pub async fn update_geo(&self) -> Result<()> {
+        std::fs::create_dir_all(&self.dir).map_err(|e| Error::io(&self.dir, e))?;
+        for name in GEO_FILES {
+            let sum = self
+                .client
+                .get(format!("{GEO_BASE}/{name}.sha256sum"))
+                .send()
+                .await?
+                .error_for_status()?
+                .text()
+                .await?;
+            let expected = parse_sha256sum_line(&sum)
+                .ok_or_else(|| Error::Subscription(format!("malformed {name}.sha256sum")))?;
+            let bytes = self
+                .client
+                .get(format!("{GEO_BASE}/{name}"))
+                .send()
+                .await?
+                .error_for_status()?
+                .bytes()
+                .await?;
+            let actual = hex::encode(Sha256::digest(&bytes));
+            if actual != expected {
+                return Err(Error::Checksum {
+                    file: name.to_owned(),
+                    expected,
+                    actual,
+                });
+            }
+            let tmp = self.dir.join(format!("{name}.tmp"));
+            let dest = self.dir.join(name);
+            std::fs::write(&tmp, &bytes).map_err(|e| Error::io(&tmp, e))?;
+            std::fs::rename(&tmp, &dest).map_err(|e| Error::io(&dest, e))?;
+        }
+        let stamp = self.dir.join(GEO_STAMP);
+        std::fs::write(&stamp, b"").map_err(|e| Error::io(&stamp, e))?;
+        Ok(())
+    }
+}
+
+/// Parses `<hex>  <filename>` (sha256sum format) and returns the hex digest.
+pub fn parse_sha256sum_line(text: &str) -> Option<String> {
+    let hex = text.split_whitespace().next()?.to_ascii_lowercase();
+    (hex.len() == 64 && hex.chars().all(|c| c.is_ascii_hexdigit())).then_some(hex)
+}
+
 /// Extracts `xray`, `geoip.dat` and `geosite.dat` from the archive into
 /// `dir`, writing to temp files and renaming so a crash never leaves a
 /// half-written binary in place.
@@ -279,6 +348,27 @@ mod tests {
         );
         assert_eq!(parse_sha256("SHA2-256= nothex"), None);
         assert_eq!(parse_sha256(""), None);
+    }
+
+    #[test]
+    fn sha256sum_line() {
+        assert_eq!(
+            parse_sha256sum_line(
+                "23CD9AF937744D97776EE35ECAD4972CF4B2109D1E0FE6BE9930467608F7C8AE  geoip.dat\n"
+            )
+            .unwrap(),
+            "23cd9af937744d97776ee35ecad4972cf4b2109d1e0fe6be9930467608f7c8ae"
+        );
+        assert_eq!(parse_sha256sum_line("zz  x"), None);
+    }
+
+    #[test]
+    fn geo_stamp_controls_update() {
+        let dir = tempfile::tempdir().unwrap();
+        let mgr = CoreManager::new(dir.path().to_path_buf(), "test");
+        assert!(mgr.geo_needs_update());
+        std::fs::write(dir.path().join(GEO_STAMP), b"").unwrap();
+        assert!(!mgr.geo_needs_update());
     }
 
     #[test]

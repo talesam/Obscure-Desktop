@@ -50,5 +50,11 @@ pub fn error_message(err: &Error) -> String {
         }
         Error::DBus(_) => gettext("Could not notify the system about the new proxy."),
         Error::Io { .. } | Error::Json(_) => gettext("Could not read or write Obscure's files."),
+        Error::Stats(_) => gettext("Could not read traffic statistics."),
+        Error::Latency(_) => gettext("The server did not respond to the latency test."),
+        Error::Subscription(_) => gettext("The subscription could not be read. Check the address."),
+        Error::ClashYaml => {
+            gettext("This subscription is in Clash format, which Obscure does not support yet.")
+        }
     }
 }

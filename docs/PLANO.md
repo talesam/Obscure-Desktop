@@ -224,18 +224,18 @@ Suporte de protocolos (fase 1): **VLESS** (raw/ws/grpc/xhttp/httpupgrade; tls/re
 **Critério:** `meson setup build && meson compile -C build && ./build/…/obscure` abre a janela; Flatpak builda.
 Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo clippy -D warnings` e `cargo fmt --check` passam. O build Flatpak só foi validado com `flatpak-builder-lint` (ver §8).
 
-### Fase 1 — obscure-core (2 semanas)
+### Fase 1 — obscure-core (2 semanas) — **concluída em 2026-09-20**
 - [x] `links.rs`: parse/serialize vless/vmess/trojan/ss + testes com fixtures.
 - [x] `profile.rs`: modelo de dados (Profile, Group, Subscription) + persistência versionada. *(grupos/assinaturas ficam para a Fase 3)*
 - [x] `config.rs`: Profile + RoutePreset → `config.json` (usa `serde_json::json!`); testes de asserção.
-- [x] `core_manager.rs`: detectar arquitetura, baixar, verificar `.dgst`, extrair, atualizar; geo data. *(geo vem do zip do Xray; atualização diária via Loyalsoldier pendente)*
-- [x] `supervisor.rs`: spawn/kill do Xray, `-test` antes de subir, stream de log. *(reinício com backoff pendente)*
-- [ ] `stats.rs`: tonic client do `StatsService`, polling 1 s, taxa e acumulado da sessão.
+- [x] `core_manager.rs`: detectar arquitetura, baixar, verificar `.dgst`, extrair, atualizar; geo data (diária, Loyalsoldier + `.sha256sum`).
+- [x] `supervisor.rs`: spawn/kill do Xray, `-test` antes de subir, stream de log, `RestartPolicy` com backoff (máx. 3; o app reinicia sozinho).
+- [x] `stats.rs`: tonic client do `StatsService` (mensagens prost escritas à mão, sem protoc), polling 1 s, taxa e acumulado.
 - [x] `sysproxy.rs`: GNOME + KDE, salvar/restaurar estado.
-- [ ] `subscription.rs`: fetch, decode, userinfo, intervalo.
-- [ ] `latency.rs`: TCP + URL test.
+- [x] `subscription.rs`: fetch, decode, userinfo, intervalo, título, redirecionamento, detecção de YAML Clash. *(UI de assinaturas é Fase 3)*
+- [x] `latency.rs`: TCP + URL test + "testar todos" com concorrência limitada. *(UI é Fase 3)*
 **Critério:** teste de integração que importa um `vless://`, sobe o Xray, faz um request via SOCKS e lê stats.
-**Estado (2026-09-20):** `crates/obscure-core/tests/integration.rs` importa o link, sobe o Xray real e faz requests via SOCKS e HTTP (passou com servidor REALITY real). Faltam `stats.rs`, `subscription.rs`, `latency.rs`.
+**Estado (2026-09-20):** `crates/obscure-core/tests/integration.rs` importa o link, sobe o Xray real, faz requests via SOCKS e HTTP, lê os contadores de tráfego pelo gRPC e mede latência TCP (passou com servidor REALITY real). Critério atendido.
 
 ### Fase 2 — UI MVP (2–3 semanas)
 - [ ] Janela: sidebar (servidores/grupos, busca, latência colorida) + hero Conectar + rodapé com ↑/↓ e tempo conectado.
@@ -304,7 +304,10 @@ lista de servidores com seleção e remoção confirmada, download do core com p
 de proxy após crash, encerramento limpo). Strings em inglês com 28 traduções em `po/`.
 
 Pendências:
-- `stats.rs` (gRPC StatsService), `subscription.rs`, `latency.rs`; reinício com backoff no supervisor.
+- ~~`stats.rs`, `subscription.rs`, `latency.rs`, backoff~~ feitos em 2026-09-20 (Fase 1 fechada).
+- `subscription.rs` e `latency.rs` existem no core, mas ainda não têm UI (Fase 3).
+- Sinais SIGTERM/SIGINT/SIGHUP passam pelo shutdown normal (proxy restaurado). SIGKILL só é
+  recuperado na próxima abertura.
 - UI: sidebar/grupos, detalhe do servidor (QR, copiar link), painel de log (o `ConnectionManager` já
   guarda as últimas 500 linhas), preset de rota, Preferências reais (porta, DNS, canal do core).
 - Handler de URL scheme e importação por arquivo.
@@ -314,6 +317,10 @@ Pendências:
   traduzir à mão nos 28 `.po` (o gerador usado em 2026-09-20 ficou fora do repositório; os `.po`
   são a fonte canônica).
 - Rodar sem instalar: no perfil development o binário usa `build/po/` como LOCALEDIR.
+- Decisão: mensagens protobuf do StatsService escritas à mão com `prost` (5 mensagens) em vez de
+  `tonic-build` + `protoc`, para não exigir protoc no Flatpak/AUR. Se o proto mudar, atualizar
+  `stats.rs` (fonte: `app/stats/command/command.proto`).
+- Exemplo manual `cargo run -p obscure-core --example geo_update` baixa os geo files de verdade.
 
 
 ### Fase 0 (2026-09-19)

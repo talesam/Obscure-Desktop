@@ -3,9 +3,12 @@
 pub mod config;
 pub mod core_manager;
 pub mod error;
+pub mod latency;
 pub mod links;
 pub mod paths;
 pub mod profile;
+pub mod stats;
+pub mod subscription;
 pub mod supervisor;
 pub mod sysproxy;
 

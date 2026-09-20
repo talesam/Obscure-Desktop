@@ -32,6 +32,8 @@ mod imp {
         #[template_child]
         pub status_label: TemplateChild<gtk::Label>,
         #[template_child]
+        pub traffic_label: TemplateChild<gtk::Label>,
+        #[template_child]
         pub progress_bar: TemplateChild<gtk::ProgressBar>,
         #[template_child]
         pub connect_button: TemplateChild<gtk::Button>,
@@ -228,6 +230,13 @@ impl ObscureWindow {
             .sync_create()
             .build();
         m.bind_property("status_text", &*imp.status_label, "label")
+            .sync_create()
+            .build();
+        m.bind_property("traffic_text", &*imp.traffic_label, "label")
+            .sync_create()
+            .build();
+        m.bind_property("traffic_text", &*imp.traffic_label, "visible")
+            .transform_to(|_, t: String| Some(!t.is_empty()))
             .sync_create()
             .build();
         m.bind_property("progress", &*imp.progress_bar, "fraction")

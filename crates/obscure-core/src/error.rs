@@ -39,6 +39,14 @@ pub enum Error {
     SysProxy(String),
     #[error("d-bus error: {0}")]
     DBus(#[from] zbus::Error),
+    #[error("stats error: {0}")]
+    Stats(String),
+    #[error("latency test failed: {0}")]
+    Latency(String),
+    #[error("subscription error: {0}")]
+    Subscription(String),
+    #[error("the subscription server returned a Clash/YAML profile instead of share links")]
+    ClashYaml,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
