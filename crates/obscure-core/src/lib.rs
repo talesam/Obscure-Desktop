@@ -1,8 +1,15 @@
 //! Core library of Obscure. Must never depend on GTK.
-//!
-//! Phase 1 will add: share-link parsing, profile persistence, Xray config
-//! generation, core download/verification, process supervision, stats,
-//! system proxy and subscriptions.
+
+pub mod config;
+pub mod core_manager;
+pub mod error;
+pub mod links;
+pub mod paths;
+pub mod profile;
+pub mod supervisor;
+pub mod sysproxy;
+
+pub use error::{Error, Result};
 
 /// Default local port of the mixed (HTTP + SOCKS) inbound.
 pub const DEFAULT_LOCAL_PORT: u16 = 2080;
@@ -10,6 +17,11 @@ pub const DEFAULT_LOCAL_PORT: u16 = 2080;
 /// Returns the User-Agent sent when fetching subscriptions and core releases.
 pub fn user_agent(version: &str) -> String {
     format!("Obscure/{version} (Linux)")
+}
+
+/// Installs the rustls crypto provider. Safe to call more than once.
+pub fn init_crypto() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
 }
 
 #[cfg(test)]

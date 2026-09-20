@@ -45,7 +45,7 @@ glib = "0.22"; gio = "0.22"
 tokio = { version = "1", features = ["rt-multi-thread", "process", "sync", "time", "io-util"] }
 async-channel = "2"
 serde = { version = "1", features = ["derive"] }; serde_json = "1"
-reqwest = { version = "0.13", default-features = false, features = ["rustls-tls", "json", "stream"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "json", "stream"] }  # + rustls 0.23 com provider ring (evita aws-lc/cmake)
 tonic = "0.14"; prost = "0.14"           # gRPC StatsService do Xray (build: tonic-build)
 url = "2"; base64 = "0.22"; percent-encoding = "2"; uuid = "1"
 tracing = "0.1"; tracing-subscriber = "0.3"
