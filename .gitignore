@@ -1,0 +1,23 @@
+# Rust
+/target/
+**/*.rs.bk
+
+# Meson
+/build/
+/_build/
+/builddir/
+
+# Flatpak
+/.flatpak-builder/
+/.flatpak/
+/repo/
+*.flatpak
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Generated
+/po/*.pot
