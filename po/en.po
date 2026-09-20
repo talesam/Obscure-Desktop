@@ -184,3 +184,7 @@ msgstr "Window height"
 #: data/io.github.talesam.Obscure.gschema.xml.in:14
 msgid "Whether the window is maximized"
 msgstr "Whether the window is maximized"
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:9
+msgid "Conecte-se ao seu proxy com um botão"
+msgstr "Connect to your proxy with one button"

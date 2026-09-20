@@ -5,7 +5,7 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <name>Obscure</name>
-  <summary>Conecte-se. Só isso.</summary>
+  <summary>Conecte-se ao seu proxy com um botão</summary>
   <description>
     <p>
       O Obscure é um cliente simples para o motor Xray-core. Cole um link ou

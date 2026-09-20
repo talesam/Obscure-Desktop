@@ -215,13 +215,14 @@ Suporte de protocolos (fase 1): **VLESS** (raw/ws/grpc/xhttp/httpupgrade; tls/re
 
 ## 5. Roadmap por fases
 
-### Fase 0 — Esqueleto (1 semana)
-- [ ] Workspace Cargo + meson + Blueprint (base: gtk-rust-template do GNOME World, adaptado para workspace).
-- [ ] `AdwApplicationWindow` vazia com `AdwToolbarView`, about dialog, gschema, `.desktop`, metainfo, ícone provisório.
-- [ ] Flatpak manifest Devel (GNOME 50; migrar para 51 assim que a imagem CI existir), `cargo-sources.json`.
-- [ ] CI: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, build Flatpak.
-- [ ] `README.md`, `CONTRIBUTING.md`, `LICENSE`, `.editorconfig`, hook pre-commit.
+### Fase 0 — Esqueleto (1 semana) — **concluída em 2026-09-19**
+- [x] Workspace Cargo + meson + Blueprint (base: gtk-rust-template do GNOME World, adaptado para workspace).
+- [x] `AdwApplicationWindow` vazia com `AdwToolbarView`, about dialog, gschema, `.desktop`, metainfo, ícone provisório.
+- [x] Flatpak manifest Devel (GNOME 50; migrar para 51 assim que a imagem CI existir), `cargo-sources.json`.
+- [x] CI: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, build Flatpak.
+- [x] `README.md`, `CONTRIBUTING.md`, `LICENSE`, `.editorconfig`, hook pre-commit.
 **Critério:** `meson setup build && meson compile -C build && ./build/…/obscure` abre a janela; Flatpak builda.
+Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo clippy -D warnings` e `cargo fmt --check` passam. O build Flatpak só foi validado com `flatpak-builder-lint` (ver §8).
 
 ### Fase 1 — obscure-core (2 semanas)
 - [ ] `links.rs`: parse/serialize vless/vmess/trojan/ss + testes com fixtures.
@@ -289,3 +290,38 @@ Suporte de protocolos (fase 1): **VLESS** (raw/ws/grpc/xhttp/httpupgrade; tls/re
 - HIG: https://developer.gnome.org/hig/ · Workbench: https://github.com/workbenchdev/Workbench
 - Apps de referência: Snapshot, Loupe, Fractal, Authenticator (GNOME World)
 - Concorrentes: Throne https://github.com/throneproj/Throne · oxidom https://github.com/keepinfov/oxidom · v2ray-rs https://github.com/victorzhuk/v2ray-rs · sysproxy-rs https://github.com/clash-verge-rev/sysproxy-rs
+
+---
+
+## 8. Registro de progresso e pendências
+
+### Fase 0 (2026-09-19)
+Feito: repositório, workspace com 3 crates, meson + Blueprint, janela libadwaita com menu
+(Preferências, Atalhos, Sobre), gschema, `.desktop`, metainfo, ícones provisórios, i18n
+(pt_BR base + en), manifest Flatpak Devel (GNOME 50), `cargo-sources.json`, CI, hook pre-commit.
+
+Pendências e observações para as próximas fases:
+- **Build Flatpak local não executado**: `flatpak-builder` não está instalado no sistema e nenhum
+  runtime GNOME está baixado. O manifest foi validado com `flatpak-builder-lint` (via
+  `org.flatpak.Builder`, instalado em nível de usuário). O build completo roda na CI.
+- O manifest inclui um módulo `blueprint-compiler` v0.22.2 (tag + commit) por segurança; se o SDK
+  do GNOME 50 já trouxer uma versão suficiente, remover o módulo.
+- `flatpak-builder-lint manifest` só reclama de `appid-url-not-reachable`: o Flathub espera que o
+  app ID `io.github.talesam.Obscure` corresponda ao repositório `github.com/talesam/Obscure`
+  (o repo ainda não está publicado, e o nome atual é `Obscure-Desktop`). **Decidir antes do
+  Flathub (fase 5)**: renomear o repositório para `talesam/Obscure` ou mudar o app ID para
+  `io.github.talesam.Obscure_Desktop`. O linter também avisa que GNOME 51 já existe no Flathub, mas a
+  imagem `flatpak-github-actions:gnome-51` ainda não foi publicada (HTTP 404 em 2026-09-19), então o
+  manifest segue em GNOME 50 conforme o plano.
+- O `<summary>` do metainfo foi trocado para "Conecte-se ao seu proxy com um botão" porque o
+  AppStream não aceita ponto final no resumo; o slogan continua na tela principal e no Sobre.
+- `rust-version` do workspace ficou em 1.92 (mínimo exigido por `gtk4-sys 0.11.4`).
+- `config.rs` é gerado pelo meson (`CODEGEN_BUILD_DIR`) e, sem meson, o `build.rs` gera padrões de
+  desenvolvimento; assim `cargo test`/`cargo clippy` funcionam sem `meson setup`.
+- O binário roda sem instalar só no perfil `development` (fallback para `build/data`). No perfil
+  padrão é preciso `meson install`.
+- Os ícones são provisórios (escudo azul); trocar na Fase 5.
+- Textos da UI ainda são poucos; `po/en.po` cobre todos os atuais. Ao adicionar strings, rodar
+  `meson compile -C build obscure-pot` e `meson compile -C build obscure-update-po`.
+- CI Rust roda em contêiner `archlinux:base-devel` porque o Ubuntu LTS não tem GTK 4.22 /
+  libadwaita 1.9.

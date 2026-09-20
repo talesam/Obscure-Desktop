@@ -153,3 +153,7 @@ msgstr ""
 #: data/io.github.talesam.Obscure.gschema.xml.in:14
 msgid "Whether the window is maximized"
 msgstr ""
+
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:9
+msgid "Conecte-se ao seu proxy com um botão"
+msgstr ""

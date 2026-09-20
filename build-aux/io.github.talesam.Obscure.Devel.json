@@ -35,7 +35,8 @@
         {
           "type": "git",
           "url": "https://gitlab.gnome.org/GNOME/blueprint-compiler.git",
-          "tag": "v0.22.0"
+          "tag": "v0.22.2",
+          "commit": "ed35ac74de0c1bb1f5e852410b97edd1f08904c9"
         }
       ]
     },
