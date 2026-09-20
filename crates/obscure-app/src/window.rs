@@ -15,7 +15,7 @@ mod imp {
         #[template_child]
         pub status_page: TemplateChild<adw::StatusPage>,
         #[template_child]
-        pub connect_button: TemplateChild<gtk::Button>,
+        pub add_server_button: TemplateChild<gtk::Button>,
     }
 
     #[glib::object_subclass]
@@ -37,9 +37,10 @@ mod imp {
     #[gtk::template_callbacks]
     impl ObscureWindow {
         #[template_callback]
-        fn on_connect_clicked(&self, _button: &gtk::Button) {
-            // Phase 2 wires this to obscure-core. For now it is only a stub.
-            tracing::info!("connect requested (not implemented yet)");
+        fn on_add_server_clicked(&self, _button: &gtk::Button) {
+            // Phase 2 opens the import dialog here. The Connect button only
+            // appears once at least one server exists.
+            tracing::info!("add server requested (not implemented yet)");
         }
     }
 

@@ -238,6 +238,7 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 
 ### Fase 2 — UI MVP (2–3 semanas)
 - [ ] Janela: sidebar (servidores/grupos, busca, latência colorida) + hero Conectar + rodapé com ↑/↓ e tempo conectado.
+  - Estado vazio (sem servidor): o hero mostra **"Adicionar servidor"**, nunca "Conectar". O botão Conectar só existe quando há pelo menos um servidor (já aplicado no esqueleto da Fase 0).
 - [ ] Importar: colar (Ctrl+V), diálogo, arquivo, handler de URL scheme. Toast de resultado.
 - [ ] Detalhe do servidor em bottom sheet: nome editável, chips (protocolo, transporte, segurança), QR, copiar link, remover.
 - [ ] Preset de rota (`AdwToggleGroup`), seletor "Como aplicar" (só Proxy de sistema nesta fase).
@@ -323,5 +324,9 @@ Pendências e observações para as próximas fases:
 - Os ícones são provisórios (escudo azul); trocar na Fase 5.
 - Textos da UI ainda são poucos; `po/en.po` cobre todos os atuais. Ao adicionar strings, rodar
   `meson compile -C build obscure-pot` e `meson compile -C build obscure-update-po`.
+- Callbacks de template no Blueprint que recebem `&self` do widget precisam de `swapped`
+  (`clicked => $on_x() swapped;`); sem isso o primeiro argumento é o botão e o app aborta.
+- Cada `.blp` é um `custom_target` próprio em `data/resources/meson.build` (saída em diretório não
+  era rastreada pelo ninja e o gresource ficava desatualizado).
 - CI Rust roda em contêiner `archlinux:base-devel` porque o Ubuntu LTS não tem GTK 4.22 /
   libadwaita 1.9.

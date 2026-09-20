@@ -76,13 +76,13 @@ msgstr "Connect. That's it."
 
 
 #: crates/obscure-app/src/ui/window.blp:33
-msgid "Adicione um servidor e toque em Conectar."
-msgstr "Add a server and tap Connect."
+msgid "Cole um link ou uma assinatura para começar."
+msgstr "Paste a link or a subscription to get started."
 
 
 #: crates/obscure-app/src/ui/window.blp:41
-msgid "Conectar"
-msgstr "Connect"
+msgid "Adicionar servidor"
+msgstr "Add Server"
 
 
 #: crates/obscure-app/src/ui/window.blp:56

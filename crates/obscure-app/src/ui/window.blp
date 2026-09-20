@@ -30,16 +30,20 @@ template $ObscureWindow: Adw.ApplicationWindow {
 
     content: Adw.StatusPage status_page {
       title: _("Conecte-se. Só isso.");
-      description: _("Adicione um servidor e toque em Conectar.");
+      description: _("Cole um link ou uma assinatura para começar.");
 
       styles [
         "obscure-hero",
       ]
 
-      Button connect_button {
+      Button add_server_button {
         halign: center;
-        label: _("Conectar");
-        clicked => $on_connect_clicked();
+        clicked => $on_add_server_clicked() swapped;
+
+        Adw.ButtonContent {
+          icon-name: "list-add-symbolic";
+          label: _("Adicionar servidor");
+        }
 
         styles [
           "pill",
