@@ -26,11 +26,7 @@ printMsg() {
 # }
 
 # Function executed after package installation
-post_install() {
-    printMsg "Obscure installed. Xray-core is downloaded on first connection (~66 MB)."
-}
-
-# post_install_example() {
+# post_install() {
 #     printMsg "Configuring the package after installation..."
 #     # Example: Create a configuration directory
 #     # mkdir -p /etc/mypackage
