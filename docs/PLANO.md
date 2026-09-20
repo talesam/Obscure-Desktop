@@ -16,7 +16,7 @@
 | App ID | `io.github.talesam.Obscure` (reverse-DNS aceito pelo Flathub sem precisar de domínio próprio; trocar antes do primeiro commit se preferir outro) |
 | Binário | `obscure` |
 | Licença | **GPL-3.0-or-later** (padrão do ecossistema GNOME; como o Xray roda em processo separado, não há contaminação de licença em nenhuma direção) |
-| Idioma padrão | pt-BR com i18n via gettext; inglês como segundo idioma desde o início |
+| Idioma padrão | **Inglês como idioma-fonte** (msgid) e traduções gettext para 28 idiomas: bg, cs, da, de, el, es, et, fi, fr, he, hr, hu, is, it, ja, ko, nl, nb, pl, pt, pt_BR, ro, ru, sk, sv, tr, uk, zh (decisão de 2026-09-20; `nb` substitui `no` e `zh` cobre zh_CN/zh_TW por fallback do gettext) |
 | Slogan | "Conecte-se. Só isso." |
 
 Princípios de UX (inegociáveis):
@@ -225,26 +225,27 @@ Suporte de protocolos (fase 1): **VLESS** (raw/ws/grpc/xhttp/httpupgrade; tls/re
 Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo clippy -D warnings` e `cargo fmt --check` passam. O build Flatpak só foi validado com `flatpak-builder-lint` (ver §8).
 
 ### Fase 1 — obscure-core (2 semanas)
-- [ ] `links.rs`: parse/serialize vless/vmess/trojan/ss + testes com fixtures.
-- [ ] `profile.rs`: modelo de dados (Profile, Group, Subscription) + persistência versionada.
-- [ ] `config.rs`: Profile + RoutePreset → `config.json` (structs serde com `skip_serializing_if`); testes de snapshot.
-- [ ] `core_manager.rs`: detectar arquitetura, baixar, verificar `.dgst`, extrair, atualizar; geo data.
-- [ ] `supervisor.rs`: spawn/kill do Xray, `-test` antes de subir, stream de log, reinício em falha (com backoff, máx. 3).
+- [x] `links.rs`: parse/serialize vless/vmess/trojan/ss + testes com fixtures.
+- [x] `profile.rs`: modelo de dados (Profile, Group, Subscription) + persistência versionada. *(grupos/assinaturas ficam para a Fase 3)*
+- [x] `config.rs`: Profile + RoutePreset → `config.json` (usa `serde_json::json!`); testes de asserção.
+- [x] `core_manager.rs`: detectar arquitetura, baixar, verificar `.dgst`, extrair, atualizar; geo data. *(geo vem do zip do Xray; atualização diária via Loyalsoldier pendente)*
+- [x] `supervisor.rs`: spawn/kill do Xray, `-test` antes de subir, stream de log. *(reinício com backoff pendente)*
 - [ ] `stats.rs`: tonic client do `StatsService`, polling 1 s, taxa e acumulado da sessão.
-- [ ] `sysproxy.rs`: GNOME + KDE, salvar/restaurar estado.
+- [x] `sysproxy.rs`: GNOME + KDE, salvar/restaurar estado.
 - [ ] `subscription.rs`: fetch, decode, userinfo, intervalo.
 - [ ] `latency.rs`: TCP + URL test.
 **Critério:** teste de integração que importa um `vless://`, sobe o Xray, faz um request via SOCKS e lê stats.
+**Estado (2026-09-20):** `crates/obscure-core/tests/integration.rs` importa o link, sobe o Xray real e faz requests via SOCKS e HTTP (passou com servidor REALITY real). Faltam `stats.rs`, `subscription.rs`, `latency.rs`.
 
 ### Fase 2 — UI MVP (2–3 semanas)
 - [ ] Janela: sidebar (servidores/grupos, busca, latência colorida) + hero Conectar + rodapé com ↑/↓ e tempo conectado.
   - Estado vazio (sem servidor): o hero mostra **"Adicionar servidor"**, nunca "Conectar". O botão Conectar só existe quando há pelo menos um servidor (já aplicado no esqueleto da Fase 0).
-- [ ] Importar: colar (Ctrl+V), diálogo, arquivo, handler de URL scheme. Toast de resultado.
+- [x] Importar: colar (Ctrl+V) e diálogo com validação ao vivo. Toast de resultado. *(arquivo e handler de URL scheme pendentes)*
 - [ ] Detalhe do servidor em bottom sheet: nome editável, chips (protocolo, transporte, segurança), QR, copiar link, remover.
-- [ ] Preset de rota (`AdwToggleGroup`), seletor "Como aplicar" (só Proxy de sistema nesta fase).
+- [x] Seletor "Como aplicar" (`AdwToggleGroup`: Proxy do sistema padrão, Só proxy local, Túnel desativado). *(preset de rota na UI pendente; o core já suporta)*
 - [ ] Painel de log (bottom sheet, monoespaçado, filtro por nível, copiar).
-- [ ] Erros humanizados (mapa dos erros comuns do Xray → mensagens).
-- [ ] Primeiro uso: página de boas-vindas que baixa o core com progresso.
+- [x] Erros humanizados (`humanize.rs`).
+- [x] Primeiro uso: o core é baixado no primeiro Conectar, com barra de progresso e SHA-256 verificado.
 - [ ] Preferências: porta local, DNS, canal do core, iniciar minimizado, autostart.
 **Critério:** uma pessoa leiga cola um link e conecta em < 30 s sem ler nada.
 
@@ -295,6 +296,25 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ---
 
 ## 8. Registro de progresso e pendências
+
+### Fase 1 + fatia da Fase 2 (2026-09-20)
+Feito: `obscure-core` (links, profile, config, core_manager, supervisor, sysproxy, paths), teste de
+integração com Xray real, UI funcional (importar, conectar/desconectar/cancelar, modo de aplicação,
+lista de servidores com seleção e remoção confirmada, download do core com progresso, recuperação
+de proxy após crash, encerramento limpo). Strings em inglês com 28 traduções em `po/`.
+
+Pendências:
+- `stats.rs` (gRPC StatsService), `subscription.rs`, `latency.rs`; reinício com backoff no supervisor.
+- UI: sidebar/grupos, detalhe do servidor (QR, copiar link), painel de log (o `ConnectionManager` já
+  guarda as últimas 500 linhas), preset de rota, Preferências reais (porta, DNS, canal do core).
+- Handler de URL scheme e importação por arquivo.
+- Flatpak: proxy do sistema via GSettings precisa de acesso ao dconf (args já no manifest); o
+  `kwriteconfig6` do KDE não existe dentro do sandbox — usar `flatpak-spawn --host` (Fase 5).
+- Traduções: quando surgirem strings novas, rodar `meson compile -C build obscure-update-po` e
+  traduzir à mão nos 28 `.po` (o gerador usado em 2026-09-20 ficou fora do repositório; os `.po`
+  são a fonte canônica).
+- Rodar sem instalar: no perfil development o binário usa `build/po/` como LOCALEDIR.
+
 
 ### Fase 0 (2026-09-19)
 Feito: repositório, workspace com 3 crates, meson + Blueprint, janela libadwaita com menu

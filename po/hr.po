@@ -1,4 +1,4 @@
-# Português do Brasil translation for Obscure.
+# Hrvatski translation for Obscure.
 # Copyright (C) 2026 Tales A. Mendonça
 # This file is distributed under the same license as the obscure package.
 #
@@ -9,12 +9,12 @@ msgstr ""
 "POT-Creation-Date: 2026-09-20 01:16\n"
 "PO-Revision-Date: 2026-09-20 01:16\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
-"Language-Team: Português do Brasil\n"
-"Language: pt_BR\n"
+"Language-Team: Hrvatski\n"
+"Language: hr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #: data/io.github.talesam.Obscure.desktop.in.in:2
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
@@ -27,11 +27,11 @@ msgstr "Obscure"
 #: crates/obscure-app/src/ui/window.blp:38
 #: crates/obscure-app/src/application.rs:183
 msgid "Connect. That's it."
-msgstr "Conecte-se. Só isso."
+msgstr "Povežite se. To je sve."
 
 #: data/io.github.talesam.Obscure.desktop.in.in:5
 msgid "Proxy Client"
-msgstr "Cliente de proxy"
+msgstr "Proxy klijent"
 
 #. Translators: search terms, keep the trailing semicolon
 #: data/io.github.talesam.Obscure.desktop.in.in:12
@@ -40,165 +40,165 @@ msgstr "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:8
 msgid "Connect to your proxy with one button"
-msgstr "Conecte-se ao seu proxy com um botão"
+msgstr "Povežite se sa svojim proxyjem jednim gumbom"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:10
 msgid "Obscure is a simple client for the Xray-core engine. Paste a link or a subscription, tap Connect and you are done."
-msgstr "O Obscure é um cliente simples para o motor Xray-core. Cole um link ou uma assinatura, toque em Conectar e pronto."
+msgstr "Obscure je jednostavan klijent za Xray-core. Zalijepite poveznicu ili pretplatu, dodirnite Poveži i gotovo."
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:14
 msgid "Features:"
-msgstr "Recursos:"
+msgstr "Značajke:"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:16
 msgid "One Connect button, no technical terms on the main screen"
-msgstr "Um botão Conectar, sem termos técnicos na tela principal"
+msgstr "Jedan gumb Poveži, bez tehničkih pojmova na glavnom zaslonu"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:17
 msgid "Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
-msgstr "Importa links vless, vmess, trojan e shadowsocks, além de assinaturas"
+msgstr "Uvozi vless, vmess, trojan i shadowsocks poveznice te pretplate"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:18
 msgid "Applies the system proxy on GNOME and KDE, no root required"
-msgstr "Aplica o proxy do sistema no GNOME e no KDE, sem precisar de root"
+msgstr "Postavlja proxy sustava na GNOME-u i KDE-u bez root prava"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:19
 msgid "Downloads and updates Xray-core automatically, with integrity checks"
-msgstr "Baixa e atualiza o Xray-core automaticamente, com verificação de integridade"
+msgstr "Automatski preuzima i ažurira Xray-core s provjerom cjelovitosti"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:49
 msgid "Initial project skeleton."
-msgstr "Esqueleto inicial do projeto."
+msgstr "Početni kostur projekta."
 
 #: data/io.github.talesam.Obscure.gschema.xml.in:6
 msgid "Window width"
-msgstr "Largura da janela"
+msgstr "Širina prozora"
 
 #: data/io.github.talesam.Obscure.gschema.xml.in:10
 msgid "Window height"
-msgstr "Altura da janela"
+msgstr "Visina prozora"
 
 #: data/io.github.talesam.Obscure.gschema.xml.in:14
 msgid "Whether the window is maximized"
-msgstr "Se a janela está maximizada"
+msgstr "Je li prozor maksimiziran"
 
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
 msgid "Add Server"
-msgstr "Adicionar servidor"
+msgstr "Dodaj poslužitelj"
 
 #: crates/obscure-app/src/ui/window.blp:24
 msgid "Main Menu"
-msgstr "Menu principal"
+msgstr "Glavni izbornik"
 
 #: crates/obscure-app/src/ui/window.blp:39
 msgid "Paste a link or a subscription to get started."
-msgstr "Cole um link ou uma assinatura para começar."
+msgstr "Zalijepite poveznicu ili pretplatu za početak."
 
 #: crates/obscure-app/src/ui/window.blp:127
 #: crates/obscure-app/src/window.rs:301
 msgid "Connect"
-msgstr "Conectar"
+msgstr "Poveži"
 
 #: crates/obscure-app/src/ui/window.blp:139
 msgid "How to apply"
-msgstr "Como aplicar"
+msgstr "Način primjene"
 
 #: crates/obscure-app/src/ui/window.blp:147
 msgid "System proxy"
-msgstr "Proxy do sistema"
+msgstr "Proxy sustava"
 
 #: crates/obscure-app/src/ui/window.blp:148
 msgid "Browsers and most apps use the connection. No administrator password needed."
-msgstr "Navegadores e a maioria dos apps passam a usar a conexão. Não precisa de senha de administrador."
+msgstr "Preglednici i većina aplikacija koristit će vezu. Nije potrebna administratorska lozinka."
 
 #: crates/obscure-app/src/ui/window.blp:153
 msgid "Local proxy only"
-msgstr "Só proxy local"
+msgstr "Samo lokalni proxy"
 
 #: crates/obscure-app/src/ui/window.blp:154
 msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
-msgstr "Nada muda no sistema. Aponte os programas que quiser para 127.0.0.1:2080."
+msgstr "Ništa se u sustavu ne mijenja. Usmjerite željene programe na 127.0.0.1:2080."
 
 #: crates/obscure-app/src/ui/window.blp:159
 msgid "Tunnel"
-msgstr "Túnel"
+msgstr "Tunel"
 
 #: crates/obscure-app/src/ui/window.blp:161
 msgid "All traffic from this computer. Coming in a future version."
-msgstr "Todo o tráfego deste computador. Disponível em uma próxima versão."
+msgstr "Sav promet ovog računala. Dolazi u budućoj verziji."
 
 #: crates/obscure-app/src/ui/window.blp:167
 msgid "Servers"
-msgstr "Servidores"
+msgstr "Poslužitelji"
 
 #: crates/obscure-app/src/ui/window.blp:190
 msgid "_Copy Environment Variables"
-msgstr "_Copiar variáveis de ambiente"
+msgstr "_Kopiraj varijable okruženja"
 
 #: crates/obscure-app/src/ui/window.blp:197
 msgid "_Preferences"
-msgstr "_Preferências"
+msgstr "_Postavke"
 
 #: crates/obscure-app/src/ui/window.blp:202
 msgid "_Keyboard Shortcuts"
-msgstr "_Atalhos de teclado"
+msgstr "_Tipkovnički prečaci"
 
 #: crates/obscure-app/src/ui/window.blp:207
 msgid "_About Obscure"
-msgstr "_Sobre o Obscure"
+msgstr "_O programu Obscure"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
 #: crates/obscure-app/src/ui/preferences-dialog.blp:10
 msgid "General"
-msgstr "Geral"
+msgstr "Općenito"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:9
 #: crates/obscure-app/src/ui/preferences-dialog.blp:5
 msgid "Preferences"
-msgstr "Preferências"
+msgstr "Postavke"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:14
 msgid "Keyboard Shortcuts"
-msgstr "Atalhos de teclado"
+msgstr "Tipkovnički prečaci"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
 msgid "Close Window"
-msgstr "Fechar janela"
+msgstr "Zatvori prozor"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
 msgid "Quit"
-msgstr "Sair"
+msgstr "Izađi"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:14
 msgid "Connection"
-msgstr "Conexão"
+msgstr "Veza"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:15
 msgid "Connection options will be available in the next stage of the project."
-msgstr "As opções de conexão ficam disponíveis na próxima etapa do projeto."
+msgstr "Opcije veze bit će dostupne u sljedećoj fazi projekta."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
 #: crates/obscure-app/src/window.rs:293 crates/obscure-app/src/window.rs:363
 msgid "Cancel"
-msgstr "Cancelar"
+msgstr "Odustani"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:23
 msgid "Add"
-msgstr "Adicionar"
+msgstr "Dodaj"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:42
 msgid "Paste the server link below, or the links from your subscription, one per line."
-msgstr "Cole abaixo o link do servidor ou os links da sua assinatura, um por linha."
+msgstr "Ispod zalijepite poveznicu poslužitelja ili poveznice iz pretplate, jednu po retku."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:75
 msgid "Paste from Clipboard"
-msgstr "Colar da área de transferência"
+msgstr "Zalijepi iz međuspremnika"
 
 #: crates/obscure-app/src/application.rs:56
 msgid "The system proxy settings from a previous session were restored."
-msgstr "As configurações de proxy do sistema da sessão anterior foram restauradas."
+msgstr "Postavke proxyja sustava iz prethodne sesije su vraćene."
 
 #. Translators: replace with your name and, optionally, e-mail.
 #: crates/obscure-app/src/application.rs:180
@@ -207,184 +207,187 @@ msgstr ""
 
 #: crates/obscure-app/src/application.rs:184
 msgid "Obscure uses Xray-core, downloaded separately on first run."
-msgstr "O Obscure usa o Xray-core, baixado separadamente na primeira execução."
+msgstr "Obscure koristi Xray-core, koji se zasebno preuzima pri prvom pokretanju."
 
 #: crates/obscure-app/src/application.rs:190
 msgid "Project plan"
-msgstr "Plano do projeto"
+msgstr "Plan projekta"
 
 #: crates/obscure-app/src/window.rs:183
 msgid "The clipboard does not contain a server link."
-msgstr "A área de transferência não contém um link de servidor."
+msgstr "Međuspremnik ne sadrži poveznicu poslužitelja."
 
 #: crates/obscure-app/src/window.rs:214
 msgid "Environment variables copied. Paste them in a terminal."
-msgstr "Variáveis de ambiente copiadas. Cole em um terminal."
+msgstr "Varijable okruženja kopirane. Zalijepite ih u terminal."
 
 #: crates/obscure-app/src/window.rs:285
 msgid "Disconnect"
-msgstr "Desconectar"
+msgstr "Odspoji"
 
 #: crates/obscure-app/src/window.rs:341
 msgid "Remove server"
-msgstr "Remover servidor"
+msgstr "Ukloni poslužitelj"
 
 #: crates/obscure-app/src/window.rs:359
 msgid "Remove “%s”?"
-msgstr "Remover “%s”?"
+msgstr "Ukloniti „%s”?"
 
 #: crates/obscure-app/src/window.rs:360
 msgid "You can add it again later by pasting its link."
-msgstr "Você pode adicioná-lo de novo depois colando o link."
+msgstr "Kasnije ga možete ponovno dodati lijepljenjem poveznice."
 
 #: crates/obscure-app/src/window.rs:364
 msgid "Remove"
-msgstr "Remover"
+msgstr "Ukloni"
 
 #: crates/obscure-app/src/window.rs:384
 msgid "These servers were already added."
-msgstr "Esses servidores já estavam adicionados."
+msgstr "Ovi poslužitelji već su bili dodani."
 
 #: crates/obscure-app/src/window.rs:386
 msgid "%n server added."
 msgid_plural "%n servers added."
-msgstr[0] "%n servidor adicionado."
-msgstr[1] "%n servidores adicionados."
+msgstr[0] "Dodan %n poslužitelj."
+msgstr[1] "Dodana %n poslužitelja."
+msgstr[2] "Dodano %n poslužitelja."
 
 #: crates/obscure-app/src/connection.rs:129
 #: crates/obscure-app/src/connection.rs:410
 msgid "Disconnected"
-msgstr "Desconectado"
+msgstr "Odspojeno"
 
 #: crates/obscure-app/src/connection.rs:296
 msgid "Choose a server to connect"
-msgstr "Escolha um servidor para conectar"
+msgstr "Odaberite poslužitelj za povezivanje"
 
 #: crates/obscure-app/src/connection.rs:311
 msgid "Connecting…"
-msgstr "Conectando…"
+msgstr "Povezivanje…"
 
 #: crates/obscure-app/src/connection.rs:345
 msgid "Disconnecting…"
-msgstr "Desconectando…"
+msgstr "Odspajanje…"
 
 #: crates/obscure-app/src/connection.rs:368
 msgid "Preparing the connection engine…"
-msgstr "Preparando o motor de conexão…"
+msgstr "Priprema pogona veze…"
 
 #: crates/obscure-app/src/connection.rs:379
 msgid "Downloading the connection engine: %a of %b MB"
-msgstr "Baixando o motor de conexão: %a de %b MB"
+msgstr "Preuzimanje pogona veze: %a od %b MB"
 
 #: crates/obscure-app/src/connection.rs:382
 msgid "Downloading the connection engine: %a MB"
-msgstr "Baixando o motor de conexão: %a MB"
+msgstr "Preuzimanje pogona veze: %a MB"
 
 #: crates/obscure-app/src/connection.rs:387
 msgid "Verifying the download…"
-msgstr "Verificando o download…"
+msgstr "Provjera preuzimanja…"
 
 #: crates/obscure-app/src/connection.rs:389
 msgid "Installing the connection engine…"
-msgstr "Instalando o motor de conexão…"
+msgstr "Instalacija pogona veze…"
 
 #: crates/obscure-app/src/connection.rs:403
 msgid "Connected · system proxy active"
-msgstr "Conectado · proxy do sistema ativo"
+msgstr "Povezano · proxy sustava aktivan"
 
 #: crates/obscure-app/src/connection.rs:404
 msgid "Connected · local proxy only"
-msgstr "Conectado · só proxy local"
+msgstr "Povezano · samo lokalni proxy"
 
 #: crates/obscure-app/src/connection.rs:405
 msgid "Connected"
-msgstr "Conectado"
+msgstr "Povezano"
 
 #: crates/obscure-app/src/humanize.rs:9
 msgid "This kind of link is not supported yet: %s"
-msgstr "Este tipo de link ainda não é suportado: %s"
+msgstr "Ova vrsta poveznice još nije podržana: %s"
 
 #: crates/obscure-app/src/humanize.rs:11
 msgid "The link looks incomplete or invalid."
-msgstr "O link parece incompleto ou inválido."
+msgstr "Poveznica izgleda nepotpuno ili nevažeće."
 
 #: crates/obscure-app/src/humanize.rs:12
 msgid "The internet connection took too long."
-msgstr "A conexão com a internet demorou demais."
+msgstr "Internetska veza je predugo trajala."
 
 #: crates/obscure-app/src/humanize.rs:14
 msgid "Could not reach the internet to download the connection engine."
-msgstr "Não foi possível acessar a internet para baixar o motor de conexão."
+msgstr "Nije moguće pristupiti internetu za preuzimanje pogona veze."
 
 #: crates/obscure-app/src/humanize.rs:17
 msgid "Could not download the connection engine. Try again later."
-msgstr "Não foi possível baixar o motor de conexão. Tente novamente mais tarde."
+msgstr "Nije moguće preuzeti pogon veze. Pokušajte ponovno kasnije."
 
 #: crates/obscure-app/src/humanize.rs:20
 msgid "The downloaded file is corrupted. It will be downloaded again on the next attempt."
-msgstr "O arquivo baixado está corrompido. O download será refeito na próxima tentativa."
+msgstr "Preuzeta datoteka je oštećena. Bit će ponovno preuzeta pri sljedećem pokušaju."
 
 #: crates/obscure-app/src/humanize.rs:22
 msgid "Could not extract the connection engine."
-msgstr "Não foi possível extrair o motor de conexão."
+msgstr "Nije moguće raspakirati pogon veze."
 
 #: crates/obscure-app/src/humanize.rs:23
 msgid "The connection engine has not been downloaded yet."
-msgstr "O motor de conexão ainda não foi baixado."
+msgstr "Pogon veze još nije preuzet."
 
 #: crates/obscure-app/src/humanize.rs:26
 msgid "Check the server's public key."
-msgstr "Verifique a chave pública do servidor."
+msgstr "Provjerite javni ključ poslužitelja."
 
 #: crates/obscure-app/src/humanize.rs:28
 msgid "The server identifier is not valid."
-msgstr "O identificador do servidor não é válido."
+msgstr "Identifikator poslužitelja nije valjan."
 
 #: crates/obscure-app/src/humanize.rs:30
 msgid "Check the server details."
-msgstr "Verifique os dados do servidor."
+msgstr "Provjerite podatke poslužitelja."
 
 #: crates/obscure-app/src/humanize.rs:34
 msgid "This server has a configuration the engine did not accept."
-msgstr "Este servidor tem uma configuração que o motor não aceitou."
+msgstr "Ovaj poslužitelj ima konfiguraciju koju pogon nije prihvatio."
 
 #: crates/obscure-app/src/humanize.rs:41
 msgid "The local port is already in use by another program. Change it in Preferences."
-msgstr "A porta local já está em uso por outro programa. Mude a porta nas Preferências."
+msgstr "Lokalni port već koristi drugi program. Promijenite ga u Postavkama."
 
 #: crates/obscure-app/src/humanize.rs:44
 msgid "The connection engine stopped unexpectedly."
-msgstr "O motor de conexão encerrou inesperadamente."
+msgstr "Pogon veze se neočekivano zaustavio."
 
 #: crates/obscure-app/src/humanize.rs:47
 msgid "The connection engine did not respond in time."
-msgstr "O motor de conexão não respondeu a tempo."
+msgstr "Pogon veze nije odgovorio na vrijeme."
 
 #: crates/obscure-app/src/humanize.rs:49
 msgid "Could not change the system proxy. The local connection is still available."
-msgstr "Não foi possível alterar o proxy do sistema. A conexão local continua disponível."
+msgstr "Nije moguće promijeniti proxy sustava. Lokalna veza i dalje je dostupna."
 
 #: crates/obscure-app/src/humanize.rs:51
 msgid "Could not notify the system about the new proxy."
-msgstr "Não foi possível avisar o sistema sobre o novo proxy."
+msgstr "Nije moguće obavijestiti sustav o novom proxyju."
 
 #: crates/obscure-app/src/humanize.rs:52
 msgid "Could not read or write Obscure's files."
-msgstr "Não foi possível ler ou gravar os arquivos do Obscure."
+msgstr "Nije moguće čitati ili pisati datoteke programa Obscure."
 
 #: crates/obscure-app/src/import_dialog.rs:49
 #: crates/obscure-app/src/import_dialog.rs:159
 msgid "No valid link found."
-msgstr "Nenhum link válido encontrado."
+msgstr "Nije pronađena valjana poveznica."
 
 #: crates/obscure-app/src/import_dialog.rs:162
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
-msgstr[0] "%n servidor pronto para adicionar."
-msgstr[1] "%n servidores prontos para adicionar."
+msgstr[0] "%n poslužitelj spreman za dodavanje."
+msgstr[1] "%n poslužitelja spremna za dodavanje."
+msgstr[2] "%n poslužitelja spremno za dodavanje."
 
 #: crates/obscure-app/src/import_dialog.rs:172
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
-msgstr[0] "%n link não pôde ser lido."
-msgstr[1] "%n links não puderam ser lidos."
+msgstr[0] "%n poveznicu nije moguće pročitati."
+msgstr[1] "%n poveznice nije moguće pročitati."
+msgstr[2] "%n poveznica nije moguće pročitati."

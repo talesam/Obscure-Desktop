@@ -178,8 +178,10 @@ impl ObscureApplication {
             .developers(["Tales A. Mendonça"])
             // Translators: replace with your name and, optionally, e-mail.
             .translator_credits(gettext("translator-credits"))
-            .comments(gettext(
-                "Connect. That's it.\n\nObscure uses Xray-core, downloaded separately on first run.",
+            .comments(format!(
+                "{}\n\n{}",
+                gettext("Connect. That's it."),
+                gettext("Obscure uses Xray-core, downloaded separately on first run.")
             ))
             .build();
 

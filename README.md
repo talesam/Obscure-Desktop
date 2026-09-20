@@ -9,7 +9,7 @@ Cliente Linux moderno para o motor [Xray-core](https://github.com/XTLS/Xray-core
 - Proxy de sistema (GNOME e KDE) por padrão, sem root. Modo túnel opcional com permissão via polkit.
 - Baixa e atualiza o Xray-core sozinho, com verificação de hash.
 
-Estado: **Fase 0 (esqueleto) concluída**. Roadmap e decisões em [`docs/PLANO.md`](docs/PLANO.md).
+Estado: **funcional para o fluxo básico** (importar link → Conectar → proxy do sistema). Roadmap e decisões em [`docs/PLANO.md`](docs/PLANO.md).
 
 ## Compilar e executar
 
@@ -67,7 +67,7 @@ e precisa de `python-aiohttp` e `python-tomlkit`.)
 | `crates/obscure-app` | Aplicativo GTK4/libadwaita (`.blp` em `src/ui/`) |
 | `crates/obscure-helper` | Helper privilegiado para o modo túnel (fase 4) |
 | `data/` | `.desktop`, metainfo, gschema, ícones, recursos (CSS, gresource) |
-| `po/` | Traduções (`pt_BR` é o idioma base, `en` é o segundo) |
+| `po/` | Traduções: strings-fonte em inglês, 28 idiomas em `LINGUAS` |
 | `build-aux/` | Manifest Flatpak, `cargo-sources.json`, scripts de build |
 
 

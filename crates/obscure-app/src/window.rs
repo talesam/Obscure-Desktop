@@ -200,13 +200,7 @@ impl ObscureWindow {
                 self,
                 move |_dialog: ImportDialog, servers: ServersBox| {
                     let added = win.manager().add_servers(servers.0);
-                    let msg = if added == 0 {
-                        gettext("These servers were already added.")
-                    } else {
-                        ngettext("%n server added.", "%n servers added.", added as u32)
-                            .replace("%n", &added.to_string())
-                    };
-                    win.toast(&msg);
+                    win.toast(&added_message(added));
                 }
             ),
         );
@@ -381,5 +375,15 @@ impl ObscureWindow {
             ),
         );
         dialog.present(Some(self));
+    }
+}
+
+/// Toast text after an import. Kept out of macros so xgettext sees it.
+fn added_message(added: usize) -> String {
+    if added == 0 {
+        gettext("These servers were already added.")
+    } else {
+        ngettext("%n server added.", "%n servers added.", added as u32)
+            .replace("%n", &added.to_string())
     }
 }

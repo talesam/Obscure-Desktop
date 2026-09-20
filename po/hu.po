@@ -1,4 +1,4 @@
-# Português do Brasil translation for Obscure.
+# Magyar translation for Obscure.
 # Copyright (C) 2026 Tales A. Mendonça
 # This file is distributed under the same license as the obscure package.
 #
@@ -9,12 +9,12 @@ msgstr ""
 "POT-Creation-Date: 2026-09-20 01:16\n"
 "PO-Revision-Date: 2026-09-20 01:16\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
-"Language-Team: Português do Brasil\n"
-"Language: pt_BR\n"
+"Language-Team: Magyar\n"
+"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: data/io.github.talesam.Obscure.desktop.in.in:2
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
@@ -27,11 +27,11 @@ msgstr "Obscure"
 #: crates/obscure-app/src/ui/window.blp:38
 #: crates/obscure-app/src/application.rs:183
 msgid "Connect. That's it."
-msgstr "Conecte-se. Só isso."
+msgstr "Csatlakozzon. Ennyi."
 
 #: data/io.github.talesam.Obscure.desktop.in.in:5
 msgid "Proxy Client"
-msgstr "Cliente de proxy"
+msgstr "Proxykliens"
 
 #. Translators: search terms, keep the trailing semicolon
 #: data/io.github.talesam.Obscure.desktop.in.in:12
@@ -40,165 +40,165 @@ msgstr "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:8
 msgid "Connect to your proxy with one button"
-msgstr "Conecte-se ao seu proxy com um botão"
+msgstr "Csatlakozzon a proxyjához egy gombbal"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:10
 msgid "Obscure is a simple client for the Xray-core engine. Paste a link or a subscription, tap Connect and you are done."
-msgstr "O Obscure é um cliente simples para o motor Xray-core. Cole um link ou uma assinatura, toque em Conectar e pronto."
+msgstr "Az Obscure egy egyszerű kliens az Xray-core motorhoz. Illesszen be egy hivatkozást vagy előfizetést, koppintson a Csatlakozás gombra, és kész."
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:14
 msgid "Features:"
-msgstr "Recursos:"
+msgstr "Funkciók:"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:16
 msgid "One Connect button, no technical terms on the main screen"
-msgstr "Um botão Conectar, sem termos técnicos na tela principal"
+msgstr "Egy Csatlakozás gomb, szakkifejezések nélkül a főképernyőn"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:17
 msgid "Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
-msgstr "Importa links vless, vmess, trojan e shadowsocks, além de assinaturas"
+msgstr "Importálja a vless, vmess, trojan és shadowsocks hivatkozásokat, valamint az előfizetéseket"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:18
 msgid "Applies the system proxy on GNOME and KDE, no root required"
-msgstr "Aplica o proxy do sistema no GNOME e no KDE, sem precisar de root"
+msgstr "Beállítja a rendszerproxyt GNOME és KDE alatt, root jog nélkül"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:19
 msgid "Downloads and updates Xray-core automatically, with integrity checks"
-msgstr "Baixa e atualiza o Xray-core automaticamente, com verificação de integridade"
+msgstr "Automatikusan letölti és frissíti az Xray-core-t, integritás-ellenőrzéssel"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:49
 msgid "Initial project skeleton."
-msgstr "Esqueleto inicial do projeto."
+msgstr "A projekt kezdeti váza."
 
 #: data/io.github.talesam.Obscure.gschema.xml.in:6
 msgid "Window width"
-msgstr "Largura da janela"
+msgstr "Ablak szélessége"
 
 #: data/io.github.talesam.Obscure.gschema.xml.in:10
 msgid "Window height"
-msgstr "Altura da janela"
+msgstr "Ablak magassága"
 
 #: data/io.github.talesam.Obscure.gschema.xml.in:14
 msgid "Whether the window is maximized"
-msgstr "Se a janela está maximizada"
+msgstr "Az ablak maximalizált-e"
 
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
 msgid "Add Server"
-msgstr "Adicionar servidor"
+msgstr "Kiszolgáló hozzáadása"
 
 #: crates/obscure-app/src/ui/window.blp:24
 msgid "Main Menu"
-msgstr "Menu principal"
+msgstr "Főmenü"
 
 #: crates/obscure-app/src/ui/window.blp:39
 msgid "Paste a link or a subscription to get started."
-msgstr "Cole um link ou uma assinatura para começar."
+msgstr "A kezdéshez illesszen be egy hivatkozást vagy előfizetést."
 
 #: crates/obscure-app/src/ui/window.blp:127
 #: crates/obscure-app/src/window.rs:301
 msgid "Connect"
-msgstr "Conectar"
+msgstr "Csatlakozás"
 
 #: crates/obscure-app/src/ui/window.blp:139
 msgid "How to apply"
-msgstr "Como aplicar"
+msgstr "Alkalmazás módja"
 
 #: crates/obscure-app/src/ui/window.blp:147
 msgid "System proxy"
-msgstr "Proxy do sistema"
+msgstr "Rendszerproxy"
 
 #: crates/obscure-app/src/ui/window.blp:148
 msgid "Browsers and most apps use the connection. No administrator password needed."
-msgstr "Navegadores e a maioria dos apps passam a usar a conexão. Não precisa de senha de administrador."
+msgstr "A böngészők és a legtöbb alkalmazás a kapcsolatot használja. Nincs szükség rendszergazdai jelszóra."
 
 #: crates/obscure-app/src/ui/window.blp:153
 msgid "Local proxy only"
-msgstr "Só proxy local"
+msgstr "Csak helyi proxy"
 
 #: crates/obscure-app/src/ui/window.blp:154
 msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
-msgstr "Nada muda no sistema. Aponte os programas que quiser para 127.0.0.1:2080."
+msgstr "A rendszerben semmi nem változik. Irányítsa a kívánt programokat a 127.0.0.1:2080 címre."
 
 #: crates/obscure-app/src/ui/window.blp:159
 msgid "Tunnel"
-msgstr "Túnel"
+msgstr "Tunnel"
 
 #: crates/obscure-app/src/ui/window.blp:161
 msgid "All traffic from this computer. Coming in a future version."
-msgstr "Todo o tráfego deste computador. Disponível em uma próxima versão."
+msgstr "A számítógép teljes forgalma. Egy későbbi verzióban érkezik."
 
 #: crates/obscure-app/src/ui/window.blp:167
 msgid "Servers"
-msgstr "Servidores"
+msgstr "Kiszolgálók"
 
 #: crates/obscure-app/src/ui/window.blp:190
 msgid "_Copy Environment Variables"
-msgstr "_Copiar variáveis de ambiente"
+msgstr "Környezeti változók _másolása"
 
 #: crates/obscure-app/src/ui/window.blp:197
 msgid "_Preferences"
-msgstr "_Preferências"
+msgstr "_Beállítások"
 
 #: crates/obscure-app/src/ui/window.blp:202
 msgid "_Keyboard Shortcuts"
-msgstr "_Atalhos de teclado"
+msgstr "_Gyorsbillentyűk"
 
 #: crates/obscure-app/src/ui/window.blp:207
 msgid "_About Obscure"
-msgstr "_Sobre o Obscure"
+msgstr "Az Obscure _névjegye"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
 #: crates/obscure-app/src/ui/preferences-dialog.blp:10
 msgid "General"
-msgstr "Geral"
+msgstr "Általános"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:9
 #: crates/obscure-app/src/ui/preferences-dialog.blp:5
 msgid "Preferences"
-msgstr "Preferências"
+msgstr "Beállítások"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:14
 msgid "Keyboard Shortcuts"
-msgstr "Atalhos de teclado"
+msgstr "Gyorsbillentyűk"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
 msgid "Close Window"
-msgstr "Fechar janela"
+msgstr "Ablak bezárása"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
 msgid "Quit"
-msgstr "Sair"
+msgstr "Kilépés"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:14
 msgid "Connection"
-msgstr "Conexão"
+msgstr "Kapcsolat"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:15
 msgid "Connection options will be available in the next stage of the project."
-msgstr "As opções de conexão ficam disponíveis na próxima etapa do projeto."
+msgstr "A kapcsolati beállítások a projekt következő szakaszában lesznek elérhetők."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
 #: crates/obscure-app/src/window.rs:293 crates/obscure-app/src/window.rs:363
 msgid "Cancel"
-msgstr "Cancelar"
+msgstr "Mégse"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:23
 msgid "Add"
-msgstr "Adicionar"
+msgstr "Hozzáadás"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:42
 msgid "Paste the server link below, or the links from your subscription, one per line."
-msgstr "Cole abaixo o link do servidor ou os links da sua assinatura, um por linha."
+msgstr "Illessze be alább a kiszolgáló hivatkozását vagy az előfizetés hivatkozásait, soronként egyet."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:75
 msgid "Paste from Clipboard"
-msgstr "Colar da área de transferência"
+msgstr "Beillesztés a vágólapról"
 
 #: crates/obscure-app/src/application.rs:56
 msgid "The system proxy settings from a previous session were restored."
-msgstr "As configurações de proxy do sistema da sessão anterior foram restauradas."
+msgstr "Az előző munkamenet rendszerproxy-beállításai visszaállítva."
 
 #. Translators: replace with your name and, optionally, e-mail.
 #: crates/obscure-app/src/application.rs:180
@@ -207,184 +207,184 @@ msgstr ""
 
 #: crates/obscure-app/src/application.rs:184
 msgid "Obscure uses Xray-core, downloaded separately on first run."
-msgstr "O Obscure usa o Xray-core, baixado separadamente na primeira execução."
+msgstr "Az Obscure az Xray-core-t használja, amely az első indításkor külön letöltődik."
 
 #: crates/obscure-app/src/application.rs:190
 msgid "Project plan"
-msgstr "Plano do projeto"
+msgstr "Projektterv"
 
 #: crates/obscure-app/src/window.rs:183
 msgid "The clipboard does not contain a server link."
-msgstr "A área de transferência não contém um link de servidor."
+msgstr "A vágólapon nincs kiszolgáló-hivatkozás."
 
 #: crates/obscure-app/src/window.rs:214
 msgid "Environment variables copied. Paste them in a terminal."
-msgstr "Variáveis de ambiente copiadas. Cole em um terminal."
+msgstr "Környezeti változók másolva. Illessze be egy terminálba."
 
 #: crates/obscure-app/src/window.rs:285
 msgid "Disconnect"
-msgstr "Desconectar"
+msgstr "Bontás"
 
 #: crates/obscure-app/src/window.rs:341
 msgid "Remove server"
-msgstr "Remover servidor"
+msgstr "Kiszolgáló eltávolítása"
 
 #: crates/obscure-app/src/window.rs:359
 msgid "Remove “%s”?"
-msgstr "Remover “%s”?"
+msgstr "Eltávolítja: „%s”?"
 
 #: crates/obscure-app/src/window.rs:360
 msgid "You can add it again later by pasting its link."
-msgstr "Você pode adicioná-lo de novo depois colando o link."
+msgstr "Később a hivatkozás beillesztésével újra hozzáadhatja."
 
 #: crates/obscure-app/src/window.rs:364
 msgid "Remove"
-msgstr "Remover"
+msgstr "Eltávolítás"
 
 #: crates/obscure-app/src/window.rs:384
 msgid "These servers were already added."
-msgstr "Esses servidores já estavam adicionados."
+msgstr "Ezek a kiszolgálók már hozzá voltak adva."
 
 #: crates/obscure-app/src/window.rs:386
 msgid "%n server added."
 msgid_plural "%n servers added."
-msgstr[0] "%n servidor adicionado."
-msgstr[1] "%n servidores adicionados."
+msgstr[0] "%n kiszolgáló hozzáadva."
+msgstr[1] "%n kiszolgáló hozzáadva."
 
 #: crates/obscure-app/src/connection.rs:129
 #: crates/obscure-app/src/connection.rs:410
 msgid "Disconnected"
-msgstr "Desconectado"
+msgstr "Nincs kapcsolat"
 
 #: crates/obscure-app/src/connection.rs:296
 msgid "Choose a server to connect"
-msgstr "Escolha um servidor para conectar"
+msgstr "Válasszon kiszolgálót a csatlakozáshoz"
 
 #: crates/obscure-app/src/connection.rs:311
 msgid "Connecting…"
-msgstr "Conectando…"
+msgstr "Csatlakozás…"
 
 #: crates/obscure-app/src/connection.rs:345
 msgid "Disconnecting…"
-msgstr "Desconectando…"
+msgstr "Bontás…"
 
 #: crates/obscure-app/src/connection.rs:368
 msgid "Preparing the connection engine…"
-msgstr "Preparando o motor de conexão…"
+msgstr "A kapcsolati motor előkészítése…"
 
 #: crates/obscure-app/src/connection.rs:379
 msgid "Downloading the connection engine: %a of %b MB"
-msgstr "Baixando o motor de conexão: %a de %b MB"
+msgstr "A kapcsolati motor letöltése: %a / %b MB"
 
 #: crates/obscure-app/src/connection.rs:382
 msgid "Downloading the connection engine: %a MB"
-msgstr "Baixando o motor de conexão: %a MB"
+msgstr "A kapcsolati motor letöltése: %a MB"
 
 #: crates/obscure-app/src/connection.rs:387
 msgid "Verifying the download…"
-msgstr "Verificando o download…"
+msgstr "A letöltés ellenőrzése…"
 
 #: crates/obscure-app/src/connection.rs:389
 msgid "Installing the connection engine…"
-msgstr "Instalando o motor de conexão…"
+msgstr "A kapcsolati motor telepítése…"
 
 #: crates/obscure-app/src/connection.rs:403
 msgid "Connected · system proxy active"
-msgstr "Conectado · proxy do sistema ativo"
+msgstr "Csatlakozva · rendszerproxy aktív"
 
 #: crates/obscure-app/src/connection.rs:404
 msgid "Connected · local proxy only"
-msgstr "Conectado · só proxy local"
+msgstr "Csatlakozva · csak helyi proxy"
 
 #: crates/obscure-app/src/connection.rs:405
 msgid "Connected"
-msgstr "Conectado"
+msgstr "Csatlakozva"
 
 #: crates/obscure-app/src/humanize.rs:9
 msgid "This kind of link is not supported yet: %s"
-msgstr "Este tipo de link ainda não é suportado: %s"
+msgstr "Ez a hivatkozástípus még nem támogatott: %s"
 
 #: crates/obscure-app/src/humanize.rs:11
 msgid "The link looks incomplete or invalid."
-msgstr "O link parece incompleto ou inválido."
+msgstr "A hivatkozás hiányosnak vagy érvénytelennek tűnik."
 
 #: crates/obscure-app/src/humanize.rs:12
 msgid "The internet connection took too long."
-msgstr "A conexão com a internet demorou demais."
+msgstr "Az internetkapcsolat túl sokáig tartott."
 
 #: crates/obscure-app/src/humanize.rs:14
 msgid "Could not reach the internet to download the connection engine."
-msgstr "Não foi possível acessar a internet para baixar o motor de conexão."
+msgstr "Nem sikerült elérni az internetet a kapcsolati motor letöltéséhez."
 
 #: crates/obscure-app/src/humanize.rs:17
 msgid "Could not download the connection engine. Try again later."
-msgstr "Não foi possível baixar o motor de conexão. Tente novamente mais tarde."
+msgstr "Nem sikerült letölteni a kapcsolati motort. Próbálja újra később."
 
 #: crates/obscure-app/src/humanize.rs:20
 msgid "The downloaded file is corrupted. It will be downloaded again on the next attempt."
-msgstr "O arquivo baixado está corrompido. O download será refeito na próxima tentativa."
+msgstr "A letöltött fájl sérült. A következő próbálkozásnál újra letöltődik."
 
 #: crates/obscure-app/src/humanize.rs:22
 msgid "Could not extract the connection engine."
-msgstr "Não foi possível extrair o motor de conexão."
+msgstr "Nem sikerült kibontani a kapcsolati motort."
 
 #: crates/obscure-app/src/humanize.rs:23
 msgid "The connection engine has not been downloaded yet."
-msgstr "O motor de conexão ainda não foi baixado."
+msgstr "A kapcsolati motor még nincs letöltve."
 
 #: crates/obscure-app/src/humanize.rs:26
 msgid "Check the server's public key."
-msgstr "Verifique a chave pública do servidor."
+msgstr "Ellenőrizze a kiszolgáló nyilvános kulcsát."
 
 #: crates/obscure-app/src/humanize.rs:28
 msgid "The server identifier is not valid."
-msgstr "O identificador do servidor não é válido."
+msgstr "A kiszolgáló azonosítója érvénytelen."
 
 #: crates/obscure-app/src/humanize.rs:30
 msgid "Check the server details."
-msgstr "Verifique os dados do servidor."
+msgstr "Ellenőrizze a kiszolgáló adatait."
 
 #: crates/obscure-app/src/humanize.rs:34
 msgid "This server has a configuration the engine did not accept."
-msgstr "Este servidor tem uma configuração que o motor não aceitou."
+msgstr "Ennek a kiszolgálónak olyan beállítása van, amit a motor nem fogadott el."
 
 #: crates/obscure-app/src/humanize.rs:41
 msgid "The local port is already in use by another program. Change it in Preferences."
-msgstr "A porta local já está em uso por outro programa. Mude a porta nas Preferências."
+msgstr "A helyi portot már egy másik program használja. Módosítsa a Beállításokban."
 
 #: crates/obscure-app/src/humanize.rs:44
 msgid "The connection engine stopped unexpectedly."
-msgstr "O motor de conexão encerrou inesperadamente."
+msgstr "A kapcsolati motor váratlanul leállt."
 
 #: crates/obscure-app/src/humanize.rs:47
 msgid "The connection engine did not respond in time."
-msgstr "O motor de conexão não respondeu a tempo."
+msgstr "A kapcsolati motor nem válaszolt időben."
 
 #: crates/obscure-app/src/humanize.rs:49
 msgid "Could not change the system proxy. The local connection is still available."
-msgstr "Não foi possível alterar o proxy do sistema. A conexão local continua disponível."
+msgstr "Nem sikerült módosítani a rendszerproxyt. A helyi kapcsolat továbbra is elérhető."
 
 #: crates/obscure-app/src/humanize.rs:51
 msgid "Could not notify the system about the new proxy."
-msgstr "Não foi possível avisar o sistema sobre o novo proxy."
+msgstr "Nem sikerült értesíteni a rendszert az új proxyról."
 
 #: crates/obscure-app/src/humanize.rs:52
 msgid "Could not read or write Obscure's files."
-msgstr "Não foi possível ler ou gravar os arquivos do Obscure."
+msgstr "Nem sikerült olvasni vagy írni az Obscure fájljait."
 
 #: crates/obscure-app/src/import_dialog.rs:49
 #: crates/obscure-app/src/import_dialog.rs:159
 msgid "No valid link found."
-msgstr "Nenhum link válido encontrado."
+msgstr "Nem található érvényes hivatkozás."
 
 #: crates/obscure-app/src/import_dialog.rs:162
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
-msgstr[0] "%n servidor pronto para adicionar."
-msgstr[1] "%n servidores prontos para adicionar."
+msgstr[0] "%n kiszolgáló hozzáadásra kész."
+msgstr[1] "%n kiszolgáló hozzáadásra kész."
 
 #: crates/obscure-app/src/import_dialog.rs:172
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
-msgstr[0] "%n link não pôde ser lido."
-msgstr[1] "%n links não puderam ser lidos."
+msgstr[0] "%n hivatkozás nem olvasható."
+msgstr[1] "%n hivatkozás nem olvasható."

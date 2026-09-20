@@ -24,11 +24,23 @@ fn main() -> glib::ExitCode {
 
     tracing::info!("Obscure {VERSION} ({PROFILE}), app id {APP_ID}");
 
-    let resources = load_resources();
+    let (resources, uninstalled) = load_resources();
 
     // Safe: called on the main thread before any other thread is spawned.
     unsafe { setlocale(LocaleCategory::LcAll, "") };
-    bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR).expect("unable to bind the text domain");
+    // When running from the build tree, use the .mo files compiled by meson.
+    let localedir = if uninstalled {
+        std::path::Path::new(config::BUILD_DATADIR)
+            .parent()
+            .map(|b| b.join("po"))
+            .filter(|p| p.is_dir())
+            .map(|p| p.to_string_lossy().into_owned())
+            .unwrap_or_else(|| LOCALEDIR.to_owned())
+    } else {
+        LOCALEDIR.to_owned()
+    };
+    bindtextdomain(GETTEXT_PACKAGE, localedir).expect("unable to bind the text domain");
+    gettextrs::bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8").expect("unable to set codeset");
     textdomain(GETTEXT_PACKAGE).expect("unable to switch to the text domain");
 
     glib::set_application_name("Obscure");
@@ -45,10 +57,13 @@ fn main() -> glib::ExitCode {
 /// profile we fall back to the meson build tree so the binary can be run
 /// directly from `build/` without `meson install`; in that case the schema
 /// directory is pointed to the build tree as well.
-fn load_resources() -> gio::Resource {
+fn load_resources() -> (gio::Resource, bool) {
     let installed = std::path::Path::new(PKGDATADIR).join("obscure.gresource");
     if installed.exists() {
-        return gio::Resource::load(&installed).expect("could not load installed resources");
+        return (
+            gio::Resource::load(&installed).expect("could not load installed resources"),
+            false,
+        );
     }
 
     let build_datadir = config::BUILD_DATADIR;
@@ -63,7 +78,10 @@ fn load_resources() -> gio::Resource {
                 // Safe: called from the main thread before any other thread exists.
                 unsafe { std::env::set_var("GSETTINGS_SCHEMA_DIR", build_datadir) };
             }
-            return gio::Resource::load(&bundle).expect("could not load build-tree resources");
+            return (
+                gio::Resource::load(&bundle).expect("could not load build-tree resources"),
+                true,
+            );
         }
     }
 

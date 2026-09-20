@@ -1,4 +1,4 @@
-# Português do Brasil translation for Obscure.
+# Português translation for Obscure.
 # Copyright (C) 2026 Tales A. Mendonça
 # This file is distributed under the same license as the obscure package.
 #
@@ -9,12 +9,12 @@ msgstr ""
 "POT-Creation-Date: 2026-09-20 01:16\n"
 "PO-Revision-Date: 2026-09-20 01:16\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
-"Language-Team: Português do Brasil\n"
-"Language: pt_BR\n"
+"Language-Team: Português\n"
+"Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: data/io.github.talesam.Obscure.desktop.in.in:2
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
@@ -27,7 +27,7 @@ msgstr "Obscure"
 #: crates/obscure-app/src/ui/window.blp:38
 #: crates/obscure-app/src/application.rs:183
 msgid "Connect. That's it."
-msgstr "Conecte-se. Só isso."
+msgstr "Ligue-se. Só isso."
 
 #: data/io.github.talesam.Obscure.desktop.in.in:5
 msgid "Proxy Client"
@@ -40,31 +40,31 @@ msgstr "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:8
 msgid "Connect to your proxy with one button"
-msgstr "Conecte-se ao seu proxy com um botão"
+msgstr "Ligue-se ao seu proxy com um botão"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:10
 msgid "Obscure is a simple client for the Xray-core engine. Paste a link or a subscription, tap Connect and you are done."
-msgstr "O Obscure é um cliente simples para o motor Xray-core. Cole um link ou uma assinatura, toque em Conectar e pronto."
+msgstr "O Obscure é um cliente simples para o motor Xray-core. Cole uma ligação ou uma subscrição, toque em Ligar e está feito."
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:14
 msgid "Features:"
-msgstr "Recursos:"
+msgstr "Funcionalidades:"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:16
 msgid "One Connect button, no technical terms on the main screen"
-msgstr "Um botão Conectar, sem termos técnicos na tela principal"
+msgstr "Um botão Ligar, sem termos técnicos no ecrã principal"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:17
 msgid "Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
-msgstr "Importa links vless, vmess, trojan e shadowsocks, além de assinaturas"
+msgstr "Importa ligações vless, vmess, trojan e shadowsocks, bem como subscrições"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:18
 msgid "Applies the system proxy on GNOME and KDE, no root required"
-msgstr "Aplica o proxy do sistema no GNOME e no KDE, sem precisar de root"
+msgstr "Aplica o proxy do sistema no GNOME e no KDE, sem necessidade de root"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:19
 msgid "Downloads and updates Xray-core automatically, with integrity checks"
-msgstr "Baixa e atualiza o Xray-core automaticamente, com verificação de integridade"
+msgstr "Descarrega e atualiza o Xray-core automaticamente, com verificação de integridade"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:49
 msgid "Initial project skeleton."
@@ -94,12 +94,12 @@ msgstr "Menu principal"
 
 #: crates/obscure-app/src/ui/window.blp:39
 msgid "Paste a link or a subscription to get started."
-msgstr "Cole um link ou uma assinatura para começar."
+msgstr "Cole uma ligação ou uma subscrição para começar."
 
 #: crates/obscure-app/src/ui/window.blp:127
 #: crates/obscure-app/src/window.rs:301
 msgid "Connect"
-msgstr "Conectar"
+msgstr "Ligar"
 
 #: crates/obscure-app/src/ui/window.blp:139
 msgid "How to apply"
@@ -111,7 +111,7 @@ msgstr "Proxy do sistema"
 
 #: crates/obscure-app/src/ui/window.blp:148
 msgid "Browsers and most apps use the connection. No administrator password needed."
-msgstr "Navegadores e a maioria dos apps passam a usar a conexão. Não precisa de senha de administrador."
+msgstr "Os navegadores e a maioria das aplicações passam a usar a ligação. Não é preciso a palavra-passe de administrador."
 
 #: crates/obscure-app/src/ui/window.blp:153
 msgid "Local proxy only"
@@ -127,7 +127,7 @@ msgstr "Túnel"
 
 #: crates/obscure-app/src/ui/window.blp:161
 msgid "All traffic from this computer. Coming in a future version."
-msgstr "Todo o tráfego deste computador. Disponível em uma próxima versão."
+msgstr "Todo o tráfego deste computador. Disponível numa versão futura."
 
 #: crates/obscure-app/src/ui/window.blp:167
 msgid "Servers"
@@ -147,7 +147,7 @@ msgstr "_Atalhos de teclado"
 
 #: crates/obscure-app/src/ui/window.blp:207
 msgid "_About Obscure"
-msgstr "_Sobre o Obscure"
+msgstr "_Acerca do Obscure"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
 #: crates/obscure-app/src/ui/preferences-dialog.blp:10
@@ -173,11 +173,11 @@ msgstr "Sair"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:14
 msgid "Connection"
-msgstr "Conexão"
+msgstr "Ligação"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:15
 msgid "Connection options will be available in the next stage of the project."
-msgstr "As opções de conexão ficam disponíveis na próxima etapa do projeto."
+msgstr "As opções de ligação ficarão disponíveis na próxima fase do projeto."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
 #: crates/obscure-app/src/window.rs:293 crates/obscure-app/src/window.rs:363
@@ -190,7 +190,7 @@ msgstr "Adicionar"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:42
 msgid "Paste the server link below, or the links from your subscription, one per line."
-msgstr "Cole abaixo o link do servidor ou os links da sua assinatura, um por linha."
+msgstr "Cole abaixo a ligação do servidor ou as ligações da sua subscrição, uma por linha."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:75
 msgid "Paste from Clipboard"
@@ -198,7 +198,7 @@ msgstr "Colar da área de transferência"
 
 #: crates/obscure-app/src/application.rs:56
 msgid "The system proxy settings from a previous session were restored."
-msgstr "As configurações de proxy do sistema da sessão anterior foram restauradas."
+msgstr "As definições de proxy do sistema da sessão anterior foram restauradas."
 
 #. Translators: replace with your name and, optionally, e-mail.
 #: crates/obscure-app/src/application.rs:180
@@ -207,7 +207,7 @@ msgstr ""
 
 #: crates/obscure-app/src/application.rs:184
 msgid "Obscure uses Xray-core, downloaded separately on first run."
-msgstr "O Obscure usa o Xray-core, baixado separadamente na primeira execução."
+msgstr "O Obscure usa o Xray-core, descarregado à parte na primeira execução."
 
 #: crates/obscure-app/src/application.rs:190
 msgid "Project plan"
@@ -215,15 +215,15 @@ msgstr "Plano do projeto"
 
 #: crates/obscure-app/src/window.rs:183
 msgid "The clipboard does not contain a server link."
-msgstr "A área de transferência não contém um link de servidor."
+msgstr "A área de transferência não contém uma ligação de servidor."
 
 #: crates/obscure-app/src/window.rs:214
 msgid "Environment variables copied. Paste them in a terminal."
-msgstr "Variáveis de ambiente copiadas. Cole em um terminal."
+msgstr "Variáveis de ambiente copiadas. Cole-as num terminal."
 
 #: crates/obscure-app/src/window.rs:285
 msgid "Disconnect"
-msgstr "Desconectar"
+msgstr "Desligar"
 
 #: crates/obscure-app/src/window.rs:341
 msgid "Remove server"
@@ -235,7 +235,7 @@ msgstr "Remover “%s”?"
 
 #: crates/obscure-app/src/window.rs:360
 msgid "You can add it again later by pasting its link."
-msgstr "Você pode adicioná-lo de novo depois colando o link."
+msgstr "Pode adicioná-lo novamente mais tarde colando a sua ligação."
 
 #: crates/obscure-app/src/window.rs:364
 msgid "Remove"
@@ -243,7 +243,7 @@ msgstr "Remover"
 
 #: crates/obscure-app/src/window.rs:384
 msgid "These servers were already added."
-msgstr "Esses servidores já estavam adicionados."
+msgstr "Estes servidores já tinham sido adicionados."
 
 #: crates/obscure-app/src/window.rs:386
 msgid "%n server added."
@@ -254,83 +254,83 @@ msgstr[1] "%n servidores adicionados."
 #: crates/obscure-app/src/connection.rs:129
 #: crates/obscure-app/src/connection.rs:410
 msgid "Disconnected"
-msgstr "Desconectado"
+msgstr "Desligado"
 
 #: crates/obscure-app/src/connection.rs:296
 msgid "Choose a server to connect"
-msgstr "Escolha um servidor para conectar"
+msgstr "Escolha um servidor para ligar"
 
 #: crates/obscure-app/src/connection.rs:311
 msgid "Connecting…"
-msgstr "Conectando…"
+msgstr "A ligar…"
 
 #: crates/obscure-app/src/connection.rs:345
 msgid "Disconnecting…"
-msgstr "Desconectando…"
+msgstr "A desligar…"
 
 #: crates/obscure-app/src/connection.rs:368
 msgid "Preparing the connection engine…"
-msgstr "Preparando o motor de conexão…"
+msgstr "A preparar o motor de ligação…"
 
 #: crates/obscure-app/src/connection.rs:379
 msgid "Downloading the connection engine: %a of %b MB"
-msgstr "Baixando o motor de conexão: %a de %b MB"
+msgstr "A descarregar o motor de ligação: %a de %b MB"
 
 #: crates/obscure-app/src/connection.rs:382
 msgid "Downloading the connection engine: %a MB"
-msgstr "Baixando o motor de conexão: %a MB"
+msgstr "A descarregar o motor de ligação: %a MB"
 
 #: crates/obscure-app/src/connection.rs:387
 msgid "Verifying the download…"
-msgstr "Verificando o download…"
+msgstr "A verificar a transferência…"
 
 #: crates/obscure-app/src/connection.rs:389
 msgid "Installing the connection engine…"
-msgstr "Instalando o motor de conexão…"
+msgstr "A instalar o motor de ligação…"
 
 #: crates/obscure-app/src/connection.rs:403
 msgid "Connected · system proxy active"
-msgstr "Conectado · proxy do sistema ativo"
+msgstr "Ligado · proxy do sistema ativo"
 
 #: crates/obscure-app/src/connection.rs:404
 msgid "Connected · local proxy only"
-msgstr "Conectado · só proxy local"
+msgstr "Ligado · só proxy local"
 
 #: crates/obscure-app/src/connection.rs:405
 msgid "Connected"
-msgstr "Conectado"
+msgstr "Ligado"
 
 #: crates/obscure-app/src/humanize.rs:9
 msgid "This kind of link is not supported yet: %s"
-msgstr "Este tipo de link ainda não é suportado: %s"
+msgstr "Este tipo de ligação ainda não é suportado: %s"
 
 #: crates/obscure-app/src/humanize.rs:11
 msgid "The link looks incomplete or invalid."
-msgstr "O link parece incompleto ou inválido."
+msgstr "A ligação parece incompleta ou inválida."
 
 #: crates/obscure-app/src/humanize.rs:12
 msgid "The internet connection took too long."
-msgstr "A conexão com a internet demorou demais."
+msgstr "A ligação à Internet demorou demasiado."
 
 #: crates/obscure-app/src/humanize.rs:14
 msgid "Could not reach the internet to download the connection engine."
-msgstr "Não foi possível acessar a internet para baixar o motor de conexão."
+msgstr "Não foi possível aceder à Internet para descarregar o motor de ligação."
 
 #: crates/obscure-app/src/humanize.rs:17
 msgid "Could not download the connection engine. Try again later."
-msgstr "Não foi possível baixar o motor de conexão. Tente novamente mais tarde."
+msgstr "Não foi possível descarregar o motor de ligação. Tente novamente mais tarde."
 
 #: crates/obscure-app/src/humanize.rs:20
 msgid "The downloaded file is corrupted. It will be downloaded again on the next attempt."
-msgstr "O arquivo baixado está corrompido. O download será refeito na próxima tentativa."
+msgstr "O ficheiro descarregado está corrompido. Será descarregado de novo na próxima tentativa."
 
 #: crates/obscure-app/src/humanize.rs:22
 msgid "Could not extract the connection engine."
-msgstr "Não foi possível extrair o motor de conexão."
+msgstr "Não foi possível extrair o motor de ligação."
 
 #: crates/obscure-app/src/humanize.rs:23
 msgid "The connection engine has not been downloaded yet."
-msgstr "O motor de conexão ainda não foi baixado."
+msgstr "O motor de ligação ainda não foi descarregado."
 
 #: crates/obscure-app/src/humanize.rs:26
 msgid "Check the server's public key."
@@ -350,41 +350,41 @@ msgstr "Este servidor tem uma configuração que o motor não aceitou."
 
 #: crates/obscure-app/src/humanize.rs:41
 msgid "The local port is already in use by another program. Change it in Preferences."
-msgstr "A porta local já está em uso por outro programa. Mude a porta nas Preferências."
+msgstr "A porta local já está a ser usada por outro programa. Altere-a nas Preferências."
 
 #: crates/obscure-app/src/humanize.rs:44
 msgid "The connection engine stopped unexpectedly."
-msgstr "O motor de conexão encerrou inesperadamente."
+msgstr "O motor de ligação terminou inesperadamente."
 
 #: crates/obscure-app/src/humanize.rs:47
 msgid "The connection engine did not respond in time."
-msgstr "O motor de conexão não respondeu a tempo."
+msgstr "O motor de ligação não respondeu a tempo."
 
 #: crates/obscure-app/src/humanize.rs:49
 msgid "Could not change the system proxy. The local connection is still available."
-msgstr "Não foi possível alterar o proxy do sistema. A conexão local continua disponível."
+msgstr "Não foi possível alterar o proxy do sistema. A ligação local continua disponível."
 
 #: crates/obscure-app/src/humanize.rs:51
 msgid "Could not notify the system about the new proxy."
-msgstr "Não foi possível avisar o sistema sobre o novo proxy."
+msgstr "Não foi possível notificar o sistema sobre o novo proxy."
 
 #: crates/obscure-app/src/humanize.rs:52
 msgid "Could not read or write Obscure's files."
-msgstr "Não foi possível ler ou gravar os arquivos do Obscure."
+msgstr "Não foi possível ler ou escrever os ficheiros do Obscure."
 
 #: crates/obscure-app/src/import_dialog.rs:49
 #: crates/obscure-app/src/import_dialog.rs:159
 msgid "No valid link found."
-msgstr "Nenhum link válido encontrado."
+msgstr "Nenhuma ligação válida encontrada."
 
 #: crates/obscure-app/src/import_dialog.rs:162
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
-msgstr[0] "%n servidor pronto para adicionar."
-msgstr[1] "%n servidores prontos para adicionar."
+msgstr[0] "%n servidor pronto a adicionar."
+msgstr[1] "%n servidores prontos a adicionar."
 
 #: crates/obscure-app/src/import_dialog.rs:172
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
-msgstr[0] "%n link não pôde ser lido."
-msgstr[1] "%n links não puderam ser lidos."
+msgstr[0] "%n ligação não pôde ser lida."
+msgstr[1] "%n ligações não puderam ser lidas."
