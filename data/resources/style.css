@@ -1,0 +1,10 @@
+/* Obscure — application stylesheet.
+ * Keep it minimal: libadwaita already handles light/dark and accent colors. */
+
+statuspage.obscure-hero .icon {
+  -gtk-icon-size: 128px;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Dark-only tweaks go here. */
+}

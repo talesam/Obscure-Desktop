@@ -1,0 +1,70 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObscureWindow: Adw.ApplicationWindow {
+  title: _("Obscure");
+  default-width: 480;
+  default-height: 640;
+  width-request: 360;
+  height-request: 294;
+
+  Adw.Breakpoint {
+    condition ("max-width: 400sp")
+
+    setters {
+      status_page.title: _("Obscure");
+    }
+  }
+
+  content: Adw.ToolbarView toolbar_view {
+    [top]
+    Adw.HeaderBar {
+      [end]
+      MenuButton {
+        icon-name: "open-menu-symbolic";
+        tooltip-text: _("Menu principal");
+        primary: true;
+        menu-model: primary_menu;
+      }
+    }
+
+    content: Adw.StatusPage status_page {
+      title: _("Conecte-se. Só isso.");
+      description: _("Adicione um servidor e toque em Conectar.");
+
+      styles [
+        "obscure-hero",
+      ]
+
+      Button connect_button {
+        halign: center;
+        label: _("Conectar");
+        clicked => $on_connect_clicked();
+
+        styles [
+          "pill",
+          "suggested-action",
+        ]
+      }
+    };
+  };
+}
+
+menu primary_menu {
+  section {
+    item {
+      label: _("_Preferências");
+      action: "app.preferences";
+    }
+
+    item {
+      label: _("_Atalhos de teclado");
+      action: "app.shortcuts";
+    }
+
+    item {
+      label: _("_Sobre o Obscure");
+      action: "app.about";
+    }
+  }
+}

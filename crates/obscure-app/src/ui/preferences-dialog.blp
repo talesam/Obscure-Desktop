@@ -1,0 +1,18 @@
+using Gtk 4.0;
+using Adw 1;
+
+Adw.PreferencesDialog preferences_dialog {
+  title: _("Preferências");
+  content-width: 560;
+  content-height: 480;
+
+  Adw.PreferencesPage {
+    title: _("Geral");
+    icon-name: "preferences-system-symbolic";
+
+    Adw.PreferencesGroup {
+      title: _("Conexão");
+      description: _("As opções de conexão ficam disponíveis na próxima etapa do projeto.");
+    }
+  }
+}

@@ -1,0 +1,28 @@
+using Gtk 4.0;
+using Adw 1;
+
+Adw.ShortcutsDialog shortcuts_dialog {
+  Adw.ShortcutsSection {
+    title: _("Geral");
+
+    Adw.ShortcutsItem {
+      title: _("Preferências");
+      accelerator: "<primary>comma";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Atalhos de teclado");
+      accelerator: "<primary>question";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Fechar janela");
+      accelerator: "<primary>w";
+    }
+
+    Adw.ShortcutsItem {
+      title: _("Sair");
+      accelerator: "<primary>q";
+    }
+  }
+}
