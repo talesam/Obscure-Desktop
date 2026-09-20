@@ -1,0 +1,94 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObscureServerDialog: Adw.Dialog {
+  title: _("Server");
+  content-width: 420;
+
+  child: Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {}
+
+    content: ScrolledWindow {
+      propagate-natural-height: true;
+      hscrollbar-policy: never;
+
+      Box {
+        orientation: vertical;
+        spacing: 18;
+        margin-top: 6;
+        margin-bottom: 18;
+        margin-start: 18;
+        margin-end: 18;
+
+        Picture qr_picture {
+          halign: center;
+          width-request: 200;
+          height-request: 200;
+          can-shrink: true;
+          content-fit: contain;
+
+          styles [
+            "obscure-qr",
+          ]
+        }
+
+        Adw.WrapBox chips {
+          halign: center;
+          child-spacing: 6;
+          line-spacing: 6;
+        }
+
+        Adw.PreferencesGroup {
+          Adw.EntryRow name_row {
+            title: _("Name");
+            show-apply-button: true;
+            apply => $on_name_applied() swapped;
+          }
+
+          Adw.ActionRow address_row {
+            title: _("Address");
+            subtitle-selectable: true;
+
+            styles [
+              "property",
+            ]
+          }
+        }
+
+        Box {
+          orientation: horizontal;
+          spacing: 12;
+          halign: center;
+
+          Button {
+            clicked => $on_copy_link_clicked() swapped;
+
+            Adw.ButtonContent {
+              icon-name: "edit-copy-symbolic";
+              label: _("Copy Link");
+            }
+
+            styles [
+              "pill",
+            ]
+          }
+
+          Button {
+            clicked => $on_remove_clicked() swapped;
+
+            Adw.ButtonContent {
+              icon-name: "user-trash-symbolic";
+              label: _("Remove");
+            }
+
+            styles [
+              "pill",
+              "destructive-action",
+            ]
+          }
+        }
+      }
+    };
+  };
+}

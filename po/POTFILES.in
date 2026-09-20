@@ -11,3 +11,8 @@ crates/obscure-app/src/connection.rs
 crates/obscure-app/src/humanize.rs
 crates/obscure-app/src/import_dialog.rs
 crates/obscure-app/src/tray.rs
+crates/obscure-app/src/ui/log-dialog.blp
+crates/obscure-app/src/ui/server-dialog.blp
+crates/obscure-app/src/log_dialog.rs
+crates/obscure-app/src/server_dialog.rs
+crates/obscure-app/src/preferences_dialog.rs

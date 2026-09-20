@@ -1,10 +1,10 @@
 using Gtk 4.0;
 using Adw 1;
 
-Adw.PreferencesDialog preferences_dialog {
+template $ObscurePreferencesDialog: Adw.PreferencesDialog {
   title: _("Preferences");
   content-width: 560;
-  content-height: 480;
+  content-height: 520;
 
   Adw.PreferencesPage {
     title: _("General");
@@ -21,7 +21,30 @@ Adw.PreferencesDialog preferences_dialog {
 
     Adw.PreferencesGroup {
       title: _("Connection");
-      description: _("Connection options will be available in the next stage of the project.");
+      description: _("Changes apply the next time you connect. If you are connected now, Obscure reconnects.");
+
+      Adw.SpinRow port_row {
+        title: _("Local port");
+        subtitle: _("Where programs on this computer reach the connection.");
+        numeric: true;
+
+        adjustment: Adjustment {
+          lower: 1025;
+          upper: 65535;
+          step-increment: 1;
+          page-increment: 100;
+        };
+      }
+
+      Adw.EntryRow dns_row {
+        title: _("DNS server (DNS over HTTPS)");
+        show-apply-button: true;
+      }
+
+      Adw.SwitchRow prerelease_row {
+        title: _("Try pre-release versions of the engine");
+        subtitle: _("Newer features, but less tested. Off is the safe choice.");
+      }
     }
   }
 }

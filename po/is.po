@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 17:02\n"
-"PO-Revision-Date: 2026-09-20 17:02\n"
+"POT-Creation-Date: 2026-09-20 17:11\n"
+"PO-Revision-Date: 2026-09-20 17:11\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Íslenska\n"
 "Language: is\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:323
+#: crates/obscure-app/src/application.rs:331
 msgid "Connect. That's it."
 msgstr "Tengstu. Það er allt."
 
@@ -34,7 +34,7 @@ msgid "Proxy Client"
 msgstr "Proxy-biðlari"
 
 #. Translators: search terms, keep the trailing semicolon
-#: data/io.github.talesam.Obscure.desktop.in.in:12
+#: data/io.github.talesam.Obscure.desktop.in.in:13
 msgid "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
 msgstr "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
 
@@ -101,7 +101,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "Límdu tengil eða áskrift til að byrja."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:310 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/window.rs:406 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Tengjast"
 
@@ -134,22 +134,50 @@ msgid "All traffic from this computer. Coming in a future version."
 msgstr "Öll umferð frá þessari tölvu. Kemur í framtíðarútgáfu."
 
 #: crates/obscure-app/src/ui/window.blp:177
+msgid "What goes through the connection"
+msgstr "Hvað fer um tenginguna"
+
+#: crates/obscure-app/src/ui/window.blp:185
+msgid "Smart"
+msgstr "Snjallt"
+
+#: crates/obscure-app/src/ui/window.blp:186
+msgid "Everything, except local network addresses. Ads are blocked."
+msgstr "Allt nema vistföng á staðarneti. Auglýsingar eru lokaðar."
+
+#: crates/obscure-app/src/ui/window.blp:191
+msgid "Everything"
+msgstr "Allt"
+
+#: crates/obscure-app/src/ui/window.blp:192
+msgid "All traffic goes through the connection, except local network addresses."
+msgstr "Öll umferð fer um tenginguna, nema vistföng á staðarneti."
+
+#: crates/obscure-app/src/ui/window.blp:198
 msgid "Servers"
 msgstr "Þjónar"
 
-#: crates/obscure-app/src/ui/window.blp:200
+#: crates/obscure-app/src/ui/window.blp:221
+msgid "_Import from File…"
+msgstr "_Flytja inn úr skrá…"
+
+#: crates/obscure-app/src/ui/window.blp:226
+msgid "_Connection Log"
+msgstr "_Tengiskrá"
+
+#: crates/obscure-app/src/ui/window.blp:231
 msgid "_Copy Environment Variables"
 msgstr "_Afrita umhverfisbreytur"
 
-#: crates/obscure-app/src/ui/window.blp:207
+#: crates/obscure-app/src/ui/window.blp:238
 msgid "_Preferences"
 msgstr "_Kjörstillingar"
 
-#: crates/obscure-app/src/ui/window.blp:212
+#: crates/obscure-app/src/ui/window.blp:243
 msgid "_Keyboard Shortcuts"
 msgstr "_Flýtilyklar"
 
-#: crates/obscure-app/src/ui/window.blp:217
+#: crates/obscure-app/src/ui/window.blp:248
 msgid "_About Obscure"
 msgstr "_Um Obscure"
 
@@ -193,11 +221,31 @@ msgid "Connection"
 msgstr "Tenging"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:24
-msgid "Connection options will be available in the next stage of the project."
-msgstr "Tengingarvalkostir verða í boði í næsta áfanga verkefnisins."
+msgid "Changes apply the next time you connect. If you are connected now, Obscure reconnects."
+msgstr "Breytingar gilda við næstu tengingu. Ef þú ert tengd(ur) núna endurtengist Obscure."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:27
+msgid "Local port"
+msgstr "Staðbundin gátt"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:28
+msgid "Where programs on this computer reach the connection."
+msgstr "Þar sem forrit á þessari tölvu finna tenginguna."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:40
+msgid "DNS server (DNS over HTTPS)"
+msgstr "DNS-þjónn (DNS yfir HTTPS)"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:45
+msgid "Try pre-release versions of the engine"
+msgstr "Prófa forútgáfur af vélinni"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:46
+msgid "Newer features, but less tested. Off is the safe choice."
+msgstr "Nýrri eiginleikar en minna prófaðir. Slökkt er öruggi kosturinn."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:302 crates/obscure-app/src/window.rs:372
+#: crates/obscure-app/src/window.rs:398 crates/obscure-app/src/window.rs:467
 msgid "Cancel"
 msgstr "Hætta við"
 
@@ -218,103 +266,116 @@ msgid "The system proxy settings from a previous session were restored."
 msgstr "Kerfis-proxy stillingar frá fyrri setu voru endurheimtar."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:320
+#: crates/obscure-app/src/application.rs:328
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:324
+#: crates/obscure-app/src/application.rs:332
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure notar Xray-core, sem er sótt sérstaklega við fyrstu keyrslu."
 
-#: crates/obscure-app/src/application.rs:330
+#: crates/obscure-app/src/application.rs:338
 msgid "Project plan"
 msgstr "Verkáætlun"
 
-#: crates/obscure-app/src/window.rs:185
+#: crates/obscure-app/src/window.rs:198
 msgid "The clipboard does not contain a server link."
 msgstr "Klippispjaldið inniheldur ekki tengil á þjón."
 
 #: crates/obscure-app/src/window.rs:216
+msgid "Text files"
+msgstr "Textaskrár"
+
+#: crates/obscure-app/src/window.rs:223
+msgid "Import servers from a file"
+msgstr "Flytja inn þjóna úr skrá"
+
+#: crates/obscure-app/src/window.rs:243
+msgid "Could not read that file."
+msgstr "Ekki tókst að lesa þá skrá."
+
+#: crates/obscure-app/src/window.rs:309
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Umhverfisbreytur afritaðar. Límdu þær í skjáhermi."
 
-#: crates/obscure-app/src/window.rs:294 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:390 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Aftengjast"
 
-#: crates/obscure-app/src/window.rs:350
-msgid "Remove server"
-msgstr "Fjarlægja þjón"
+#: crates/obscure-app/src/window.rs:446
+msgid "Server details"
+msgstr "Upplýsingar um þjón"
 
-#: crates/obscure-app/src/window.rs:368
+#: crates/obscure-app/src/window.rs:463
 msgid "Remove “%s”?"
 msgstr "Fjarlægja „%s“?"
 
-#: crates/obscure-app/src/window.rs:369
+#: crates/obscure-app/src/window.rs:464
 msgid "You can add it again later by pasting its link."
 msgstr "Þú getur bætt honum við aftur síðar með því að líma tengilinn."
 
-#: crates/obscure-app/src/window.rs:373
+#: crates/obscure-app/src/window.rs:468
+#: crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Fjarlægja"
 
-#: crates/obscure-app/src/window.rs:393
+#: crates/obscure-app/src/window.rs:488
 msgid "These servers were already added."
 msgstr "Þessum þjónum hafði þegar verið bætt við."
 
-#: crates/obscure-app/src/window.rs:395
+#: crates/obscure-app/src/window.rs:490
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "%n þjóni bætt við."
 msgstr[1] "%n þjónum bætt við."
 
-#: crates/obscure-app/src/connection.rs:147
-#: crates/obscure-app/src/connection.rs:441
+#: crates/obscure-app/src/connection.rs:161
+#: crates/obscure-app/src/connection.rs:527
 msgid "Disconnected"
 msgstr "Ótengt"
 
-#: crates/obscure-app/src/connection.rs:314
+#: crates/obscure-app/src/connection.rs:396
 msgid "Choose a server to connect"
 msgstr "Veldu þjón til að tengjast"
 
-#: crates/obscure-app/src/connection.rs:329
-#: crates/obscure-app/src/connection.rs:417
+#: crates/obscure-app/src/connection.rs:413
+#: crates/obscure-app/src/connection.rs:503
 msgid "Connecting…"
 msgstr "Tengist…"
 
-#: crates/obscure-app/src/connection.rs:361
+#: crates/obscure-app/src/connection.rs:447
 msgid "Disconnecting…"
 msgstr "Aftengist…"
 
-#: crates/obscure-app/src/connection.rs:384
+#: crates/obscure-app/src/connection.rs:470
 msgid "Preparing the connection engine…"
 msgstr "Undirbý tengivél…"
 
-#: crates/obscure-app/src/connection.rs:395
+#: crates/obscure-app/src/connection.rs:481
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "Sæki tengivél: %a af %b MB"
 
-#: crates/obscure-app/src/connection.rs:398
+#: crates/obscure-app/src/connection.rs:484
 msgid "Downloading the connection engine: %a MB"
 msgstr "Sæki tengivél: %a MB"
 
-#: crates/obscure-app/src/connection.rs:403
+#: crates/obscure-app/src/connection.rs:489
 msgid "Verifying the download…"
 msgstr "Staðfesti niðurhal…"
 
-#: crates/obscure-app/src/connection.rs:405
+#: crates/obscure-app/src/connection.rs:491
 msgid "Installing the connection engine…"
 msgstr "Set upp tengivél…"
 
-#: crates/obscure-app/src/connection.rs:434
+#: crates/obscure-app/src/connection.rs:520
 msgid "Connected · system proxy active"
 msgstr "Tengt · kerfis-proxy virkur"
 
-#: crates/obscure-app/src/connection.rs:435
+#: crates/obscure-app/src/connection.rs:521
 msgid "Connected · local proxy only"
 msgstr "Tengt · aðeins staðbundinn proxy"
 
-#: crates/obscure-app/src/connection.rs:436
+#: crates/obscure-app/src/connection.rs:522
 msgid "Connected"
 msgstr "Tengt"
 
@@ -426,3 +487,39 @@ msgstr[1] "Ekki tókst að lesa %n tengla."
 #: crates/obscure-app/src/tray.rs:87
 msgid "Show Obscure"
 msgstr "Sýna Obscure"
+
+#: crates/obscure-app/src/ui/log-dialog.blp:5
+msgid "Connection Log"
+msgstr "Tengiskrá"
+
+#: crates/obscure-app/src/ui/log-dialog.blp:15
+msgid "Copy log"
+msgstr "Afrita skrá"
+
+#: crates/obscure-app/src/ui/log-dialog.blp:22
+msgid "Clear log"
+msgstr "Hreinsa skrá"
+
+#: crates/obscure-app/src/ui/server-dialog.blp:5
+msgid "Server"
+msgstr "Þjónn"
+
+#: crates/obscure-app/src/ui/server-dialog.blp:44
+msgid "Name"
+msgstr "Heiti"
+
+#: crates/obscure-app/src/ui/server-dialog.blp:50
+msgid "Address"
+msgstr "Vistfang"
+
+#: crates/obscure-app/src/ui/server-dialog.blp:69
+msgid "Copy Link"
+msgstr "Afrita tengil"
+
+#: crates/obscure-app/src/log_dialog.rs:85
+msgid "Nothing logged yet. Connect to see what the engine reports."
+msgstr "Ekkert skráð ennþá. Tengstu til að sjá hvað vélin tilkynnir."
+
+#: crates/obscure-app/src/server_dialog.rs:61
+msgid "Link copied."
+msgstr "Tengill afritaður."

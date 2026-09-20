@@ -1,0 +1,40 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObscureLogDialog: Adw.Dialog {
+  title: _("Connection Log");
+  content-width: 640;
+  content-height: 480;
+
+  child: Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {
+      [start]
+      Button {
+        icon-name: "edit-copy-symbolic";
+        tooltip-text: _("Copy log");
+        clicked => $on_copy_clicked() swapped;
+      }
+
+      [start]
+      Button {
+        icon-name: "edit-clear-all-symbolic";
+        tooltip-text: _("Clear log");
+        clicked => $on_clear_clicked() swapped;
+      }
+    }
+
+    content: ScrolledWindow scrolled {
+      TextView text_view {
+        editable: false;
+        cursor-visible: false;
+        monospace: true;
+        wrap-mode: word_char;
+        top-margin: 8;
+        bottom-margin: 8;
+        left-margin: 8;
+        right-margin: 8;
+      }
+    };
+  };
+}

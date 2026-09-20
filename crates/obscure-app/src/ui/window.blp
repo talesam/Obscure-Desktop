@@ -174,6 +174,27 @@ template $ObscureWindow: Adw.ApplicationWindow {
                 }
 
                 Adw.PreferencesGroup {
+                  title: _("What goes through the connection");
+
+                  Adw.ToggleGroup route_group {
+                    homogeneous: true;
+                    notify::active-name => $on_route_changed() swapped;
+
+                    Adw.Toggle {
+                      name: "smart";
+                      label: _("Smart");
+                      tooltip: _("Everything, except local network addresses. Ads are blocked.");
+                    }
+
+                    Adw.Toggle {
+                      name: "all";
+                      label: _("Everything");
+                      tooltip: _("All traffic goes through the connection, except local network addresses.");
+                    }
+                  }
+                }
+
+                Adw.PreferencesGroup {
                   title: _("Servers");
 
                   ListBox servers_list {
@@ -196,6 +217,16 @@ template $ObscureWindow: Adw.ApplicationWindow {
 
 menu primary_menu {
   section {
+    item {
+      label: _("_Import from File…");
+      action: "win.import-file";
+    }
+
+    item {
+      label: _("_Connection Log");
+      action: "win.show-log";
+    }
+
     item {
       label: _("_Copy Environment Variables");
       action: "win.copy-env";

@@ -8,6 +8,7 @@ Icon=@app-id@
 Terminal=false
 Type=Application
 Categories=Network;
+MimeType=x-scheme-handler/vless;x-scheme-handler/vmess;x-scheme-handler/trojan;x-scheme-handler/ss;
 # Translators: search terms, keep the trailing semicolon
 Keywords=proxy;vpn;xray;vless;vmess;trojan;shadowsocks;
 StartupNotify=true

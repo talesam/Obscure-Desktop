@@ -73,6 +73,16 @@ mod imp {
             window.present();
         }
 
+        /// `obscure vless://…` or clicking a share link in a browser.
+        fn open(&self, files: &[gio::File], _hint: &str) {
+            let app = self.obj();
+            app.activate();
+            let text: Vec<String> = files.iter().map(|f| f.uri().to_string()).collect();
+            if let Some(win) = app.active_window().and_downcast::<ObscureWindow>() {
+                win.import_text(&text.join("\n"));
+            }
+        }
+
         fn shutdown(&self) {
             if let Some(m) = self.manager.get() {
                 m.shutdown();
@@ -117,7 +127,7 @@ impl ObscureApplication {
     pub fn new() -> Self {
         glib::Object::builder()
             .property("application-id", APP_ID)
-            .property("flags", gio::ApplicationFlags::default())
+            .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
             .property("resource-base-path", "/io/github/talesam/Obscure")
             .build()
     }
@@ -195,20 +205,13 @@ impl ObscureApplication {
     }
 
     fn show_preferences(&self) {
-        let builder =
-            gtk::Builder::from_resource("/io/github/talesam/Obscure/ui/preferences-dialog.ui");
-        let dialog: adw::PreferencesDialog = builder
-            .object("preferences_dialog")
-            .expect("preferences-dialog.ui must define `preferences_dialog`");
-        let background_row: adw::SwitchRow = builder
-            .object("background_row")
-            .expect("preferences-dialog.ui must define `background_row`");
-        self.settings()
-            .bind("run-in-background", &background_row, "active")
-            .build();
-        // Without a tray there is no way back to the window: disable the option.
-        background_row.set_sensitive(self.imp().tray.borrow().is_some());
-        dialog.present(self.active_window().as_ref());
+        let has_tray = self.imp().tray.borrow().is_some();
+        crate::preferences_dialog::PreferencesDialog::new(
+            self.manager(),
+            self.settings(),
+            has_tray,
+        )
+        .present(self.active_window().as_ref());
     }
 
     fn settings(&self) -> &gio::Settings {

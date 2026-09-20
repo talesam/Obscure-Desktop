@@ -8,6 +8,8 @@ blueprint_files = [
   'shortcuts-dialog',
   'preferences-dialog',
   'import-dialog',
+  'log-dialog',
+  'server-dialog',
 ]
 
 blueprints = []

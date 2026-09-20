@@ -46,6 +46,8 @@ struct SessionParams {
     route_preset: RoutePreset,
     listed_domains: Vec<String>,
     apply_mode: ApplyMode,
+    dns: String,
+    prerelease: bool,
 }
 
 /// Commands from the UI to the actor.
@@ -85,6 +87,9 @@ mod imp {
         /// "↑ 1.2 kB/s · ↓ 3.4 MB/s · 12 MB" while connected, else "".
         #[property(get, set)]
         pub traffic_text: RefCell<String>,
+        /// `all`, `smart` or `only_listed` (mirrors RoutePreset).
+        #[property(get, set)]
+        pub route_preset: RefCell<String>,
 
         pub profiles: RefCell<Profiles>,
         pub servers: gio::ListStore,
@@ -105,6 +110,7 @@ mod imp {
                 has_servers: Cell::new(false),
                 apply_mode: RefCell::new("system_proxy".into()),
                 traffic_text: RefCell::new(String::new()),
+                route_preset: RefCell::new("smart".into()),
                 profiles: RefCell::new(Profiles::default()),
                 servers: gio::ListStore::new::<ServerObject>(),
                 log: RefCell::new(VecDeque::new()),
@@ -125,7 +131,15 @@ mod imp {
         fn signals() -> &'static [glib::subclass::Signal] {
             use std::sync::OnceLock;
             static SIGNALS: OnceLock<Vec<glib::subclass::Signal>> = OnceLock::new();
-            SIGNALS.get_or_init(|| vec![glib::subclass::Signal::builder("failed").build()])
+            SIGNALS.get_or_init(|| {
+                vec![
+                    glib::subclass::Signal::builder("failed").build(),
+                    // Emitted for every new log line (String).
+                    glib::subclass::Signal::builder("log-line")
+                        .param_types([String::static_type()])
+                        .build(),
+                ]
+            })
         }
     }
 }
@@ -187,6 +201,67 @@ impl ConnectionManager {
                 .unwrap_or_default(),
         );
         self.set_apply_mode(mode_to_str(profiles.apply_mode));
+        self.set_route_preset(preset_to_str(profiles.route_preset));
+    }
+
+    /// Read-only access to the stored profiles (settings, servers).
+    pub fn profiles(&self) -> Profiles {
+        self.imp().profiles.borrow().clone()
+    }
+
+    pub fn server_entry(&self, id: &str) -> Option<obscure_core::profile::ServerEntry> {
+        self.imp().profiles.borrow().get(id).cloned()
+    }
+
+    pub fn rename_server(&self, id: &str, name: &str) -> bool {
+        let ok = self.imp().profiles.borrow_mut().rename(id, name);
+        if ok {
+            self.save_profiles();
+            self.sync_from_profiles();
+        }
+        ok
+    }
+
+    pub fn set_route_preset_from_ui(&self, preset: &str) {
+        let Some(preset) = str_to_preset(preset) else {
+            return;
+        };
+        let changed = {
+            let mut p = self.imp().profiles.borrow_mut();
+            let changed = p.route_preset != preset;
+            p.route_preset = preset;
+            changed
+        };
+        if changed {
+            self.save_profiles();
+            self.set_route_preset(preset_to_str(preset));
+            if self.connected() {
+                self.reconnect();
+            }
+        }
+    }
+
+    /// Updates connection settings from Preferences. Reconnects if needed.
+    pub fn update_settings(&self, local_port: u16, dns: &str, prerelease: bool) {
+        let dns = if dns.trim().is_empty() {
+            obscure_core::profile::DEFAULT_DNS.to_owned()
+        } else {
+            dns.trim().to_owned()
+        };
+        let changed = {
+            let mut p = self.imp().profiles.borrow_mut();
+            let changed = p.local_port != local_port || p.dns != dns || p.prerelease != prerelease;
+            p.local_port = local_port;
+            p.dns = dns;
+            p.prerelease = prerelease;
+            changed
+        };
+        if changed {
+            self.save_profiles();
+            if self.connected() {
+                self.reconnect();
+            }
+        }
     }
 
     pub fn servers(&self) -> &gio::ListStore {
@@ -255,11 +330,18 @@ impl ConnectionManager {
     }
 
     fn push_log(&self, line: String) {
-        let mut log = self.imp().log.borrow_mut();
-        if log.len() >= MAX_LOG_LINES {
-            log.pop_front();
+        {
+            let mut log = self.imp().log.borrow_mut();
+            if log.len() >= MAX_LOG_LINES {
+                log.pop_front();
+            }
+            log.push_back(line.clone());
         }
-        log.push_back(line);
+        self.emit_by_name::<()>("log-line", &[&line]);
+    }
+
+    pub fn clear_log(&self) {
+        self.imp().log.borrow_mut().clear();
     }
 
     // -- connection ---------------------------------------------------------
@@ -314,13 +396,15 @@ impl ConnectionManager {
             self.set_status_text(gettext("Choose a server to connect"));
             return;
         };
-        let (local_port, preset, listed, apply_mode) = {
+        let (local_port, preset, listed, apply_mode, dns, prerelease) = {
             let p = self.imp().profiles.borrow();
             (
                 p.local_port,
                 p.route_preset,
                 p.listed_domains.clone(),
                 p.apply_mode,
+                p.dns.clone(),
+                p.prerelease,
             )
         };
 
@@ -334,6 +418,8 @@ impl ConnectionManager {
             route_preset: preset,
             listed_domains: listed,
             apply_mode,
+            dns,
+            prerelease,
         };
 
         let (ui_tx, ui_rx) = async_channel::unbounded::<UiEvent>();
@@ -469,6 +555,23 @@ fn mode_to_str(m: ApplyMode) -> &'static str {
     }
 }
 
+fn preset_to_str(p: RoutePreset) -> &'static str {
+    match p {
+        RoutePreset::All => "all",
+        RoutePreset::Smart => "smart",
+        RoutePreset::OnlyListed => "only_listed",
+    }
+}
+
+fn str_to_preset(s: &str) -> Option<RoutePreset> {
+    match s {
+        "all" => Some(RoutePreset::All),
+        "smart" => Some(RoutePreset::Smart),
+        "only_listed" => Some(RoutePreset::OnlyListed),
+        _ => None,
+    }
+}
+
 fn str_to_mode(s: &str) -> Option<ApplyMode> {
     match s {
         "local_only" => Some(ApplyMode::LocalOnly),
@@ -497,7 +600,7 @@ async fn actor(
 
     let manager = CoreManager::new(paths::core_dir(), &user_agent);
     let ui_progress = ui.clone();
-    let ensure = manager.ensure_installed(false, move |p| {
+    let ensure = manager.ensure_installed(params.prerelease, move |p| {
         let _ = ui_progress.send_blocking(UiEvent::Progress(p));
     });
     // Allow cancelling during a long download.
@@ -525,6 +628,7 @@ async fn actor(
         opts.local_port = params.local_port;
         opts.route_preset = params.route_preset;
         opts.listed_domains = &params.listed_domains;
+        opts.dns = &params.dns;
         opts.api_port = Some(api_port);
         build(&opts)
     };

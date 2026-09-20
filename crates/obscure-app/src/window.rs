@@ -9,6 +9,8 @@ use obscure_core::sysproxy::env_snippet;
 use crate::config::{APP_ID, PROFILE};
 use crate::connection::ConnectionManager;
 use crate::import_dialog::{ImportDialog, ServersBox};
+use crate::log_dialog::LogDialog;
+use crate::server_dialog::ServerDialog;
 use crate::server_object::ServerObject;
 
 mod imp {
@@ -42,6 +44,8 @@ mod imp {
         #[template_child]
         pub mode_group: TemplateChild<adw::ToggleGroup>,
         #[template_child]
+        pub route_group: TemplateChild<adw::ToggleGroup>,
+        #[template_child]
         pub servers_list: TemplateChild<gtk::ListBox>,
 
         pub manager: std::cell::OnceCell<ConnectionManager>,
@@ -60,6 +64,8 @@ mod imp {
                 win.show_import_dialog(None)
             });
             klass.install_action("win.copy-env", None, |win, _, _| win.copy_env());
+            klass.install_action("win.show-log", None, |win, _, _| win.show_log());
+            klass.install_action("win.import-file", None, |win, _, _| win.import_from_file());
         }
 
         fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
@@ -78,6 +84,13 @@ mod imp {
         fn on_mode_changed(&self, _pspec: glib::ParamSpec, _group: &adw::ToggleGroup) {
             if let Some(name) = self.mode_group.active_name() {
                 self.obj().manager().set_apply_mode_from_ui(&name);
+            }
+        }
+
+        #[template_callback]
+        fn on_route_changed(&self, _pspec: glib::ParamSpec, _group: &adw::ToggleGroup) {
+            if let Some(name) = self.route_group.active_name() {
+                self.obj().manager().set_route_preset_from_ui(&name);
             }
         }
 
@@ -188,6 +201,86 @@ impl ObscureWindow {
         ));
     }
 
+    /// Opens the import dialog with text handed over by the system
+    /// (URL scheme handler or file).
+    pub fn import_text(&self, text: &str) {
+        self.show_import_dialog(Some(text));
+    }
+
+    fn show_log(&self) {
+        LogDialog::new(self.manager()).present(Some(self));
+    }
+
+    fn import_from_file(&self) {
+        let filter = gtk::FileFilter::new();
+        filter.set_name(Some(&gettext("Text files")));
+        filter.add_mime_type("text/plain");
+        filter.add_pattern("*.txt");
+        filter.add_pattern("*.json");
+        let filters = gio::ListStore::new::<gtk::FileFilter>();
+        filters.append(&filter);
+        let dialog = gtk::FileDialog::builder()
+            .title(gettext("Import servers from a file"))
+            .modal(true)
+            .filters(&filters)
+            .build();
+        dialog.open(
+            Some(self),
+            gio::Cancellable::NONE,
+            clone!(
+                #[weak(rename_to = win)]
+                self,
+                move |result| {
+                    let Ok(file) = result else { return };
+                    glib::spawn_future_local(async move {
+                        match file.load_contents_future().await {
+                            Ok((bytes, _)) => {
+                                let text = String::from_utf8_lossy(&bytes).into_owned();
+                                win.show_import_dialog(Some(&text));
+                            }
+                            Err(e) => {
+                                tracing::warn!("cannot read file: {e}");
+                                win.toast(&gettext("Could not read that file."));
+                            }
+                        }
+                    });
+                }
+            ),
+        );
+    }
+
+    fn show_server_details(&self, id: &str) {
+        let Some(dialog) = ServerDialog::new(self.manager(), id) else {
+            return;
+        };
+        dialog.connect_closure(
+            "remove-requested",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = win)]
+                self,
+                move |_d: ServerDialog, id: String| {
+                    let name = win
+                        .manager()
+                        .server_entry(&id)
+                        .map(|e| e.server.name)
+                        .unwrap_or_default();
+                    win.confirm_remove(&id, &name);
+                }
+            ),
+        );
+        dialog.connect_closure(
+            "toast",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = win)]
+                self,
+                move |_d: ServerDialog, text: String| win.toast(&text)
+            ),
+        );
+        dialog.present(Some(self));
+    }
+
     fn show_import_dialog(&self, prefill: Option<&str>) {
         tracing::debug!("opening import dialog (prefilled: {})", prefill.is_some());
         let dialog = match prefill {
@@ -250,6 +343,9 @@ impl ObscureWindow {
             .sync_create()
             .build();
         m.bind_property("apply_mode", &*imp.mode_group, "active-name")
+            .sync_create()
+            .build();
+        m.bind_property("route_preset", &*imp.route_group, "active-name")
             .sync_create()
             .build();
 
@@ -345,20 +441,19 @@ impl ObscureWindow {
             .build();
         row.add_suffix(&check);
 
-        let remove = gtk::Button::builder()
-            .icon_name("user-trash-symbolic")
-            .tooltip_text(gettext("Remove server"))
+        let details = gtk::Button::builder()
+            .icon_name("view-more-symbolic")
+            .tooltip_text(gettext("Server details"))
             .valign(gtk::Align::Center)
             .css_classes(["flat"])
             .build();
         let id = server.id();
-        let name = server.name();
-        remove.connect_clicked(clone!(
+        details.connect_clicked(clone!(
             #[weak(rename_to = win)]
             self,
-            move |_| win.confirm_remove(&id, &name)
+            move |_| win.show_server_details(&id)
         ));
-        row.add_suffix(&remove);
+        row.add_suffix(&details);
         row.upcast()
     }
 

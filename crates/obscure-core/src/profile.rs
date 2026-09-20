@@ -69,6 +69,18 @@ pub struct Profiles {
     /// Domains routed through the proxy in `OnlyListed` mode.
     #[serde(default)]
     pub listed_domains: Vec<String>,
+    /// DNS-over-HTTPS server used for remote resolution.
+    #[serde(default = "default_dns")]
+    pub dns: String,
+    /// Follow Xray pre-releases instead of stable.
+    #[serde(default)]
+    pub prerelease: bool,
+}
+
+pub const DEFAULT_DNS: &str = "https://1.1.1.1/dns-query";
+
+fn default_dns() -> String {
+    DEFAULT_DNS.to_owned()
 }
 
 fn default_local_port() -> u16 {
@@ -85,6 +97,8 @@ impl Default for Profiles {
             route_preset: RoutePreset::default(),
             local_port: default_local_port(),
             listed_domains: Vec::new(),
+            dns: default_dns(),
+            prerelease: false,
         }
     }
 }
@@ -152,6 +166,21 @@ impl Profiles {
         Some(removed)
     }
 
+    /// Renames a server; returns `false` if it does not exist or the name is blank.
+    pub fn rename(&mut self, id: &str, name: &str) -> bool {
+        let name = name.trim();
+        if name.is_empty() {
+            return false;
+        }
+        match self.servers.iter_mut().find(|e| e.id == id) {
+            Some(e) => {
+                e.server.name = name.to_owned();
+                true
+            }
+            None => false,
+        }
+    }
+
     pub fn get(&self, id: &str) -> Option<&ServerEntry> {
         self.servers.iter().find(|e| e.id == id)
     }
@@ -211,5 +240,18 @@ mod tests {
         let p = Profiles::load(&path).unwrap();
         assert_eq!(p.selected, None);
         assert_eq!(p.local_port, 2080);
+        assert_eq!(p.dns, DEFAULT_DNS);
+        assert!(!p.prerelease);
+    }
+
+    #[test]
+    fn rename_validates() {
+        let mut p = Profiles::default();
+        p.add_servers([sample(1)]);
+        let id = p.servers[0].id.clone();
+        assert!(!p.rename(&id, "   "));
+        assert!(p.rename(&id, "  New name "));
+        assert_eq!(p.servers[0].server.name, "New name");
+        assert!(!p.rename("nope", "x"));
     }
 }

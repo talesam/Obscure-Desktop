@@ -238,16 +238,17 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 **Estado (2026-09-20):** `crates/obscure-core/tests/integration.rs` importa o link, sobe o Xray real, faz requests via SOCKS e HTTP, lê os contadores de tráfego pelo gRPC e mede latência TCP (passou com servidor REALITY real). Critério atendido.
 
 ### Fase 2 — UI MVP (2–3 semanas)
-- [ ] Janela: sidebar (servidores/grupos, busca, latência colorida) + hero Conectar + rodapé com ↑/↓ e tempo conectado.
+- [~] Janela: hero Conectar + linha de tráfego ↑/↓ e total da sessão (feito). *(sidebar com busca/latência e tempo conectado ficam para a Fase 3, junto com grupos)*
   - Estado vazio (sem servidor): o hero mostra **"Adicionar servidor"**, nunca "Conectar". O botão Conectar só existe quando há pelo menos um servidor (já aplicado no esqueleto da Fase 0).
-- [x] Importar: colar (Ctrl+V) e diálogo com validação ao vivo. Toast de resultado. *(arquivo e handler de URL scheme pendentes)*
-- [ ] Detalhe do servidor em bottom sheet: nome editável, chips (protocolo, transporte, segurança), QR, copiar link, remover.
-- [x] Seletor "Como aplicar" (`AdwToggleGroup`: Proxy do sistema padrão, Só proxy local, Túnel desativado). *(preset de rota na UI pendente; o core já suporta)*
-- [ ] Painel de log (bottom sheet, monoespaçado, filtro por nível, copiar).
+- [x] Importar: colar (Ctrl+V), diálogo com validação ao vivo, arquivo (`.txt`/`.json`) e handler de URL scheme (`vless://` etc. via `HANDLES_OPEN` + `MimeType` no .desktop). Toast de resultado.
+- [x] Detalhe do servidor em diálogo: nome editável, chips (protocolo, transporte, segurança), QR (`qrcode` → PNG → `gdk::Texture`), copiar link, remover com confirmação.
+- [x] Seletor "Como aplicar" (Proxy do sistema padrão, Só proxy local, Túnel desativado) e preset de rota "O que passa pela conexão" (Inteligente / Tudo). *("Só listados" precisa do editor de domínios da Fase 4)*
+- [x] Painel de log (diálogo monoespaçado ao vivo, copiar, limpar). *(filtro por nível pendente)*
 - [x] Erros humanizados (`humanize.rs`).
 - [x] Primeiro uso: o core é baixado no primeiro Conectar, com barra de progresso e SHA-256 verificado.
-- [ ] Preferências: porta local, DNS, canal do core, iniciar minimizado, autostart.
+- [x] Preferências: porta local, DNS (DoH), canal do core (pré-release), continuar em segundo plano. *(iniciar minimizado e autostart ficam com o portal Background, Fase 3)*
 **Critério:** uma pessoa leiga cola um link e conecta em < 30 s sem ler nada.
+**Estado (2026-09-20):** fluxo principal completo e testado. Pendências da fase: sidebar/busca, filtro de nível no log, "Só listados".
 
 ### Fase 3 — Assinaturas e conforto (2 semanas)
 - [ ] Grupos = assinaturas com auto-update, barra de tráfego/expiração quando houver `userinfo`.
@@ -310,9 +311,8 @@ Pendências:
 - Bandeja: `ksni` registra `org.kde.StatusNotifierItem-<pid>-1`; em modo development usa `IconThemePath` = `build/data/icons`. GNOME precisa da extensão AppIndicator (o usuário tem). Testado via D-Bus (Activate, dbusmenu Event, propriedades IconName/ToolTip).
 - Sinais SIGTERM/SIGINT/SIGHUP passam pelo shutdown normal (proxy restaurado). SIGKILL só é
   recuperado na próxima abertura.
-- UI: sidebar/grupos, detalhe do servidor (QR, copiar link), painel de log (o `ConnectionManager` já
-  guarda as últimas 500 linhas), preset de rota, Preferências reais (porta, DNS, canal do core).
-- Handler de URL scheme e importação por arquivo.
+- UI: sidebar/grupos (Fase 3). ~~detalhe do servidor, log, preset, preferências, URL scheme, arquivo~~ feitos em 2026-09-20.
+- `GFile::uri()` normaliza `vless://host:443?x` para `vless://host:443/?x`; o parser aceita.
 - Flatpak: proxy do sistema via GSettings precisa de acesso ao dconf (args já no manifest); o
   `kwriteconfig6` do KDE não existe dentro do sandbox — usar `flatpak-spawn --host` (Fase 5).
 - Traduções: quando surgirem strings novas, rodar `meson compile -C build obscure-update-po` e
