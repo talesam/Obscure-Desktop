@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: fmt, clippy and tests
+    runs-on: ubuntu-latest
+    # Arch Linux ships GTK 4.22 and libadwaita 1.9, the versions this project
+    # targets (same as the development environment). Ubuntu LTS does not.
+    container: archlinux:base-devel
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            rust gtk4 libadwaita blueprint-compiler meson ninja pkgconf git \
+            desktop-file-utils appstream gettext
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+      - name: rustfmt
+        run: cargo fmt --all -- --check
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: tests
+        run: cargo test --workspace
+      - name: meson (development profile)
+        run: |
+          meson setup build -Dprofile=development
+          meson compile -C build
+          meson test -C build --print-errorlogs
+
+  flatpak:
+    name: Flatpak (GNOME 50)
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: flathub-infra/flatpak-github-actions/flatpak-builder@master
+        with:
+          bundle: obscure-devel.flatpak
+          manifest-path: build-aux/io.github.talesam.Obscure.Devel.json
+          cache-key: flatpak-builder-${{ github.sha }}
+          run-tests: true
