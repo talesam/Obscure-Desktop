@@ -30,7 +30,6 @@ optdepends=(
     'xdg-desktop-portal: iniciar com a sessão e ler QR code da tela'
     'gnome-shell-extension-appindicator: ícone na bandeja do GNOME'
 )
-provides=('obscure')
 options=(!lto)
 source=("git+${url}.git")
 md5sums=('SKIP')
