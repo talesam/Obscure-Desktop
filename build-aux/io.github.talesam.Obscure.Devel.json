@@ -1,0 +1,59 @@
+{
+  "id": "io.github.talesam.Obscure.Devel",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "50",
+  "sdk": "org.gnome.Sdk",
+  "sdk-extensions": [
+    "org.freedesktop.Sdk.Extension.rust-stable"
+  ],
+  "command": "obscure",
+  "finish-args": [
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--share=ipc",
+    "--device=dri",
+    "--share=network",
+    "--talk-name=org.kde.StatusNotifierWatcher",
+    "--env=RUST_BACKTRACE=1",
+    "--env=RUST_LOG=obscure=debug"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin",
+    "env": {
+      "CARGO_HOME": "/run/build/obscure/cargo",
+      "RUST_BACKTRACE": "1"
+    }
+  },
+  "modules": [
+    {
+      "name": "blueprint-compiler",
+      "buildsystem": "meson",
+      "cleanup": [
+        "*"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://gitlab.gnome.org/GNOME/blueprint-compiler.git",
+          "tag": "v0.22.0"
+        }
+      ]
+    },
+    {
+      "name": "obscure",
+      "buildsystem": "meson",
+      "run-tests": true,
+      "config-opts": [
+        "-Dprofile=development",
+        "-Doffline=true"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "../"
+        },
+        "cargo-sources.json"
+      ]
+    }
+  ]
+}
