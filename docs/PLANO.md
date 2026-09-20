@@ -266,7 +266,7 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 - [ ] Protótipo do `obscure-helper` D-Bus para Flatpak.
 
 ### Fase 5 — Distribuição (1 semana)
-- [ ] Ícone final (128 px full-color + simbólico), screenshots, metainfo completo (releases, branding color).
+- [~] Ícone final (escudo-prisma, feito em 2026-09-20) + simbólico; faltam screenshots e metainfo completo (releases).
 - [ ] Flathub (modo proxy) — verificar com `flatpak-builder-lint`.
 - [ ] AUR: `obscure-desktop` (PKGBUILD com cargo + meson, `options=(!lto)`).
 - [ ] Release GitHub com tarball vendorizado.
@@ -305,8 +305,10 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
   parser em `obscure-core/src/access.rs`). Pausar, copiar, limpar, contador.
 - Constante de versão renomeada para `APP_VERSION`; a versão exibida é sempre `0.1.0` (sem hash) e
   o perfil development não desenha mais as faixas `.devel` no header. O app ID `.Devel` continua.
-- Ícones candidatos do app estão em `~/Servidor/GitHub/talesam/obscure/docs/assets/icones/`
-  (escudo-prisma, eclipse, anel-o, túnel, escudo-sinal); troca do ícone pendente de escolha.
+- Ícone do app: **escudo-prisma** (`docs/assets/icones/icone-1-escudo-prisma.svg` do projeto
+  `obscure`), adaptado com cantos arredondados em `data/icons/hicolor/scalable/apps/`. Cores da
+  marca no metainfo atualizadas (#a99bff / #4b3fbf). Os simbólicos (janela e bandeja) mantêm o
+  escudo com fechadura.
 
 ### Fase 3 (2026-09-20)
 Feito: assinaturas (núcleo + tela), latência com badges e modo automático, notificações, autostart

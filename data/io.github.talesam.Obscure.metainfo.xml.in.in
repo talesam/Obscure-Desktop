@@ -29,8 +29,8 @@
   <url type="vcs-browser">https://github.com/talesam/Obscure-Desktop</url>
   <content_rating type="oars-1.1" />
   <branding>
-    <color type="primary" scheme_preference="light">#99c1f1</color>
-    <color type="primary" scheme_preference="dark">#1a5fb4</color>
+    <color type="primary" scheme_preference="light">#a99bff</color>
+    <color type="primary" scheme_preference="dark">#4b3fbf</color>
   </branding>
   <requires>
     <display_length compare="ge">360</display_length>
