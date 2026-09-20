@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 19:19\n"
-"PO-Revision-Date: 2026-09-20 19:19\n"
+"POT-Creation-Date: 2026-09-20 19:23\n"
+"PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Ελληνικά\n"
 "Language: el\n"
@@ -22,21 +22,22 @@ msgstr ""
 msgid "Obscure"
 msgstr "Obscure"
 
-#. Translators: the slogan of the app
+#. Translators: short description shown next to the app name in menus
 #: data/io.github.talesam.Obscure.desktop.in.in:4
+msgid "Proxy Client"
+msgstr "Πρόγραμμα-πελάτης proxy"
+
+#. Translators: the slogan of the app
+#: data/io.github.talesam.Obscure.desktop.in.in:6
 #: crates/obscure-app/src/ui/window.blp:38
 #: crates/obscure-app/src/application.rs:399
 msgid "Connect. That's it."
 msgstr "Συνδεθείτε. Αυτό είναι όλο."
 
-#: data/io.github.talesam.Obscure.desktop.in.in:5
-msgid "Proxy Client"
-msgstr "Πρόγραμμα-πελάτης proxy"
-
-#. Translators: search terms, keep the trailing semicolon
-#: data/io.github.talesam.Obscure.desktop.in.in:13
-msgid "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
-msgstr "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;"
+#. Translators: search terms, keep the trailing semicolon and add local words
+#: data/io.github.talesam.Obscure.desktop.in.in:16
+msgid "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;wireguard;privacy;censorship;"
+msgstr "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;wireguard;απόρρητο;λογοκρισία;σύνδεση;"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:8
 msgid "Connect to your proxy with one button"
