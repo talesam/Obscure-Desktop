@@ -44,6 +44,9 @@ pub struct ServerEntry {
     /// Subscription this server belongs to, if any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub group: Option<String>,
+    /// ISO 3166-1 alpha-2 of the server's IP, looked up offline.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
     #[serde(flatten)]
     pub server: Server,
 }
@@ -53,6 +56,7 @@ impl ServerEntry {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
             group: None,
+            country: None,
             server,
         }
     }
@@ -283,9 +287,14 @@ impl Profiles {
                 .find(|e| e.server == *server)
                 .map(|e| e.id.clone())
                 .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+            let country = old
+                .iter()
+                .find(|e| e.server == *server)
+                .and_then(|e| e.country.clone());
             self.servers.push(ServerEntry {
                 id,
                 group: Some(group.to_owned()),
+                country,
                 server: server.clone(),
             });
         }
@@ -339,6 +348,16 @@ impl Profiles {
         match self.servers.iter_mut().find(|e| e.id == id) {
             Some(e) => {
                 e.server.name = name.to_owned();
+                true
+            }
+            None => false,
+        }
+    }
+
+    pub fn set_country(&mut self, id: &str, country: Option<String>) -> bool {
+        match self.servers.iter_mut().find(|e| e.id == id) {
+            Some(e) => {
+                e.country = country;
                 true
             }
             None => false,

@@ -33,6 +33,8 @@ mod imp {
         #[template_child]
         pub server_label: TemplateChild<gtk::Label>,
         #[template_child]
+        pub flag_label: TemplateChild<gtk::Label>,
+        #[template_child]
         pub status_label: TemplateChild<gtk::Label>,
         #[template_child]
         pub traffic_label: TemplateChild<gtk::Label>,
@@ -371,6 +373,13 @@ impl ObscureWindow {
         m.bind_property("selected_name", &*imp.server_label, "label")
             .sync_create()
             .build();
+        m.bind_property("selected_flag", &*imp.flag_label, "label")
+            .sync_create()
+            .build();
+        m.bind_property("selected_flag", &*imp.flag_label, "visible")
+            .transform_to(|_, f: String| Some(!f.is_empty()))
+            .sync_create()
+            .build();
         m.bind_property("status_text", &*imp.status_label, "label")
             .sync_create()
             .build();
@@ -605,6 +614,26 @@ impl ObscureWindow {
             .build();
         // Stash the id on the row for `on_server_activated`.
         unsafe { row.set_data("server-id", server.id()) };
+
+        let flag = gtk::Label::builder()
+            .valign(gtk::Align::Center)
+            .css_classes(["obscure-flag"])
+            .build();
+        let update_flag = clone!(
+            #[weak]
+            flag,
+            move |s: &ServerObject| match s.flag() {
+                Some(f) => {
+                    flag.set_label(&f);
+                    flag.set_tooltip_text(Some(&s.country()));
+                    flag.set_visible(true);
+                }
+                None => flag.set_visible(false),
+            }
+        );
+        server.connect_country_notify(update_flag.clone());
+        update_flag(server);
+        row.add_prefix(&flag);
 
         let latency = gtk::Label::builder()
             .valign(gtk::Align::Center)

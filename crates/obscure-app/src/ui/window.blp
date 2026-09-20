@@ -92,13 +92,28 @@ template $ObscureWindow: Adw.ApplicationWindow {
                     ]
                   }
 
-                  Label server_label {
-                    wrap: true;
-                    justify: center;
+                  Box {
+                    orientation: horizontal;
+                    spacing: 8;
+                    halign: center;
 
-                    styles [
-                      "title-2",
-                    ]
+                    Label flag_label {
+                      visible: false;
+
+                      styles [
+                        "title-2",
+                        "obscure-flag",
+                      ]
+                    }
+
+                    Label server_label {
+                      wrap: true;
+                      justify: center;
+
+                      styles [
+                        "title-2",
+                      ]
+                    }
                   }
 
                   Label status_label {

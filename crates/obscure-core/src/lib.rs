@@ -4,6 +4,7 @@ pub mod access;
 pub mod config;
 pub mod core_manager;
 pub mod error;
+pub mod geoip;
 pub mod latency;
 pub mod links;
 pub mod paths;

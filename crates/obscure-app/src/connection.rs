@@ -106,6 +106,9 @@ mod imp {
         pub testing: Cell<bool>,
         #[property(get, set)]
         pub has_subscriptions: Cell<bool>,
+        /// Flag emoji of the selected server ("" when unknown).
+        #[property(get, set)]
+        pub selected_flag: RefCell<String>,
 
         pub profiles: RefCell<Profiles>,
         pub servers: gio::ListStore,
@@ -134,6 +137,7 @@ mod imp {
                 auto_select: Cell::new(false),
                 testing: Cell::new(false),
                 has_subscriptions: Cell::new(false),
+                selected_flag: RefCell::new(String::new()),
                 profiles: RefCell::new(Profiles::default()),
                 servers: gio::ListStore::new::<ServerObject>(),
                 subscriptions: gio::ListStore::new::<SubscriptionObject>(),
@@ -212,6 +216,7 @@ impl ConnectionManager {
         };
         *self.imp().profiles.borrow_mut() = profiles;
         self.sync_from_profiles();
+        self.resolve_countries();
     }
 
     fn save_profiles(&self) {
@@ -262,6 +267,13 @@ impl ConnectionManager {
             profiles
                 .selected_entry()
                 .map(|e| e.server.name.clone())
+                .unwrap_or_default(),
+        );
+        self.set_selected_flag(
+            profiles
+                .selected_entry()
+                .and_then(|e| e.country.as_deref())
+                .and_then(obscure_core::geoip::flag_emoji)
                 .unwrap_or_default(),
         );
         self.set_apply_mode(mode_to_str(profiles.apply_mode));
@@ -553,7 +565,74 @@ impl ConnectionManager {
         let added = self.imp().profiles.borrow_mut().add_servers(servers);
         self.save_profiles();
         self.sync_from_profiles();
+        self.resolve_countries();
         added
+    }
+
+    /// Looks up the country of every server that does not have one yet,
+    /// offline, using the geoip.dat shipped with Xray. Runs in the
+    /// background; the list refreshes when done.
+    pub fn resolve_countries(&self) {
+        let pending: Vec<(String, String, u16)> = self
+            .imp()
+            .profiles
+            .borrow()
+            .servers
+            .iter()
+            .filter(|e| e.country.is_none())
+            .map(|e| (e.id.clone(), e.server.address.clone(), e.server.port))
+            .collect();
+        if pending.is_empty() {
+            return;
+        }
+        let geoip_path = paths::core_dir().join("geoip.dat");
+        if !geoip_path.exists() {
+            return;
+        }
+        let task = runtime().spawn(async move {
+            let db = match geoip_db(&geoip_path).await {
+                Some(db) => db,
+                None => return Vec::new(),
+            };
+            let mut out = Vec::new();
+            for (id, host, port) in pending {
+                let ip = match host.parse::<std::net::IpAddr>() {
+                    Ok(ip) => Some(ip),
+                    Err(_) => tokio::time::timeout(
+                        Duration::from_secs(5),
+                        tokio::net::lookup_host((host.as_str(), port)),
+                    )
+                    .await
+                    .ok()
+                    .and_then(|r| r.ok())
+                    .and_then(|mut addrs| addrs.next())
+                    .map(|a| a.ip()),
+                };
+                let country = ip.and_then(|ip| db.lookup(ip).map(str::to_owned));
+                out.push((id, country));
+            }
+            out
+        });
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to = this)]
+            self,
+            async move {
+                let Ok(results) = task.await else { return };
+                let mut changed = false;
+                {
+                    let mut p = this.imp().profiles.borrow_mut();
+                    for (id, country) in results {
+                        if country.is_some() && p.set_country(&id, country) {
+                            changed = true;
+                        }
+                    }
+                }
+                if changed {
+                    this.save_profiles();
+                    this.sync_from_profiles();
+                }
+            }
+        ));
     }
 
     pub fn remove_server(&self, id: &str) {
@@ -1078,4 +1157,25 @@ async fn actor(
             send(UiEvent::Failed(e));
         }
     }
+}
+
+/// The geoip database is ~17 MB; load it once per process, off the UI thread.
+async fn geoip_db(path: &std::path::Path) -> Option<std::sync::Arc<obscure_core::geoip::GeoIpDb>> {
+    use std::sync::{Arc, OnceLock};
+    use tokio::sync::Mutex;
+    static DB: OnceLock<Mutex<Option<Arc<obscure_core::geoip::GeoIpDb>>>> = OnceLock::new();
+    let slot = DB.get_or_init(|| Mutex::new(None));
+    let mut guard = slot.lock().await;
+    if let Some(db) = guard.as_ref() {
+        return Some(db.clone());
+    }
+    let path = path.to_path_buf();
+    let db = tokio::task::spawn_blocking(move || obscure_core::geoip::GeoIpDb::load(&path))
+        .await
+        .ok()?
+        .map_err(|e| tracing::warn!("geoip: {e}"))
+        .ok()?;
+    let db = Arc::new(db);
+    *guard = Some(db.clone());
+    Some(db)
 }

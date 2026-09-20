@@ -300,6 +300,10 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ## 8. Registro de progresso e pendências
 
 ### Ajustes pedidos em 2026-09-20 (branch `dev-talesam`)
+- **Bandeira do país** do servidor no hero e na lista. Lookup **offline** em `obscure-core/src/geoip.rs`
+  (protobuf `GeoIPList` do `geoip.dat` do Xray, carregado uma vez por processo), após resolver o
+  host via DNS do sistema. Resultado persistido em `ServerEntry.country`; bandeira é emoji de
+  indicadores regionais (fonte Noto Color Emoji). Servidores atrás de CDN mostram o país da borda.
 - **Conexões ao vivo** (menu e Ctrl+L): fluxo estilo terminal com hora, protocolo, destino e rota
   (pelo servidor / direto / bloqueado / DNS), a partir do access log do Xray (`log.access = ""`;
   parser em `obscure-core/src/access.rs`). Pausar, copiar, limpar, contador.

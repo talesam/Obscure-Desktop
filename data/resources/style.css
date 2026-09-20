@@ -43,3 +43,7 @@ statuspage.obscure-hero .icon {
 .obscure-out-proxy { color: #3584e4; }
 .obscure-out-direct { color: #9a9996; }
 .obscure-out-block { color: #e01b24; }
+
+.obscure-flag {
+  font-family: "Noto Color Emoji", "Twemoji", emoji;
+}
