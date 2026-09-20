@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 16:41\n"
-"PO-Revision-Date: 2026-09-20 16:41\n"
+"POT-Creation-Date: 2026-09-20 17:02\n"
+"PO-Revision-Date: 2026-09-20 17:02\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Polski\n"
 "Language: pl\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:210
+#: crates/obscure-app/src/application.rs:323
 msgid "Connect. That's it."
 msgstr "Połącz się. To wszystko."
 
@@ -82,6 +82,10 @@ msgstr "Wysokość okna"
 msgid "Whether the window is maximized"
 msgstr "Czy okno jest zmaksymalizowane"
 
+#: data/io.github.talesam.Obscure.gschema.xml.in:18
+msgid "Keep running in the tray when the window is closed"
+msgstr "Pozostań w zasobniku po zamknięciu okna"
+
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
@@ -97,7 +101,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "Wklej link lub subskrypcję, aby zacząć."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:310
+#: crates/obscure-app/src/window.rs:310 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Połącz"
 
@@ -168,14 +172,27 @@ msgid "Close Window"
 msgstr "Zamknij okno"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
+#: crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Zakończ"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:14
+msgid "Behavior"
+msgstr "Zachowanie"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:17
+msgid "Keep running in the background"
+msgstr "Działaj w tle"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:18
+msgid "Closing the window leaves Obscure in the tray, still connected."
+msgstr "Po zamknięciu okna Obscure pozostaje w zasobniku, nadal połączony."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:23
 msgid "Connection"
 msgstr "Połączenie"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:15
+#: crates/obscure-app/src/ui/preferences-dialog.blp:24
 msgid "Connection options will be available in the next stage of the project."
 msgstr "Opcje połączenia będą dostępne w następnym etapie projektu."
 
@@ -196,20 +213,20 @@ msgstr "Wklej poniżej link serwera lub linki z subskrypcji, po jednym w wierszu
 msgid "Paste from Clipboard"
 msgstr "Wklej ze schowka"
 
-#: crates/obscure-app/src/application.rs:57
+#: crates/obscure-app/src/application.rs:67
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Przywrócono ustawienia proxy systemowego z poprzedniej sesji."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:207
+#: crates/obscure-app/src/application.rs:320
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:211
+#: crates/obscure-app/src/application.rs:324
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure używa Xray-core, pobieranego osobno przy pierwszym uruchomieniu."
 
-#: crates/obscure-app/src/application.rs:217
+#: crates/obscure-app/src/application.rs:330
 msgid "Project plan"
 msgstr "Plan projektu"
 
@@ -221,7 +238,7 @@ msgstr "Schowek nie zawiera linku serwera."
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Skopiowano zmienne środowiskowe. Wklej je w terminalu."
 
-#: crates/obscure-app/src/window.rs:294
+#: crates/obscure-app/src/window.rs:294 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Rozłącz"
 
@@ -408,3 +425,7 @@ msgid_plural "%n links could not be read."
 msgstr[0] "Nie można odczytać %n linku."
 msgstr[1] "Nie można odczytać %n linków."
 msgstr[2] "Nie można odczytać %n linków."
+
+#: crates/obscure-app/src/tray.rs:87
+msgid "Show Obscure"
+msgstr "Pokaż Obscure"

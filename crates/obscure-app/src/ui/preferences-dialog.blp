@@ -11,6 +11,15 @@ Adw.PreferencesDialog preferences_dialog {
     icon-name: "preferences-system-symbolic";
 
     Adw.PreferencesGroup {
+      title: _("Behavior");
+
+      Adw.SwitchRow background_row {
+        title: _("Keep running in the background");
+        subtitle: _("Closing the window leaves Obscure in the tray, still connected.");
+      }
+    }
+
+    Adw.PreferencesGroup {
       title: _("Connection");
       description: _("Connection options will be available in the next stage of the project.");
     }

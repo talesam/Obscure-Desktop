@@ -13,5 +13,9 @@
       <default>false</default>
       <summary>Whether the window is maximized</summary>
     </key>
+    <key name="run-in-background" type="b">
+      <default>true</default>
+      <summary>Keep running in the tray when the window is closed</summary>
+    </key>
   </schema>
 </schemalist>

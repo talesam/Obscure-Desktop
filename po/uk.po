@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 16:41\n"
-"PO-Revision-Date: 2026-09-20 16:41\n"
+"POT-Creation-Date: 2026-09-20 17:02\n"
+"PO-Revision-Date: 2026-09-20 17:02\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Українська\n"
 "Language: uk\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:210
+#: crates/obscure-app/src/application.rs:323
 msgid "Connect. That's it."
 msgstr "Підключайтеся. І все."
 
@@ -82,6 +82,10 @@ msgstr "Висота вікна"
 msgid "Whether the window is maximized"
 msgstr "Чи розгорнуте вікно"
 
+#: data/io.github.talesam.Obscure.gschema.xml.in:18
+msgid "Keep running in the tray when the window is closed"
+msgstr "Залишатися в треї після закриття вікна"
+
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
@@ -97,7 +101,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "Вставте посилання або підписку, щоб почати."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:310
+#: crates/obscure-app/src/window.rs:310 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Підключитися"
 
@@ -168,14 +172,27 @@ msgid "Close Window"
 msgstr "Закрити вікно"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
+#: crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Вийти"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:14
+msgid "Behavior"
+msgstr "Поведінка"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:17
+msgid "Keep running in the background"
+msgstr "Продовжувати роботу у фоні"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:18
+msgid "Closing the window leaves Obscure in the tray, still connected."
+msgstr "Після закриття вікна Obscure залишається в треї, усе ще підключений."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:23
 msgid "Connection"
 msgstr "Підключення"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:15
+#: crates/obscure-app/src/ui/preferences-dialog.blp:24
 msgid "Connection options will be available in the next stage of the project."
 msgstr "Параметри підключення з'являться на наступному етапі проєкту."
 
@@ -196,20 +213,20 @@ msgstr "Вставте нижче посилання на сервер або п
 msgid "Paste from Clipboard"
 msgstr "Вставити з буфера обміну"
 
-#: crates/obscure-app/src/application.rs:57
+#: crates/obscure-app/src/application.rs:67
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Налаштування системного проксі з попереднього сеансу відновлено."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:207
+#: crates/obscure-app/src/application.rs:320
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:211
+#: crates/obscure-app/src/application.rs:324
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure використовує Xray-core, який завантажується окремо під час першого запуску."
 
-#: crates/obscure-app/src/application.rs:217
+#: crates/obscure-app/src/application.rs:330
 msgid "Project plan"
 msgstr "План проєкту"
 
@@ -221,7 +238,7 @@ msgstr "У буфері обміну немає посилання на серв
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Змінні середовища скопійовано. Вставте їх у термінал."
 
-#: crates/obscure-app/src/window.rs:294
+#: crates/obscure-app/src/window.rs:294 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Відключитися"
 
@@ -408,3 +425,7 @@ msgid_plural "%n links could not be read."
 msgstr[0] "Не вдалося прочитати %n посилання."
 msgstr[1] "Не вдалося прочитати %n посилання."
 msgstr[2] "Не вдалося прочитати %n посилань."
+
+#: crates/obscure-app/src/tray.rs:87
+msgid "Show Obscure"
+msgstr "Показати Obscure"

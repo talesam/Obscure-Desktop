@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 16:41\n"
-"PO-Revision-Date: 2026-09-20 16:41\n"
+"POT-Creation-Date: 2026-09-20 17:02\n"
+"PO-Revision-Date: 2026-09-20 17:02\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Français\n"
 "Language: fr\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:210
+#: crates/obscure-app/src/application.rs:323
 msgid "Connect. That's it."
 msgstr "Connectez-vous. C'est tout."
 
@@ -82,6 +82,10 @@ msgstr "Hauteur de la fenêtre"
 msgid "Whether the window is maximized"
 msgstr "Indique si la fenêtre est maximisée"
 
+#: data/io.github.talesam.Obscure.gschema.xml.in:18
+msgid "Keep running in the tray when the window is closed"
+msgstr "Rester dans la zone de notification à la fermeture de la fenêtre"
+
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
@@ -97,7 +101,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "Collez un lien ou un abonnement pour commencer."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:310
+#: crates/obscure-app/src/window.rs:310 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Connecter"
 
@@ -168,14 +172,27 @@ msgid "Close Window"
 msgstr "Fermer la fenêtre"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
+#: crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Quitter"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:14
+msgid "Behavior"
+msgstr "Comportement"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:17
+msgid "Keep running in the background"
+msgstr "Continuer en arrière-plan"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:18
+msgid "Closing the window leaves Obscure in the tray, still connected."
+msgstr "Fermer la fenêtre laisse Obscure dans la zone de notification, toujours connecté."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:23
 msgid "Connection"
 msgstr "Connexion"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:15
+#: crates/obscure-app/src/ui/preferences-dialog.blp:24
 msgid "Connection options will be available in the next stage of the project."
 msgstr "Les options de connexion seront disponibles à la prochaine étape du projet."
 
@@ -196,20 +213,20 @@ msgstr "Collez ci-dessous le lien du serveur, ou les liens de votre abonnement, 
 msgid "Paste from Clipboard"
 msgstr "Coller depuis le presse-papiers"
 
-#: crates/obscure-app/src/application.rs:57
+#: crates/obscure-app/src/application.rs:67
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Les paramètres de proxy système de la session précédente ont été restaurés."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:207
+#: crates/obscure-app/src/application.rs:320
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:211
+#: crates/obscure-app/src/application.rs:324
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure utilise Xray-core, téléchargé séparément au premier lancement."
 
-#: crates/obscure-app/src/application.rs:217
+#: crates/obscure-app/src/application.rs:330
 msgid "Project plan"
 msgstr "Plan du projet"
 
@@ -221,7 +238,7 @@ msgstr "Le presse-papiers ne contient pas de lien de serveur."
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Variables d'environnement copiées. Collez-les dans un terminal."
 
-#: crates/obscure-app/src/window.rs:294
+#: crates/obscure-app/src/window.rs:294 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Déconnecter"
 
@@ -405,3 +422,7 @@ msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
 msgstr[0] "%n lien n'a pas pu être lu."
 msgstr[1] "%n liens n'ont pas pu être lus."
+
+#: crates/obscure-app/src/tray.rs:87
+msgid "Show Obscure"
+msgstr "Afficher Obscure"

@@ -5,6 +5,7 @@ use gtk::{gio, glib};
 
 use crate::config::{APP_ID, PROFILE, VERSION};
 use crate::connection::ConnectionManager;
+use crate::tray::{ObscureTray, TrayCmd};
 use crate::window::ObscureWindow;
 
 mod imp {
@@ -14,6 +15,10 @@ mod imp {
     pub struct ObscureApplication {
         pub manager: std::cell::OnceCell<ConnectionManager>,
         pub recovered: std::cell::Cell<bool>,
+        pub tray: std::cell::RefCell<Option<ksni::Handle<ObscureTray>>>,
+        pub settings: std::cell::OnceCell<gio::Settings>,
+        /// Keeps the app alive while a tray icon exists.
+        pub hold_guard: std::cell::RefCell<Option<gio::ApplicationHoldGuard>>,
     }
 
     #[glib::object_subclass]
@@ -43,7 +48,11 @@ mod imp {
             let manager = ConnectionManager::new();
             self.recovered.set(manager.recover_from_crash());
             self.manager.set(manager).expect("manager set once");
+            self.settings
+                .set(gio::Settings::new(APP_ID))
+                .expect("settings set once");
             self.obj().handle_termination_signals();
+            self.obj().setup_tray();
         }
 
         fn activate(&self) {
@@ -52,6 +61,7 @@ mod imp {
                 Some(window) => window,
                 None => {
                     let win = ObscureWindow::new(&*app, app.manager());
+                    app.apply_background_policy(&win);
                     if self.recovered.replace(false) {
                         win.toast(&gettext(
                             "The system proxy settings from a previous session were restored.",
@@ -67,6 +77,15 @@ mod imp {
             if let Some(m) = self.manager.get() {
                 m.shutdown();
             }
+            if let Some(tray) = self.tray.borrow_mut().take() {
+                // Unregister from the watcher so the icon disappears at once.
+                crate::runtime::runtime().block_on(async {
+                    let _ =
+                        tokio::time::timeout(std::time::Duration::from_secs(1), tray.shutdown())
+                            .await;
+                });
+            }
+            self.hold_guard.borrow_mut().take();
             self.parent_shutdown();
         }
     }
@@ -181,7 +200,106 @@ impl ObscureApplication {
         let dialog: adw::PreferencesDialog = builder
             .object("preferences_dialog")
             .expect("preferences-dialog.ui must define `preferences_dialog`");
+        let background_row: adw::SwitchRow = builder
+            .object("background_row")
+            .expect("preferences-dialog.ui must define `background_row`");
+        self.settings()
+            .bind("run-in-background", &background_row, "active")
+            .build();
+        // Without a tray there is no way back to the window: disable the option.
+        background_row.set_sensitive(self.imp().tray.borrow().is_some());
         dialog.present(self.active_window().as_ref());
+    }
+
+    fn settings(&self) -> &gio::Settings {
+        self.imp()
+            .settings
+            .get()
+            .expect("settings exist after startup")
+    }
+
+    /// Whether closing the window should keep the app alive in the tray.
+    fn runs_in_background(&self) -> bool {
+        self.imp().tray.borrow().is_some() && self.settings().boolean("run-in-background")
+    }
+
+    /// Hides instead of destroying the window when running in background,
+    /// and follows the preference live.
+    fn apply_background_policy(&self, win: &ObscureWindow) {
+        win.set_hide_on_close(self.runs_in_background());
+        let app = self.clone();
+        let win_weak = win.downgrade();
+        self.settings()
+            .connect_changed(Some("run-in-background"), move |_, _| {
+                if let Some(win) = win_weak.upgrade() {
+                    win.set_hide_on_close(app.runs_in_background());
+                }
+            });
+    }
+
+    /// Registers the tray icon (if a host exists) and keeps the app alive
+    /// while it is shown. Tray commands are forwarded to the main loop.
+    fn setup_tray(&self) {
+        let (cmd_tx, cmd_rx) = async_channel::unbounded::<TrayCmd>();
+        let (handle_tx, handle_rx) = async_channel::bounded::<Option<ksni::Handle<ObscureTray>>>(1);
+        crate::runtime::runtime().spawn(async move {
+            let handle = crate::tray::spawn(cmd_tx).await;
+            let _ = handle_tx.send(handle).await;
+        });
+
+        let app = self.clone();
+        glib::spawn_future_local(async move {
+            let Ok(Some(handle)) = handle_rx.recv().await else {
+                return;
+            };
+            tracing::info!("tray icon registered");
+            *app.imp().tray.borrow_mut() = Some(handle);
+            if app.imp().hold_guard.borrow().is_none() {
+                *app.imp().hold_guard.borrow_mut() = Some(app.hold());
+            }
+            if let Some(win) = app.active_window().and_downcast::<ObscureWindow>() {
+                app.apply_background_policy(&win);
+            }
+            app.mirror_state_to_tray();
+
+            while let Ok(cmd) = cmd_rx.recv().await {
+                match cmd {
+                    TrayCmd::ShowWindow => app.activate(),
+                    TrayCmd::ToggleConnection => app.manager().toggle(),
+                    TrayCmd::Quit => app.quit(),
+                }
+            }
+        });
+    }
+
+    /// Pushes connection state changes to the tray icon and menu.
+    fn mirror_state_to_tray(&self) {
+        let m = self.manager();
+        let update = {
+            let app = self.clone();
+            move |m: &ConnectionManager| {
+                let Some(handle) = app.imp().tray.borrow().clone() else {
+                    return;
+                };
+                let (connected, busy, server, status) =
+                    (m.connected(), m.busy(), m.selected_name(), m.status_text());
+                crate::runtime::runtime().spawn(async move {
+                    handle
+                        .update(|t| {
+                            t.connected = connected;
+                            t.busy = busy;
+                            t.server_name = server;
+                            t.status_text = status;
+                        })
+                        .await;
+                });
+            }
+        };
+        m.connect_connected_notify(update.clone());
+        m.connect_busy_notify(update.clone());
+        m.connect_selected_name_notify(update.clone());
+        m.connect_status_text_notify(update.clone());
+        update(m);
     }
 
     fn show_shortcuts(&self) {

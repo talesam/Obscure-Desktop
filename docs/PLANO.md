@@ -252,8 +252,9 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ### Fase 3 — Assinaturas e conforto (2 semanas)
 - [ ] Grupos = assinaturas com auto-update, barra de tráfego/expiração quando houver `userinfo`.
 - [ ] "Testar todos" + "Auto (melhor)".
-- [ ] Tray (ksni) + notificações + autostart (portal Background).
-- [ ] QR pela tela (portal Screenshot + rqrr).
+- [x] Tray (ksni): ícone simbólico (`-symbolic` / `-connected-symbolic`, recolorido pelo tema), menu Mostrar/Conectar/Sair, app segue vivo ao fechar a janela (preferência "Continuar em segundo plano", desativada sem host SNI). *(feito em 2026-09-20)*
+- [ ] Notificações + autostart (portal Background).
+- [ ] Importar por QR code: (a) imagem — arquivo ou colar da área de transferência — e (b) pela tela (portal Screenshot + rqrr). Também gerar QR do servidor para compartilhar.
 - [ ] Protocolos extras: WireGuard, Hysteria2, SOCKS/HTTP upstream.
 - [ ] i18n completa (pt-BR, en), `AdwShortcutsDialog`.
 
@@ -306,6 +307,7 @@ de proxy após crash, encerramento limpo). Strings em inglês com 28 traduções
 Pendências:
 - ~~`stats.rs`, `subscription.rs`, `latency.rs`, backoff~~ feitos em 2026-09-20 (Fase 1 fechada).
 - `subscription.rs` e `latency.rs` existem no core, mas ainda não têm UI (Fase 3).
+- Bandeja: `ksni` registra `org.kde.StatusNotifierItem-<pid>-1`; em modo development usa `IconThemePath` = `build/data/icons`. GNOME precisa da extensão AppIndicator (o usuário tem). Testado via D-Bus (Activate, dbusmenu Event, propriedades IconName/ToolTip).
 - Sinais SIGTERM/SIGINT/SIGHUP passam pelo shutdown normal (proxy restaurado). SIGKILL só é
   recuperado na próxima abertura.
 - UI: sidebar/grupos, detalhe do servidor (QR, copiar link), painel de log (o `ConnectionManager` já

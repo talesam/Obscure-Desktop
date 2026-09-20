@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Solid shield with keyhole cut out: connected -->
+  <path fill-rule="evenodd" d="M8 1 L14 3.25 V8 C14 11.5 11.5 14 8 15 C4.5 14 2 11.5 2 8 V3.25 Z M8 5.5 A1.5 1.5 0 0 1 9 8.1 L9.5 11 H6.5 L7 8.1 A1.5 1.5 0 0 1 8 5.5 Z" fill="#2e3436"/>
+</svg>

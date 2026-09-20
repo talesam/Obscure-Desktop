@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 16:41\n"
-"PO-Revision-Date: 2026-09-20 16:41\n"
+"POT-Creation-Date: 2026-09-20 17:02\n"
+"PO-Revision-Date: 2026-09-20 17:02\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Türkçe\n"
 "Language: tr\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:210
+#: crates/obscure-app/src/application.rs:323
 msgid "Connect. That's it."
 msgstr "Bağlan. Hepsi bu."
 
@@ -82,6 +82,10 @@ msgstr "Pencere yüksekliği"
 msgid "Whether the window is maximized"
 msgstr "Pencerenin ekranı kaplayıp kaplamadığı"
 
+#: data/io.github.talesam.Obscure.gschema.xml.in:18
+msgid "Keep running in the tray when the window is closed"
+msgstr "Pencere kapatıldığında tepside çalışmaya devam et"
+
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
@@ -97,7 +101,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "Başlamak için bir bağlantı veya abonelik yapıştırın."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:310
+#: crates/obscure-app/src/window.rs:310 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Bağlan"
 
@@ -168,14 +172,27 @@ msgid "Close Window"
 msgstr "Pencereyi Kapat"
 
 #: crates/obscure-app/src/ui/shortcuts-dialog.blp:24
+#: crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Çık"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:14
+msgid "Behavior"
+msgstr "Davranış"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:17
+msgid "Keep running in the background"
+msgstr "Arka planda çalışmaya devam et"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:18
+msgid "Closing the window leaves Obscure in the tray, still connected."
+msgstr "Pencere kapatıldığında Obscure tepside kalır ve bağlı olmaya devam eder."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:23
 msgid "Connection"
 msgstr "Bağlantı"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:15
+#: crates/obscure-app/src/ui/preferences-dialog.blp:24
 msgid "Connection options will be available in the next stage of the project."
 msgstr "Bağlantı seçenekleri projenin sonraki aşamasında sunulacak."
 
@@ -196,20 +213,20 @@ msgstr "Sunucu bağlantısını veya aboneliğinizdeki bağlantıları her satı
 msgid "Paste from Clipboard"
 msgstr "Panodan Yapıştır"
 
-#: crates/obscure-app/src/application.rs:57
+#: crates/obscure-app/src/application.rs:67
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Önceki oturumun sistem proxy ayarları geri yüklendi."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:207
+#: crates/obscure-app/src/application.rs:320
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:211
+#: crates/obscure-app/src/application.rs:324
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure, ilk çalıştırmada ayrıca indirilen Xray-core kullanır."
 
-#: crates/obscure-app/src/application.rs:217
+#: crates/obscure-app/src/application.rs:330
 msgid "Project plan"
 msgstr "Proje planı"
 
@@ -221,7 +238,7 @@ msgstr "Panoda sunucu bağlantısı yok."
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Ortam değişkenleri kopyalandı. Bir uçbirime yapıştırın."
 
-#: crates/obscure-app/src/window.rs:294
+#: crates/obscure-app/src/window.rs:294 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Bağlantıyı Kes"
 
@@ -405,3 +422,7 @@ msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
 msgstr[0] "%n bağlantı okunamadı."
 msgstr[1] "%n bağlantı okunamadı."
+
+#: crates/obscure-app/src/tray.rs:87
+msgid "Show Obscure"
+msgstr "Obscure'u Göster"

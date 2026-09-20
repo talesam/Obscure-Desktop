@@ -5,6 +5,7 @@ mod humanize;
 mod import_dialog;
 mod runtime;
 mod server_object;
+mod tray;
 mod window;
 
 use gettextrs::{LocaleCategory, bindtextdomain, setlocale, textdomain};

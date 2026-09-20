@@ -10,3 +10,4 @@ crates/obscure-app/src/window.rs
 crates/obscure-app/src/connection.rs
 crates/obscure-app/src/humanize.rs
 crates/obscure-app/src/import_dialog.rs
+crates/obscure-app/src/tray.rs
