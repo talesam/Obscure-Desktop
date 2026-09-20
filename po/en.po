@@ -188,3 +188,7 @@ msgstr "Whether the window is maximized"
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:9
 msgid "Conecte-se ao seu proxy com um botão"
 msgstr "Connect to your proxy with one button"
+
+#: crates/obscure-app/src/window.rs
+msgid "Importar servidores chega na próxima versão."
+msgstr "Importing servers is coming in the next version."

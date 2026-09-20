@@ -1,5 +1,6 @@
+use adw::prelude::*;
 use adw::subclass::prelude::*;
-use gtk::prelude::*;
+use gettextrs::gettext;
 use gtk::{gio, glib};
 
 use crate::config::{APP_ID, PROFILE};
@@ -12,6 +13,8 @@ mod imp {
     pub struct ObscureWindow {
         #[template_child]
         pub toolbar_view: TemplateChild<adw::ToolbarView>,
+        #[template_child]
+        pub toast_overlay: TemplateChild<adw::ToastOverlay>,
         #[template_child]
         pub status_page: TemplateChild<adw::StatusPage>,
         #[template_child]
@@ -41,6 +44,9 @@ mod imp {
             // Phase 2 opens the import dialog here. The Connect button only
             // appears once at least one server exists.
             tracing::info!("add server requested (not implemented yet)");
+            self.toast_overlay.add_toast(adw::Toast::new(&gettext(
+                "Importar servidores chega na próxima versão.",
+            )));
         }
     }
 

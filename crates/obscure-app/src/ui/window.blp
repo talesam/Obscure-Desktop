@@ -28,7 +28,8 @@ template $ObscureWindow: Adw.ApplicationWindow {
       }
     }
 
-    content: Adw.StatusPage status_page {
+    content: Adw.ToastOverlay toast_overlay {
+      Adw.StatusPage status_page {
       title: _("Conecte-se. Só isso.");
       description: _("Cole um link ou uma assinatura para começar.");
 
@@ -49,6 +50,7 @@ template $ObscureWindow: Adw.ApplicationWindow {
           "pill",
           "suggested-action",
         ]
+      }
       }
     };
   };

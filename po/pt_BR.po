@@ -157,3 +157,7 @@ msgstr ""
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:9
 msgid "Conecte-se ao seu proxy com um botão"
 msgstr ""
+
+#: crates/obscure-app/src/window.rs
+msgid "Importar servidores chega na próxima versão."
+msgstr ""
