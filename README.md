@@ -70,6 +70,5 @@ e precisa de `python-aiohttp` e `python-tomlkit`.)
 | `po/` | Traduções (`pt_BR` é o idioma base, `en` é o segundo) |
 | `build-aux/` | Manifest Flatpak, `cargo-sources.json`, scripts de build |
 
-Contribuições: veja [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 Licença: [GPL-3.0-or-later](LICENSE).

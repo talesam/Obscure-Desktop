@@ -21,3 +21,7 @@
 
 # Generated
 /po/*.pot
+
+# Local notes (not published)
+/CLAUDE.md
+/CONTRIBUTING.md
