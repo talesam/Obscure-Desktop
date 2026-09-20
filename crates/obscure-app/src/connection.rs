@@ -348,7 +348,7 @@ impl ConnectionManager {
     // -- subscriptions -------------------------------------------------------
 
     fn http_client() -> obscure_core::HttpClient {
-        obscure_core::http_client(&obscure_core::user_agent(crate::config::APP_VERSION))
+        obscure_core::http_client(&obscure_core::user_agent(obscure_core::APP_VERSION))
     }
 
     /// Fetches `url` and adds it as a subscription. `done` receives the
@@ -829,7 +829,7 @@ impl ConnectionManager {
         let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel::<Cmd>(4);
         *self.imp().cmd_tx.borrow_mut() = Some(cmd_tx);
 
-        let user_agent = obscure_core::user_agent(crate::config::APP_VERSION);
+        let user_agent = obscure_core::user_agent(obscure_core::APP_VERSION);
         runtime().spawn(actor(params, user_agent, ui_tx, cmd_rx));
 
         glib::spawn_future_local(clone!(

@@ -1,7 +1,12 @@
 project(
   'obscure',
   'rust',
-  version: '0.1.0',
+  # The version lives in crates/obscure-core/src/lib.rs (APP_VERSION).
+  version: run_command(
+    'grep', '-oP', '(?<=pub const APP_VERSION: &str = ")[^"]+',
+    'crates/obscure-core/src/lib.rs',
+    check: true,
+  ).stdout().strip(),
   meson_version: '>= 1.3.0',
   license: 'GPL-3.0-or-later',
   default_options: ['warning_level=2'],

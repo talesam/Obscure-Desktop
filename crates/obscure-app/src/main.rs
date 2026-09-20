@@ -20,7 +20,8 @@ use gtk::prelude::*;
 use gtk::{gio, glib};
 
 use self::application::ObscureApplication;
-use self::config::{APP_ID, APP_VERSION, GETTEXT_PACKAGE, LOCALEDIR, PKGDATADIR, PROFILE};
+use self::config::{APP_ID, GETTEXT_PACKAGE, LOCALEDIR, PKGDATADIR, PROFILE};
+use obscure_core::APP_VERSION;
 
 fn main() -> glib::ExitCode {
     tracing_subscriber::fmt()

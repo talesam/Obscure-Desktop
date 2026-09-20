@@ -3,10 +3,11 @@ use adw::subclass::prelude::*;
 use gettextrs::gettext;
 use gtk::{gio, glib};
 
-use crate::config::{APP_ID, APP_VERSION, PROFILE};
+use crate::config::{APP_ID, PROFILE};
 use crate::connection::ConnectionManager;
 use crate::tray::{ObscureTray, TrayCmd};
 use crate::window::ObscureWindow;
+use obscure_core::APP_VERSION;
 
 mod imp {
     use super::*;

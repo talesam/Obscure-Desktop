@@ -307,8 +307,9 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 - **Conexões ao vivo** (menu e Ctrl+L): fluxo estilo terminal com hora, protocolo, destino e rota
   (pelo servidor / direto / bloqueado / DNS), a partir do access log do Xray (`log.access = ""`;
   parser em `obscure-core/src/access.rs`). Pausar, copiar, limpar, contador.
-- Constante de versão renomeada para `APP_VERSION`; a versão exibida é sempre `0.1.0` (sem hash) e
-  o perfil development não desenha mais as faixas `.devel` no header. O app ID `.Devel` continua.
+- Versão: literal único `APP_VERSION` em `crates/obscure-core/src/lib.rs`, lido pelo meson e
+  incrementado automaticamente pelo gitrepo (bumper semântico). Sem hash na versão exibida; o
+  perfil development não desenha mais as faixas `.devel`. O app ID `.Devel` continua.
 - Ícone do app: **escudo-prisma** (`docs/assets/icones/icone-1-escudo-prisma.svg` do projeto
   `obscure`), adaptado com cantos arredondados em `data/icons/hicolor/scalable/apps/`. Cores da
   marca no metainfo atualizadas (#a99bff / #4b3fbf). Os simbólicos (janela e bandeja) mantêm o
