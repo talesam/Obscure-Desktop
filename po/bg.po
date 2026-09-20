@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 17:11\n"
-"PO-Revision-Date: 2026-09-20 17:11\n"
+"POT-Creation-Date: 2026-09-20 18:29\n"
+"PO-Revision-Date: 2026-09-20 18:29\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Български\n"
 "Language: bg\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:331
+#: crates/obscure-app/src/application.rs:398
 msgid "Connect. That's it."
 msgstr "Свържете се. Това е всичко."
 
@@ -86,6 +86,14 @@ msgstr "Дали прозорецът е максимизиран"
 msgid "Keep running in the tray when the window is closed"
 msgstr "Оставане в системната лента при затваряне на прозореца"
 
+#: data/io.github.talesam.Obscure.gschema.xml.in:22
+msgid "Start with the session (via the Background portal)"
+msgstr "Стартиране със сесията (през портала Background)"
+
+#: data/io.github.talesam.Obscure.gschema.xml.in:26
+msgid "Connect automatically when the app starts"
+msgstr "Автоматично свързване при стартиране на приложението"
+
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
@@ -101,7 +109,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "Поставете връзка или абонамент, за да започнете."
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:406 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/window.rs:581 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Свързване"
 
@@ -154,30 +162,50 @@ msgid "All traffic goes through the connection, except local network addresses."
 msgstr "Целият трафик минава през връзката, освен адресите в локалната мрежа."
 
 #: crates/obscure-app/src/ui/window.blp:198
+msgid "Subscriptions"
+msgstr "Абонаменти"
+
+#: crates/obscure-app/src/ui/window.blp:211
 msgid "Servers"
 msgstr "Сървъри"
 
+#: crates/obscure-app/src/ui/window.blp:216
+msgid "Measure the response time of every server"
+msgstr "Измерване на времето за отговор на всички сървъри"
+
 #: crates/obscure-app/src/ui/window.blp:221
+msgid "Test All"
+msgstr "Тест на всички"
+
+#: crates/obscure-app/src/ui/window.blp:238
+msgid "Automatic: fastest server"
+msgstr "Автоматично: най-бързият сървър"
+
+#: crates/obscure-app/src/ui/window.blp:239
+msgid "Tests all servers when you connect and picks the quickest one."
+msgstr "При свързване тества всички сървъри и избира най-бързия."
+
+#: crates/obscure-app/src/ui/window.blp:265
 msgid "_Import from File…"
 msgstr "_Внасяне от файл…"
 
-#: crates/obscure-app/src/ui/window.blp:226
+#: crates/obscure-app/src/ui/window.blp:270
 msgid "_Connection Log"
 msgstr "_Дневник на връзката"
 
-#: crates/obscure-app/src/ui/window.blp:231
+#: crates/obscure-app/src/ui/window.blp:275
 msgid "_Copy Environment Variables"
 msgstr "_Копиране на променливите на средата"
 
-#: crates/obscure-app/src/ui/window.blp:238
+#: crates/obscure-app/src/ui/window.blp:282
 msgid "_Preferences"
 msgstr "_Настройки"
 
-#: crates/obscure-app/src/ui/window.blp:243
+#: crates/obscure-app/src/ui/window.blp:287
 msgid "_Keyboard Shortcuts"
 msgstr "_Клавишни комбинации"
 
-#: crates/obscure-app/src/ui/window.blp:248
+#: crates/obscure-app/src/ui/window.blp:292
 msgid "_About Obscure"
 msgstr "_Относно Obscure"
 
@@ -216,36 +244,49 @@ msgstr "Продължаване на работата във фонов реж�
 msgid "Closing the window leaves Obscure in the tray, still connected."
 msgstr "Затварянето на прозореца оставя Obscure в системната лента, все още свързан."
 
+#: crates/obscure-app/src/ui/preferences-dialog.blp:22
+msgid "Start with the session"
+msgstr "Стартиране със сесията"
+
 #: crates/obscure-app/src/ui/preferences-dialog.blp:23
+msgid "Obscure opens in the tray when you log in."
+msgstr "Obscure се отваря в системната лента при вход."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:27
+msgid "Connect when Obscure starts"
+msgstr "Свързване при стартиране на Obscure"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:32
 msgid "Connection"
 msgstr "Връзка"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:24
+#: crates/obscure-app/src/ui/preferences-dialog.blp:33
 msgid "Changes apply the next time you connect. If you are connected now, Obscure reconnects."
 msgstr "Промените влизат в сила при следващото свързване. Ако сте свързани сега, Obscure се свързва отново."
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:27
+#: crates/obscure-app/src/ui/preferences-dialog.blp:36
 msgid "Local port"
 msgstr "Локален порт"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:28
+#: crates/obscure-app/src/ui/preferences-dialog.blp:37
 msgid "Where programs on this computer reach the connection."
 msgstr "Където програмите на този компютър намират връзката."
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:40
+#: crates/obscure-app/src/ui/preferences-dialog.blp:49
 msgid "DNS server (DNS over HTTPS)"
 msgstr "DNS сървър (DNS през HTTPS)"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:45
+#: crates/obscure-app/src/ui/preferences-dialog.blp:54
 msgid "Try pre-release versions of the engine"
 msgstr "Пробване на предварителни версии на ядрото"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:46
+#: crates/obscure-app/src/ui/preferences-dialog.blp:55
 msgid "Newer features, but less tested. Off is the safe choice."
 msgstr "По-нови функции, но по-малко тествани. Изключено е сигурният избор."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:398 crates/obscure-app/src/window.rs:467
+#: crates/obscure-app/src/window.rs:544 crates/obscure-app/src/window.rs:573
+#: crates/obscure-app/src/window.rs:665
 msgid "Cancel"
 msgstr "Отказ"
 
@@ -254,130 +295,181 @@ msgid "Add"
 msgstr "Добавяне"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:42
-msgid "Paste the server link below, or the links from your subscription, one per line."
-msgstr "Поставете по-долу връзката към сървъра или връзките от абонамента, по една на ред."
+msgid "Paste server links (one per line) or the address of your subscription."
+msgstr "Поставете връзки към сървъри (по една на ред) или адреса на абонамента си."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:75
-msgid "Paste from Clipboard"
-msgstr "Поставяне от клипборда"
+#: crates/obscure-app/src/ui/import-dialog.blp:79
+msgid "Paste"
+msgstr "Поставяне"
 
-#: crates/obscure-app/src/application.rs:67
+#: crates/obscure-app/src/ui/import-dialog.blp:84
+msgid "Read a QR code from an image file"
+msgstr "Прочитане на QR код от файл с изображение"
+
+#: crates/obscure-app/src/ui/import-dialog.blp:89
+msgid "QR from Image"
+msgstr "QR от изображение"
+
+#: crates/obscure-app/src/ui/import-dialog.blp:94
+msgid "Take a screenshot and read the QR code in it"
+msgstr "Заснемане на екрана и прочитане на QR кода в него"
+
+#: crates/obscure-app/src/ui/import-dialog.blp:99
+msgid "QR from Screen"
+msgstr "QR от екрана"
+
+#: crates/obscure-app/src/application.rs:95
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Настройките на системното прокси от предишната сесия бяха възстановени."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:328
+#: crates/obscure-app/src/application.rs:395
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:332
+#: crates/obscure-app/src/application.rs:399
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure използва Xray-core, който се изтегля отделно при първото стартиране."
 
-#: crates/obscure-app/src/application.rs:338
+#: crates/obscure-app/src/application.rs:405
 msgid "Project plan"
 msgstr "План на проекта"
 
-#: crates/obscure-app/src/window.rs:198
+#: crates/obscure-app/src/window.rs:221
 msgid "The clipboard does not contain a server link."
 msgstr "Клипбордът не съдържа връзка към сървър."
 
-#: crates/obscure-app/src/window.rs:216
+#: crates/obscure-app/src/window.rs:239
 msgid "Text files"
 msgstr "Текстови файлове"
 
-#: crates/obscure-app/src/window.rs:223
+#: crates/obscure-app/src/window.rs:246
 msgid "Import servers from a file"
 msgstr "Внасяне на сървъри от файл"
 
-#: crates/obscure-app/src/window.rs:243
+#: crates/obscure-app/src/window.rs:266
 msgid "Could not read that file."
 msgstr "Този файл не може да бъде прочетен."
 
-#: crates/obscure-app/src/window.rs:309
+#: crates/obscure-app/src/window.rs:354
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Променливите на средата са копирани. Поставете ги в терминал."
 
-#: crates/obscure-app/src/window.rs:390 crates/obscure-app/src/tray.rs:81
-msgid "Disconnect"
-msgstr "Прекъсване"
+#: crates/obscure-app/src/window.rs:484
+msgid "Update now"
+msgstr "Обновяване сега"
 
-#: crates/obscure-app/src/window.rs:446
-msgid "Server details"
-msgstr "Данни за сървъра"
+#: crates/obscure-app/src/window.rs:505 crates/obscure-app/src/window.rs:699
+msgid "Subscription updated: %n server."
+msgid_plural "Subscription updated: %n servers."
+msgstr[0] "Абонаментът е обновен: %n сървър."
+msgstr[1] "Абонаментът е обновен: %n сървъра."
 
-#: crates/obscure-app/src/window.rs:463
-msgid "Remove “%s”?"
-msgstr "Да се премахне ли „%s“?"
+#: crates/obscure-app/src/window.rs:521
+msgid "Remove subscription"
+msgstr "Премахване на абонамента"
 
-#: crates/obscure-app/src/window.rs:464
-msgid "You can add it again later by pasting its link."
-msgstr "По-късно можете да го добавите отново, като поставите връзката му."
+#: crates/obscure-app/src/window.rs:538
+msgid "Remove “%s” and all its servers?"
+msgstr "Да се премахне ли „%s“ и всичките му сървъри?"
 
-#: crates/obscure-app/src/window.rs:468
+#: crates/obscure-app/src/window.rs:540
+msgid "You can add the subscription again later by pasting its address."
+msgstr "По-късно можете да добавите абонамента отново, като поставите адреса му."
+
+#: crates/obscure-app/src/window.rs:545 crates/obscure-app/src/window.rs:666
 #: crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Премахване"
 
-#: crates/obscure-app/src/window.rs:488
+#: crates/obscure-app/src/window.rs:565 crates/obscure-app/src/tray.rs:81
+msgid "Disconnect"
+msgstr "Прекъсване"
+
+#: crates/obscure-app/src/window.rs:644
+msgid "Server details"
+msgstr "Данни за сървъра"
+
+#: crates/obscure-app/src/window.rs:661
+msgid "Remove “%s”?"
+msgstr "Да се премахне ли „%s“?"
+
+#: crates/obscure-app/src/window.rs:662
+msgid "You can add it again later by pasting its link."
+msgstr "По-късно можете да го добавите отново, като поставите връзката му."
+
+#: crates/obscure-app/src/window.rs:686
 msgid "These servers were already added."
 msgstr "Тези сървъри вече бяха добавени."
 
-#: crates/obscure-app/src/window.rs:490
+#: crates/obscure-app/src/window.rs:688
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "Добавен е %n сървър."
 msgstr[1] "Добавени са %n сървъра."
 
-#: crates/obscure-app/src/connection.rs:161
-#: crates/obscure-app/src/connection.rs:527
+#: crates/obscure-app/src/window.rs:694
+msgid "Downloading the subscription…"
+msgstr "Изтегляне на абонамента…"
+
+#: crates/obscure-app/src/connection.rs:186
+#: crates/obscure-app/src/connection.rs:828
 msgid "Disconnected"
 msgstr "Няма връзка"
 
-#: crates/obscure-app/src/connection.rs:396
+#: crates/obscure-app/src/connection.rs:667
+msgid "Finding the fastest server…"
+msgstr "Търсене на най-бързия сървър…"
+
+#: crates/obscure-app/src/connection.rs:693
 msgid "Choose a server to connect"
 msgstr "Изберете сървър за свързване"
 
-#: crates/obscure-app/src/connection.rs:413
-#: crates/obscure-app/src/connection.rs:503
+#: crates/obscure-app/src/connection.rs:710
+#: crates/obscure-app/src/connection.rs:800
 msgid "Connecting…"
 msgstr "Свързване…"
 
-#: crates/obscure-app/src/connection.rs:447
+#: crates/obscure-app/src/connection.rs:744
 msgid "Disconnecting…"
 msgstr "Прекъсване…"
 
-#: crates/obscure-app/src/connection.rs:470
+#: crates/obscure-app/src/connection.rs:767
 msgid "Preparing the connection engine…"
 msgstr "Подготовка на ядрото за връзка…"
 
-#: crates/obscure-app/src/connection.rs:481
+#: crates/obscure-app/src/connection.rs:778
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "Изтегляне на ядрото за връзка: %a от %b MB"
 
-#: crates/obscure-app/src/connection.rs:484
+#: crates/obscure-app/src/connection.rs:781
 msgid "Downloading the connection engine: %a MB"
 msgstr "Изтегляне на ядрото за връзка: %a MB"
 
-#: crates/obscure-app/src/connection.rs:489
+#: crates/obscure-app/src/connection.rs:786
 msgid "Verifying the download…"
 msgstr "Проверка на изтегленото…"
 
-#: crates/obscure-app/src/connection.rs:491
+#: crates/obscure-app/src/connection.rs:788
 msgid "Installing the connection engine…"
 msgstr "Инсталиране на ядрото за връзка…"
 
-#: crates/obscure-app/src/connection.rs:520
+#: crates/obscure-app/src/connection.rs:817
 msgid "Connected · system proxy active"
 msgstr "Свързано · системното прокси е активно"
 
-#: crates/obscure-app/src/connection.rs:521
+#: crates/obscure-app/src/connection.rs:818
 msgid "Connected · local proxy only"
 msgstr "Свързано · само локално прокси"
 
-#: crates/obscure-app/src/connection.rs:522
+#: crates/obscure-app/src/connection.rs:819
+#: crates/obscure-app/src/connection.rs:823
 msgid "Connected"
 msgstr "Свързано"
+
+#: crates/obscure-app/src/connection.rs:840
+msgid "Connection failed"
+msgstr "Свързването не успя"
 
 #: crates/obscure-app/src/humanize.rs:9
 msgid "This kind of link is not supported yet: %s"
@@ -467,18 +559,39 @@ msgstr "Абонаментът не може да бъде прочетен. П�
 msgid "This subscription is in Clash format, which Obscure does not support yet."
 msgstr "Този абонамент е във формат Clash, който Obscure още не поддържа."
 
-#: crates/obscure-app/src/import_dialog.rs:49
-#: crates/obscure-app/src/import_dialog.rs:159
+#: crates/obscure-app/src/import_dialog.rs:60
+#: crates/obscure-app/src/import_dialog.rs:253
 msgid "No valid link found."
 msgstr "Не е намерена валидна връзка."
 
-#: crates/obscure-app/src/import_dialog.rs:162
+#: crates/obscure-app/src/import_dialog.rs:74
+msgid "Images"
+msgstr "Изображения"
+
+#: crates/obscure-app/src/import_dialog.rs:79
+msgid "Choose an image with a QR code"
+msgstr "Изберете изображение с QR код"
+
+#: crates/obscure-app/src/import_dialog.rs:97
+#: crates/obscure-app/src/import_dialog.rs:149
+msgid "No QR code was found in that image."
+msgstr "В това изображение не е намерен QR код."
+
+#: crates/obscure-app/src/import_dialog.rs:119
+msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
+msgstr "На екрана не е намерен QR код. Уверете се, че е напълно видим, и опитайте отново."
+
+#: crates/obscure-app/src/import_dialog.rs:246
+msgid "Subscription address: the servers will be downloaded and kept up to date."
+msgstr "Адрес на абонамент: сървърите ще бъдат изтеглени и поддържани актуални."
+
+#: crates/obscure-app/src/import_dialog.rs:256
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
 msgstr[0] "%n сървър е готов за добавяне."
 msgstr[1] "%n сървъра са готови за добавяне."
 
-#: crates/obscure-app/src/import_dialog.rs:172
+#: crates/obscure-app/src/import_dialog.rs:266
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
 msgstr[0] "%n връзка не можа да бъде прочетена."
@@ -523,3 +636,29 @@ msgstr "Още няма записи. Свържете се, за да види�
 #: crates/obscure-app/src/server_dialog.rs:61
 msgid "Link copied."
 msgstr "Връзката е копирана."
+
+#: crates/obscure-app/src/preferences_dialog.rs:98
+msgid "The system did not allow Obscure to start automatically."
+msgstr "Системата не позволи Obscure да стартира автоматично."
+
+#: crates/obscure-app/src/preferences_dialog.rs:109
+msgid "Automatic start is not available on this system."
+msgstr "Автоматичното стартиране не е налично на тази система."
+
+#: crates/obscure-app/src/subscription_object.rs:50
+msgid "%n server"
+msgid_plural "%n servers"
+msgstr[0] "%n сървър"
+msgstr[1] "%n сървъра"
+
+#: crates/obscure-app/src/subscription_object.rs:58
+msgid "%a of %b used"
+msgstr "Използвани %a от %b"
+
+#: crates/obscure-app/src/subscription_object.rs:71
+msgid "expires %d"
+msgstr "изтича на %d"
+
+#: crates/obscure-app/src/autostart.rs:11
+msgid "Obscure keeps your connection available from the tray."
+msgstr "Obscure поддържа връзката ви достъпна от системната лента."

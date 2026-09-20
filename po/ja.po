@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 17:11\n"
-"PO-Revision-Date: 2026-09-20 17:11\n"
+"POT-Creation-Date: 2026-09-20 18:29\n"
+"PO-Revision-Date: 2026-09-20 18:29\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: 日本語\n"
 "Language: ja\n"
@@ -25,7 +25,7 @@ msgstr "Obscure"
 #. Translators: the slogan of the app
 #: data/io.github.talesam.Obscure.desktop.in.in:4
 #: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:331
+#: crates/obscure-app/src/application.rs:398
 msgid "Connect. That's it."
 msgstr "接続する。それだけ。"
 
@@ -86,6 +86,14 @@ msgstr "ウィンドウが最大化されているかどうか"
 msgid "Keep running in the tray when the window is closed"
 msgstr "ウィンドウを閉じてもトレイで実行し続ける"
 
+#: data/io.github.talesam.Obscure.gschema.xml.in:22
+msgid "Start with the session (via the Background portal)"
+msgstr "セッションと一緒に起動 (Background ポータル経由)"
+
+#: data/io.github.talesam.Obscure.gschema.xml.in:26
+msgid "Connect automatically when the app starts"
+msgstr "アプリ起動時に自動で接続"
+
 #: crates/obscure-app/src/ui/window.blp:17
 #: crates/obscure-app/src/ui/window.blp:51
 #: crates/obscure-app/src/ui/import-dialog.blp:5
@@ -101,7 +109,7 @@ msgid "Paste a link or a subscription to get started."
 msgstr "始めるにはリンクまたはサブスクリプションを貼り付けてください。"
 
 #: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:406 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/window.rs:581 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "接続"
 
@@ -154,30 +162,50 @@ msgid "All traffic goes through the connection, except local network addresses."
 msgstr "ローカルネットワークのアドレス以外、すべての通信が接続を通ります。"
 
 #: crates/obscure-app/src/ui/window.blp:198
+msgid "Subscriptions"
+msgstr "サブスクリプション"
+
+#: crates/obscure-app/src/ui/window.blp:211
 msgid "Servers"
 msgstr "サーバー"
 
+#: crates/obscure-app/src/ui/window.blp:216
+msgid "Measure the response time of every server"
+msgstr "すべてのサーバーの応答時間を測定"
+
 #: crates/obscure-app/src/ui/window.blp:221
+msgid "Test All"
+msgstr "すべてテスト"
+
+#: crates/obscure-app/src/ui/window.blp:238
+msgid "Automatic: fastest server"
+msgstr "自動: 最速のサーバー"
+
+#: crates/obscure-app/src/ui/window.blp:239
+msgid "Tests all servers when you connect and picks the quickest one."
+msgstr "接続時にすべてのサーバーをテストし、最も速いものを選びます。"
+
+#: crates/obscure-app/src/ui/window.blp:265
 msgid "_Import from File…"
 msgstr "ファイルからインポート(_I)…"
 
-#: crates/obscure-app/src/ui/window.blp:226
+#: crates/obscure-app/src/ui/window.blp:270
 msgid "_Connection Log"
 msgstr "接続ログ(_C)"
 
-#: crates/obscure-app/src/ui/window.blp:231
+#: crates/obscure-app/src/ui/window.blp:275
 msgid "_Copy Environment Variables"
 msgstr "環境変数をコピー(_C)"
 
-#: crates/obscure-app/src/ui/window.blp:238
+#: crates/obscure-app/src/ui/window.blp:282
 msgid "_Preferences"
 msgstr "設定(_P)"
 
-#: crates/obscure-app/src/ui/window.blp:243
+#: crates/obscure-app/src/ui/window.blp:287
 msgid "_Keyboard Shortcuts"
 msgstr "キーボードショートカット(_K)"
 
-#: crates/obscure-app/src/ui/window.blp:248
+#: crates/obscure-app/src/ui/window.blp:292
 msgid "_About Obscure"
 msgstr "Obscure について(_A)"
 
@@ -216,36 +244,49 @@ msgstr "バックグラウンドで実行し続ける"
 msgid "Closing the window leaves Obscure in the tray, still connected."
 msgstr "ウィンドウを閉じても Obscure はトレイに残り、接続を維持します。"
 
+#: crates/obscure-app/src/ui/preferences-dialog.blp:22
+msgid "Start with the session"
+msgstr "セッションと一緒に起動"
+
 #: crates/obscure-app/src/ui/preferences-dialog.blp:23
+msgid "Obscure opens in the tray when you log in."
+msgstr "ログイン時に Obscure がトレイで開きます。"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:27
+msgid "Connect when Obscure starts"
+msgstr "Obscure の起動時に接続"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:32
 msgid "Connection"
 msgstr "接続"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:24
+#: crates/obscure-app/src/ui/preferences-dialog.blp:33
 msgid "Changes apply the next time you connect. If you are connected now, Obscure reconnects."
 msgstr "変更は次回の接続時に適用されます。接続中の場合、Obscure は再接続します。"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:27
+#: crates/obscure-app/src/ui/preferences-dialog.blp:36
 msgid "Local port"
 msgstr "ローカルポート"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:28
+#: crates/obscure-app/src/ui/preferences-dialog.blp:37
 msgid "Where programs on this computer reach the connection."
 msgstr "このコンピューターのプログラムが接続に到達するポートです。"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:40
+#: crates/obscure-app/src/ui/preferences-dialog.blp:49
 msgid "DNS server (DNS over HTTPS)"
 msgstr "DNS サーバー (DNS over HTTPS)"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:45
+#: crates/obscure-app/src/ui/preferences-dialog.blp:54
 msgid "Try pre-release versions of the engine"
 msgstr "エンジンのプレリリース版を試す"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:46
+#: crates/obscure-app/src/ui/preferences-dialog.blp:55
 msgid "Newer features, but less tested. Off is the safe choice."
 msgstr "新機能が使えますが、テストは少なめです。オフが安全な選択です。"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:398 crates/obscure-app/src/window.rs:467
+#: crates/obscure-app/src/window.rs:544 crates/obscure-app/src/window.rs:573
+#: crates/obscure-app/src/window.rs:665
 msgid "Cancel"
 msgstr "キャンセル"
 
@@ -254,129 +295,179 @@ msgid "Add"
 msgstr "追加"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:42
-msgid "Paste the server link below, or the links from your subscription, one per line."
-msgstr "サーバーのリンク、またはサブスクリプションのリンクを 1 行に 1 つずつ下に貼り付けてください。"
+msgid "Paste server links (one per line) or the address of your subscription."
+msgstr "サーバーのリンク (1 行に 1 つ) またはサブスクリプションのアドレスを貼り付けてください。"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:75
-msgid "Paste from Clipboard"
-msgstr "クリップボードから貼り付け"
+#: crates/obscure-app/src/ui/import-dialog.blp:79
+msgid "Paste"
+msgstr "貼り付け"
 
-#: crates/obscure-app/src/application.rs:67
+#: crates/obscure-app/src/ui/import-dialog.blp:84
+msgid "Read a QR code from an image file"
+msgstr "画像ファイルから QR コードを読み取る"
+
+#: crates/obscure-app/src/ui/import-dialog.blp:89
+msgid "QR from Image"
+msgstr "画像から QR"
+
+#: crates/obscure-app/src/ui/import-dialog.blp:94
+msgid "Take a screenshot and read the QR code in it"
+msgstr "スクリーンショットを撮り、その中の QR コードを読み取る"
+
+#: crates/obscure-app/src/ui/import-dialog.blp:99
+msgid "QR from Screen"
+msgstr "画面から QR"
+
+#: crates/obscure-app/src/application.rs:95
 msgid "The system proxy settings from a previous session were restored."
 msgstr "前回のセッションのシステムプロキシ設定を復元しました。"
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:328
+#: crates/obscure-app/src/application.rs:395
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:332
+#: crates/obscure-app/src/application.rs:399
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure は Xray-core を使用します。初回起動時に別途ダウンロードされます。"
 
-#: crates/obscure-app/src/application.rs:338
+#: crates/obscure-app/src/application.rs:405
 msgid "Project plan"
 msgstr "プロジェクト計画"
 
-#: crates/obscure-app/src/window.rs:198
+#: crates/obscure-app/src/window.rs:221
 msgid "The clipboard does not contain a server link."
 msgstr "クリップボードにサーバーのリンクがありません。"
 
-#: crates/obscure-app/src/window.rs:216
+#: crates/obscure-app/src/window.rs:239
 msgid "Text files"
 msgstr "テキストファイル"
 
-#: crates/obscure-app/src/window.rs:223
+#: crates/obscure-app/src/window.rs:246
 msgid "Import servers from a file"
 msgstr "ファイルからサーバーをインポート"
 
-#: crates/obscure-app/src/window.rs:243
+#: crates/obscure-app/src/window.rs:266
 msgid "Could not read that file."
 msgstr "そのファイルを読み取れませんでした。"
 
-#: crates/obscure-app/src/window.rs:309
+#: crates/obscure-app/src/window.rs:354
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "環境変数をコピーしました。ターミナルに貼り付けてください。"
 
-#: crates/obscure-app/src/window.rs:390 crates/obscure-app/src/tray.rs:81
-msgid "Disconnect"
-msgstr "切断"
+#: crates/obscure-app/src/window.rs:484
+msgid "Update now"
+msgstr "今すぐ更新"
 
-#: crates/obscure-app/src/window.rs:446
-msgid "Server details"
-msgstr "サーバーの詳細"
+#: crates/obscure-app/src/window.rs:505 crates/obscure-app/src/window.rs:699
+msgid "Subscription updated: %n server."
+msgid_plural "Subscription updated: %n servers."
+msgstr[0] "サブスクリプションを更新しました: %n 台のサーバー。"
 
-#: crates/obscure-app/src/window.rs:463
-msgid "Remove “%s”?"
-msgstr "「%s」を削除しますか?"
+#: crates/obscure-app/src/window.rs:521
+msgid "Remove subscription"
+msgstr "サブスクリプションを削除"
 
-#: crates/obscure-app/src/window.rs:464
-msgid "You can add it again later by pasting its link."
-msgstr "後でリンクを貼り付ければ、また追加できます。"
+#: crates/obscure-app/src/window.rs:538
+msgid "Remove “%s” and all its servers?"
+msgstr "「%s」とそのすべてのサーバーを削除しますか?"
 
-#: crates/obscure-app/src/window.rs:468
+#: crates/obscure-app/src/window.rs:540
+msgid "You can add the subscription again later by pasting its address."
+msgstr "後でアドレスを貼り付ければ、サブスクリプションをまた追加できます。"
+
+#: crates/obscure-app/src/window.rs:545 crates/obscure-app/src/window.rs:666
 #: crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "削除"
 
-#: crates/obscure-app/src/window.rs:488
+#: crates/obscure-app/src/window.rs:565 crates/obscure-app/src/tray.rs:81
+msgid "Disconnect"
+msgstr "切断"
+
+#: crates/obscure-app/src/window.rs:644
+msgid "Server details"
+msgstr "サーバーの詳細"
+
+#: crates/obscure-app/src/window.rs:661
+msgid "Remove “%s”?"
+msgstr "「%s」を削除しますか?"
+
+#: crates/obscure-app/src/window.rs:662
+msgid "You can add it again later by pasting its link."
+msgstr "後でリンクを貼り付ければ、また追加できます。"
+
+#: crates/obscure-app/src/window.rs:686
 msgid "These servers were already added."
 msgstr "これらのサーバーはすでに追加されています。"
 
-#: crates/obscure-app/src/window.rs:490
+#: crates/obscure-app/src/window.rs:688
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "%n 台のサーバーを追加しました。"
 
-#: crates/obscure-app/src/connection.rs:161
-#: crates/obscure-app/src/connection.rs:527
+#: crates/obscure-app/src/window.rs:694
+msgid "Downloading the subscription…"
+msgstr "サブスクリプションをダウンロード中…"
+
+#: crates/obscure-app/src/connection.rs:186
+#: crates/obscure-app/src/connection.rs:828
 msgid "Disconnected"
 msgstr "未接続"
 
-#: crates/obscure-app/src/connection.rs:396
+#: crates/obscure-app/src/connection.rs:667
+msgid "Finding the fastest server…"
+msgstr "最速のサーバーを探しています…"
+
+#: crates/obscure-app/src/connection.rs:693
 msgid "Choose a server to connect"
 msgstr "接続するサーバーを選んでください"
 
-#: crates/obscure-app/src/connection.rs:413
-#: crates/obscure-app/src/connection.rs:503
+#: crates/obscure-app/src/connection.rs:710
+#: crates/obscure-app/src/connection.rs:800
 msgid "Connecting…"
 msgstr "接続中…"
 
-#: crates/obscure-app/src/connection.rs:447
+#: crates/obscure-app/src/connection.rs:744
 msgid "Disconnecting…"
 msgstr "切断中…"
 
-#: crates/obscure-app/src/connection.rs:470
+#: crates/obscure-app/src/connection.rs:767
 msgid "Preparing the connection engine…"
 msgstr "接続エンジンを準備中…"
 
-#: crates/obscure-app/src/connection.rs:481
+#: crates/obscure-app/src/connection.rs:778
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "接続エンジンをダウンロード中: %a / %b MB"
 
-#: crates/obscure-app/src/connection.rs:484
+#: crates/obscure-app/src/connection.rs:781
 msgid "Downloading the connection engine: %a MB"
 msgstr "接続エンジンをダウンロード中: %a MB"
 
-#: crates/obscure-app/src/connection.rs:489
+#: crates/obscure-app/src/connection.rs:786
 msgid "Verifying the download…"
 msgstr "ダウンロードを検証中…"
 
-#: crates/obscure-app/src/connection.rs:491
+#: crates/obscure-app/src/connection.rs:788
 msgid "Installing the connection engine…"
 msgstr "接続エンジンをインストール中…"
 
-#: crates/obscure-app/src/connection.rs:520
+#: crates/obscure-app/src/connection.rs:817
 msgid "Connected · system proxy active"
 msgstr "接続済み · システムプロキシ有効"
 
-#: crates/obscure-app/src/connection.rs:521
+#: crates/obscure-app/src/connection.rs:818
 msgid "Connected · local proxy only"
 msgstr "接続済み · ローカルプロキシのみ"
 
-#: crates/obscure-app/src/connection.rs:522
+#: crates/obscure-app/src/connection.rs:819
+#: crates/obscure-app/src/connection.rs:823
 msgid "Connected"
 msgstr "接続済み"
+
+#: crates/obscure-app/src/connection.rs:840
+msgid "Connection failed"
+msgstr "接続に失敗しました"
 
 #: crates/obscure-app/src/humanize.rs:9
 msgid "This kind of link is not supported yet: %s"
@@ -466,17 +557,38 @@ msgstr "サブスクリプションを読み取れませんでした。アドレ
 msgid "This subscription is in Clash format, which Obscure does not support yet."
 msgstr "このサブスクリプションは Clash 形式で、Obscure はまだ対応していません。"
 
-#: crates/obscure-app/src/import_dialog.rs:49
-#: crates/obscure-app/src/import_dialog.rs:159
+#: crates/obscure-app/src/import_dialog.rs:60
+#: crates/obscure-app/src/import_dialog.rs:253
 msgid "No valid link found."
 msgstr "有効なリンクが見つかりません。"
 
-#: crates/obscure-app/src/import_dialog.rs:162
+#: crates/obscure-app/src/import_dialog.rs:74
+msgid "Images"
+msgstr "画像"
+
+#: crates/obscure-app/src/import_dialog.rs:79
+msgid "Choose an image with a QR code"
+msgstr "QR コードを含む画像を選択"
+
+#: crates/obscure-app/src/import_dialog.rs:97
+#: crates/obscure-app/src/import_dialog.rs:149
+msgid "No QR code was found in that image."
+msgstr "その画像に QR コードが見つかりませんでした。"
+
+#: crates/obscure-app/src/import_dialog.rs:119
+msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
+msgstr "画面に QR コードが見つかりませんでした。全体が見えていることを確認して、もう一度お試しください。"
+
+#: crates/obscure-app/src/import_dialog.rs:246
+msgid "Subscription address: the servers will be downloaded and kept up to date."
+msgstr "サブスクリプションのアドレス: サーバーをダウンロードし、最新の状態に保ちます。"
+
+#: crates/obscure-app/src/import_dialog.rs:256
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
 msgstr[0] "追加できるサーバー: %n 台"
 
-#: crates/obscure-app/src/import_dialog.rs:172
+#: crates/obscure-app/src/import_dialog.rs:266
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
 msgstr[0] "読み取れなかったリンク: %n 件"
@@ -520,3 +632,28 @@ msgstr "まだログはありません。接続すると、エンジンの報告
 #: crates/obscure-app/src/server_dialog.rs:61
 msgid "Link copied."
 msgstr "リンクをコピーしました。"
+
+#: crates/obscure-app/src/preferences_dialog.rs:98
+msgid "The system did not allow Obscure to start automatically."
+msgstr "システムが Obscure の自動起動を許可しませんでした。"
+
+#: crates/obscure-app/src/preferences_dialog.rs:109
+msgid "Automatic start is not available on this system."
+msgstr "このシステムでは自動起動を利用できません。"
+
+#: crates/obscure-app/src/subscription_object.rs:50
+msgid "%n server"
+msgid_plural "%n servers"
+msgstr[0] "%n 台のサーバー"
+
+#: crates/obscure-app/src/subscription_object.rs:58
+msgid "%a of %b used"
+msgstr "%b 中 %a 使用"
+
+#: crates/obscure-app/src/subscription_object.rs:71
+msgid "expires %d"
+msgstr "%d に期限切れ"
+
+#: crates/obscure-app/src/autostart.rs:11
+msgid "Obscure keeps your connection available from the tray."
+msgstr "Obscure はトレイから接続を利用できる状態に保ちます。"

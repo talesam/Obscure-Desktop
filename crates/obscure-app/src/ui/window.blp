@@ -194,8 +194,52 @@ template $ObscureWindow: Adw.ApplicationWindow {
                   }
                 }
 
+                Adw.PreferencesGroup subscriptions_group {
+                  title: _("Subscriptions");
+                  visible: false;
+
+                  ListBox subscriptions_list {
+                    selection-mode: none;
+
+                    styles [
+                      "boxed-list",
+                    ]
+                  }
+                }
+
                 Adw.PreferencesGroup {
                   title: _("Servers");
+
+                  [header-suffix]
+                  Button test_all_button {
+                    valign: center;
+                    tooltip-text: _("Measure the response time of every server");
+                    clicked => $on_test_all_clicked() swapped;
+
+                    Adw.ButtonContent {
+                      icon-name: "network-transmit-receive-symbolic";
+                      label: _("Test All");
+                    }
+
+                    styles [
+                      "flat",
+                    ]
+                  }
+
+                  ListBox {
+                    selection-mode: none;
+                    margin-bottom: 12;
+
+                    styles [
+                      "boxed-list",
+                    ]
+
+                    Adw.SwitchRow auto_row {
+                      title: _("Automatic: fastest server");
+                      subtitle: _("Tests all servers when you connect and picks the quickest one.");
+                      notify::active => $on_auto_toggled() swapped;
+                    }
+                  }
 
                   ListBox servers_list {
                     selection-mode: none;

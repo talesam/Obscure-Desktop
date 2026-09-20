@@ -19,6 +19,9 @@ mod imp {
         pub settings: std::cell::OnceCell<gio::Settings>,
         /// Keeps the app alive while a tray icon exists.
         pub hold_guard: std::cell::RefCell<Option<gio::ApplicationHoldGuard>>,
+        /// `--start-minimized`: do not show the window if a tray exists.
+        pub start_minimized: std::cell::Cell<bool>,
+        pub first_activation: std::cell::Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -53,10 +56,35 @@ mod imp {
                 .expect("settings set once");
             self.obj().handle_termination_signals();
             self.obj().setup_tray();
+            self.obj().setup_notifications();
+            self.first_activation.set(true);
+            self.obj().manager().refresh_due_subscriptions();
+            if self
+                .settings
+                .get()
+                .is_some_and(|s| s.boolean("connect-on-start"))
+            {
+                self.obj().manager().connect();
+            }
+        }
+
+        fn handle_local_options(
+            &self,
+            options: &glib::VariantDict,
+        ) -> std::ops::ControlFlow<glib::ExitCode> {
+            if options.contains("start-minimized") {
+                self.start_minimized.set(true);
+            }
+            self.parent_handle_local_options(options)
         }
 
         fn activate(&self) {
             let app = self.obj();
+            let first = self.first_activation.replace(false);
+            if first && self.start_minimized.get() && self.tray.borrow().is_some() {
+                tracing::info!("started minimized: window stays hidden");
+                return;
+            }
             let window = match app.active_window() {
                 Some(window) => window,
                 None => {
@@ -125,11 +153,50 @@ impl ObscureApplication {
     }
 
     pub fn new() -> Self {
-        glib::Object::builder()
+        let app: Self = glib::Object::builder()
             .property("application-id", APP_ID)
             .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
             .property("resource-base-path", "/io/github/talesam/Obscure")
-            .build()
+            .build();
+        app.add_main_option(
+            "start-minimized",
+            glib::Char::from(0),
+            glib::OptionFlags::NONE,
+            glib::OptionArg::None,
+            "Start hidden in the tray (used by autostart)",
+            None,
+        );
+        app
+    }
+
+    /// Desktop notifications for connection events. Routine events are
+    /// only shown while the window is hidden; failures always.
+    fn setup_notifications(&self) {
+        let app = self.clone();
+        self.manager().connect_closure(
+            "notification",
+            false,
+            glib::closure_local!(move |_m: ConnectionManager,
+                                       title: String,
+                                       body: String,
+                                       important: bool| {
+                let window_visible = app
+                    .active_window()
+                    .is_some_and(|w| w.is_visible() && w.is_active());
+                if !important && window_visible {
+                    return;
+                }
+                let notification = gio::Notification::new(&title);
+                notification.set_body(Some(&body));
+                notification.set_icon(&gio::ThemedIcon::new(APP_ID));
+                notification.set_default_action("app.activate-window");
+                app.send_notification(Some("connection-state"), &notification);
+            }),
+        );
+        let activate = gio::ActionEntry::builder("activate-window")
+            .activate(|app: &Self, _, _| app.activate())
+            .build();
+        self.add_action_entries([activate]);
     }
 
     /// When running from the meson build tree (development profile, not

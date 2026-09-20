@@ -16,3 +16,7 @@ crates/obscure-app/src/ui/server-dialog.blp
 crates/obscure-app/src/log_dialog.rs
 crates/obscure-app/src/server_dialog.rs
 crates/obscure-app/src/preferences_dialog.rs
+crates/obscure-app/src/subscription_object.rs
+crates/obscure-app/src/qr.rs
+crates/obscure-app/src/autostart.rs
+crates/obscure-app/src/server_object.rs

@@ -17,6 +17,15 @@ template $ObscurePreferencesDialog: Adw.PreferencesDialog {
         title: _("Keep running in the background");
         subtitle: _("Closing the window leaves Obscure in the tray, still connected.");
       }
+
+      Adw.SwitchRow autostart_row {
+        title: _("Start with the session");
+        subtitle: _("Obscure opens in the tray when you log in.");
+      }
+
+      Adw.SwitchRow connect_on_start_row {
+        title: _("Connect when Obscure starts");
+      }
     }
 
     Adw.PreferencesGroup {

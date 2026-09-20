@@ -1,13 +1,16 @@
 mod application;
+mod autostart;
 mod config;
 mod connection;
 mod humanize;
 mod import_dialog;
 mod log_dialog;
 mod preferences_dialog;
+mod qr;
 mod runtime;
 mod server_dialog;
 mod server_object;
+mod subscription_object;
 mod tray;
 mod window;
 

@@ -17,5 +17,13 @@
       <default>true</default>
       <summary>Keep running in the tray when the window is closed</summary>
     </key>
+    <key name="autostart" type="b">
+      <default>false</default>
+      <summary>Start with the session (via the Background portal)</summary>
+    </key>
+    <key name="connect-on-start" type="b">
+      <default>false</default>
+      <summary>Connect automatically when the app starts</summary>
+    </key>
   </schema>
 </schemalist>

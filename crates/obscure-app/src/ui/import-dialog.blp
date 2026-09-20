@@ -39,7 +39,7 @@ template $ObscureImportDialog: Adw.Dialog {
       margin-end: 12;
 
       Label {
-        label: _("Paste the server link below, or the links from your subscription, one per line.");
+        label: _("Paste server links (one per line) or the address of your subscription.");
         wrap: true;
         xalign: 0;
 
@@ -66,13 +66,38 @@ template $ObscureImportDialog: Adw.Dialog {
         }
       }
 
-      Button paste_button {
+      Box {
+        orientation: horizontal;
+        spacing: 6;
         halign: center;
-        clicked => $on_paste_clicked() swapped;
 
-        Adw.ButtonContent {
-          icon-name: "edit-paste-symbolic";
-          label: _("Paste from Clipboard");
+        Button paste_button {
+          clicked => $on_paste_clicked() swapped;
+
+          Adw.ButtonContent {
+            icon-name: "edit-paste-symbolic";
+            label: _("Paste");
+          }
+        }
+
+        Button qr_image_button {
+          tooltip-text: _("Read a QR code from an image file");
+          clicked => $on_qr_image_clicked() swapped;
+
+          Adw.ButtonContent {
+            icon-name: "image-x-generic-symbolic";
+            label: _("QR from Image");
+          }
+        }
+
+        Button qr_screen_button {
+          tooltip-text: _("Take a screenshot and read the QR code in it");
+          clicked => $on_qr_screen_clicked() swapped;
+
+          Adw.ButtonContent {
+            icon-name: "camera-photo-symbolic";
+            label: _("QR from Screen");
+          }
         }
       }
 

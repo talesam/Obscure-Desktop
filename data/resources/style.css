@@ -31,3 +31,7 @@ statuspage.obscure-hero .icon {
   background-color: white;
   padding: 8px;
 }
+
+.obscure-latency {
+  font-weight: 600;
+}

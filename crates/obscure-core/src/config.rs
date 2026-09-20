@@ -145,6 +145,50 @@ pub fn outbound(server: &Server) -> Value {
             out["settings"] = json!({ "servers": [ { "address": server.address, "port": server.port,
                 "method": method, "password": password, "uot": true } ] });
         }
+        (
+            Protocol::Wireguard,
+            Auth::Wireguard {
+                private_key,
+                public_key,
+                preshared_key,
+                address,
+                reserved,
+                mtu,
+            },
+        ) => {
+            out["protocol"] = json!("wireguard");
+            let mut peer = json!({ "endpoint": format!("{}:{}", server.address, server.port), "publicKey": public_key });
+            if let Some(psk) = preshared_key {
+                peer["preSharedKey"] = json!(psk);
+            }
+            let mut settings = json!({
+                "secretKey": private_key,
+                "address": if address.is_empty() { vec!["172.16.0.2/32".to_owned()] } else { address.clone() },
+                "peers": [ peer ],
+                "domainStrategy": "ForceIP",
+            });
+            if !reserved.is_empty() {
+                settings["reserved"] = json!(reserved);
+            }
+            if let Some(mtu) = mtu {
+                settings["mtu"] = json!(mtu);
+            }
+            out["settings"] = settings;
+            // WireGuard has its own transport; no streamSettings.
+            return out;
+        }
+        (Protocol::Socks | Protocol::Http, Auth::UserPass { user, pass }) => {
+            out["protocol"] = json!(if server.protocol == Protocol::Socks {
+                "socks"
+            } else {
+                "http"
+            });
+            let mut srv = json!({ "address": server.address, "port": server.port });
+            if let Some(u) = user {
+                srv["users"] = json!([ { "user": u, "pass": pass.clone().unwrap_or_default() } ]);
+            }
+            out["settings"] = json!({ "servers": [ srv ] });
+        }
         _ => unreachable!("protocol/auth mismatch"),
     }
     out["streamSettings"] = stream_settings(server);
@@ -316,6 +360,24 @@ mod tests {
         assert_eq!(rules[1]["domain"][0], "domain:example.com");
         assert_eq!(rules[1]["outboundTag"], "proxy");
         assert_eq!(rules.last().unwrap()["outboundTag"], "direct");
+    }
+
+    #[test]
+    fn wireguard_and_socks_outbounds() {
+        let wg = parse_link(
+            "wireguard://priv@wg.example:51820?publickey=pub&address=10.0.0.2/32&reserved=1,2,3#W",
+        )
+        .unwrap();
+        let o = outbound(&wg);
+        assert_eq!(o["protocol"], "wireguard");
+        assert_eq!(o["settings"]["peers"][0]["endpoint"], "wg.example:51820");
+        assert_eq!(o["settings"]["reserved"], json!([1, 2, 3]));
+        assert!(o.get("streamSettings").is_none());
+
+        let socks = parse_link("socks://u:p@s.example:1080#S").unwrap();
+        let o = outbound(&socks);
+        assert_eq!(o["protocol"], "socks");
+        assert_eq!(o["settings"]["servers"][0]["users"][0]["user"], "u");
     }
 
     #[test]

@@ -22,6 +22,19 @@ pub fn user_agent(version: &str) -> String {
     format!("Obscure/{version} (Linux)")
 }
 
+/// Re-exported so the GUI does not need its own `reqwest` dependency.
+pub type HttpClient = reqwest::Client;
+
+/// HTTP client with Obscure's User-Agent and a sane timeout.
+pub fn http_client(user_agent: &str) -> HttpClient {
+    init_crypto();
+    reqwest::Client::builder()
+        .user_agent(user_agent)
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("reqwest client")
+}
+
 /// Installs the rustls crypto provider. Safe to call more than once.
 pub fn init_crypto() {
     let _ = rustls::crypto::ring::default_provider().install_default();

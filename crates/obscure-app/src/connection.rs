@@ -2,7 +2,7 @@
 //! actor that owns the Xray process while connected.
 
 use std::cell::{Cell, RefCell};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::time::Duration;
 
 use gettextrs::gettext;
@@ -21,7 +21,8 @@ use obscure_core::{Error, paths};
 
 use crate::humanize::error_message;
 use crate::runtime::runtime;
-use crate::server_object::ServerObject;
+use crate::server_object::{LATENCY_FAILED, LATENCY_TESTING, ServerObject};
+use crate::subscription_object::SubscriptionObject;
 
 const MAX_LOG_LINES: usize = 500;
 
@@ -90,9 +91,20 @@ mod imp {
         /// `all`, `smart` or `only_listed` (mirrors RoutePreset).
         #[property(get, set)]
         pub route_preset: RefCell<String>,
+        /// Connect to the fastest server instead of the selected one.
+        #[property(get, set)]
+        pub auto_select: Cell<bool>,
+        /// A latency test is running.
+        #[property(get, set)]
+        pub testing: Cell<bool>,
+        #[property(get, set)]
+        pub has_subscriptions: Cell<bool>,
 
         pub profiles: RefCell<Profiles>,
         pub servers: gio::ListStore,
+        pub subscriptions: gio::ListStore,
+        /// Last latency result per server id (survives list rebuilds).
+        pub latency: RefCell<HashMap<String, i32>>,
         pub log: RefCell<VecDeque<String>>,
         pub cmd_tx: RefCell<Option<tokio::sync::mpsc::Sender<Cmd>>>,
         pub last_error: RefCell<Option<String>>,
@@ -111,8 +123,13 @@ mod imp {
                 apply_mode: RefCell::new("system_proxy".into()),
                 traffic_text: RefCell::new(String::new()),
                 route_preset: RefCell::new("smart".into()),
+                auto_select: Cell::new(false),
+                testing: Cell::new(false),
+                has_subscriptions: Cell::new(false),
                 profiles: RefCell::new(Profiles::default()),
                 servers: gio::ListStore::new::<ServerObject>(),
+                subscriptions: gio::ListStore::new::<SubscriptionObject>(),
+                latency: RefCell::new(HashMap::new()),
                 log: RefCell::new(VecDeque::new()),
                 cmd_tx: RefCell::new(None),
                 last_error: RefCell::new(None),
@@ -137,6 +154,14 @@ mod imp {
                     // Emitted for every new log line (String).
                     glib::subclass::Signal::builder("log-line")
                         .param_types([String::static_type()])
+                        .build(),
+                    // Something worth a desktop notification: (title, body, important).
+                    glib::subclass::Signal::builder("notification")
+                        .param_types([
+                            String::static_type(),
+                            String::static_type(),
+                            bool::static_type(),
+                        ])
                         .build(),
                 ]
             })
@@ -182,17 +207,43 @@ impl ConnectionManager {
         }
     }
 
-    /// Rebuilds the list model and derived properties from `profiles`.
+    /// Rebuilds the list models and derived properties from `profiles`.
     fn sync_from_profiles(&self) {
         let imp = self.imp();
         let profiles = imp.profiles.borrow();
+        let latency = imp.latency.borrow();
+        let group_name = |id: &Option<String>| -> Option<String> {
+            id.as_deref()
+                .and_then(|g| profiles.subscription(g))
+                .map(|s| s.name.clone())
+        };
         let objects: Vec<ServerObject> = profiles
             .servers
             .iter()
-            .map(|e| ServerObject::from_entry(e, profiles.selected.as_deref() == Some(&e.id)))
+            .map(|e| {
+                let obj = ServerObject::from_entry(
+                    e,
+                    profiles.selected.as_deref() == Some(&e.id),
+                    group_name(&e.group).as_deref(),
+                );
+                if let Some(ms) = latency.get(&e.id) {
+                    obj.set_latency_ms(*ms);
+                }
+                obj
+            })
             .collect();
         imp.servers.remove_all();
         imp.servers.extend_from_slice(&objects);
+
+        let subs: Vec<SubscriptionObject> = profiles
+            .subscriptions
+            .iter()
+            .map(|s| SubscriptionObject::from_subscription(s, profiles.servers_in_group(&s.id)))
+            .collect();
+        imp.subscriptions.remove_all();
+        imp.subscriptions.extend_from_slice(&subs);
+        self.set_has_subscriptions(!subs.is_empty());
+
         self.set_has_servers(!profiles.servers.is_empty());
         self.set_selected_name(
             profiles
@@ -202,6 +253,11 @@ impl ConnectionManager {
         );
         self.set_apply_mode(mode_to_str(profiles.apply_mode));
         self.set_route_preset(preset_to_str(profiles.route_preset));
+        self.set_auto_select(profiles.auto_select);
+    }
+
+    pub fn subscriptions(&self) -> &gio::ListStore {
+        &self.imp().subscriptions
     }
 
     /// Read-only access to the stored profiles (settings, servers).
@@ -261,6 +317,217 @@ impl ConnectionManager {
             if self.connected() {
                 self.reconnect();
             }
+        }
+    }
+
+    // -- subscriptions -------------------------------------------------------
+
+    fn http_client() -> obscure_core::HttpClient {
+        obscure_core::http_client(&obscure_core::user_agent(crate::config::VERSION))
+    }
+
+    /// Fetches `url` and adds it as a subscription. `done` receives the
+    /// number of servers or the error.
+    pub fn add_subscription_url(
+        &self,
+        url: String,
+        done: impl FnOnce(Result<usize, Error>) + 'static,
+    ) {
+        let task = runtime().spawn(async move {
+            let client = Self::http_client();
+            obscure_core::subscription::fetch(&client, &url)
+                .await
+                .map(|f| (url, f))
+        });
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to = this)]
+            self,
+            async move {
+                let result = match task.await {
+                    Ok(Ok((url, fetched))) => {
+                        let count = fetched.servers.len();
+                        this.imp()
+                            .profiles
+                            .borrow_mut()
+                            .add_subscription(&url, &fetched);
+                        this.save_profiles();
+                        this.sync_from_profiles();
+                        Ok(count)
+                    }
+                    Ok(Err(e)) => Err(e),
+                    Err(_) => Err(Error::Subscription("task cancelled".into())),
+                };
+                done(result);
+            }
+        ));
+    }
+
+    /// Re-downloads one subscription.
+    pub fn update_subscription(
+        &self,
+        id: String,
+        done: impl FnOnce(Result<usize, Error>) + 'static,
+    ) {
+        let Some(url) = self
+            .imp()
+            .profiles
+            .borrow()
+            .subscription(&id)
+            .map(|s| s.url.clone())
+        else {
+            return;
+        };
+        self.set_subscription_updating(&id, true);
+        let task = runtime().spawn(async move {
+            let client = Self::http_client();
+            obscure_core::subscription::fetch(&client, &url).await
+        });
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to = this)]
+            self,
+            async move {
+                let result = match task.await {
+                    Ok(Ok(fetched)) => {
+                        let count = fetched.servers.len();
+                        let was_selected = this.imp().profiles.borrow().selected.clone();
+                        this.imp()
+                            .profiles
+                            .borrow_mut()
+                            .update_subscription(&id, &fetched);
+                        this.save_profiles();
+                        this.sync_from_profiles();
+                        if this.connected() && this.imp().profiles.borrow().selected != was_selected
+                        {
+                            this.reconnect();
+                        }
+                        Ok(count)
+                    }
+                    Ok(Err(e)) => Err(e),
+                    Err(_) => Err(Error::Subscription("task cancelled".into())),
+                };
+                this.set_subscription_updating(&id, false);
+                done(result);
+            }
+        ));
+    }
+
+    fn set_subscription_updating(&self, id: &str, updating: bool) {
+        let store = &self.imp().subscriptions;
+        for i in 0..store.n_items() {
+            if let Some(obj) = store.item(i).and_downcast::<SubscriptionObject>()
+                && obj.id() == id
+            {
+                obj.set_updating(updating);
+            }
+        }
+    }
+
+    pub fn remove_subscription(&self, id: &str) {
+        let selected_before = self.imp().profiles.borrow().selected.clone();
+        if self.imp().profiles.borrow_mut().remove_subscription(id) {
+            self.save_profiles();
+            self.sync_from_profiles();
+            if self.connected() && self.imp().profiles.borrow().selected != selected_before {
+                self.disconnect();
+            }
+        }
+    }
+
+    /// Updates every subscription whose interval has elapsed (startup).
+    pub fn refresh_due_subscriptions(&self) {
+        let due: Vec<String> = self
+            .imp()
+            .profiles
+            .borrow()
+            .subscriptions
+            .iter()
+            .filter(|s| s.needs_update())
+            .map(|s| s.id.clone())
+            .collect();
+        for id in due {
+            tracing::info!("subscription {id} is due for update");
+            self.update_subscription(id, |r| {
+                if let Err(e) = r {
+                    tracing::warn!("automatic subscription update failed: {e}");
+                }
+            });
+        }
+    }
+
+    // -- latency --------------------------------------------------------------
+
+    /// TCP-pings every server; results land in the list model. `done` gets
+    /// the id of the fastest server, if any.
+    pub fn test_all_latency(&self, done: impl FnOnce(Option<String>) + 'static) {
+        if self.testing() {
+            return;
+        }
+        let entries: Vec<(String, Server)> = self
+            .imp()
+            .profiles
+            .borrow()
+            .servers
+            .iter()
+            .map(|e| (e.id.clone(), e.server.clone()))
+            .collect();
+        if entries.is_empty() {
+            done(None);
+            return;
+        }
+        self.set_testing(true);
+        for (id, _) in &entries {
+            self.set_latency(id, LATENCY_TESTING);
+        }
+        let servers: Vec<Server> = entries.iter().map(|(_, s)| s.clone()).collect();
+        let task = runtime().spawn(async move {
+            obscure_core::latency::tcp_ping_all(&servers, 8, Duration::from_secs(4)).await
+        });
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to = this)]
+            self,
+            async move {
+                let results = task.await.unwrap_or_default();
+                let mut best: Option<(u32, String)> = None;
+                for ((id, _), r) in entries.iter().zip(results) {
+                    let ms = match r {
+                        Ok(ms) => {
+                            if best.as_ref().is_none_or(|(b, _)| ms < *b) {
+                                best = Some((ms, id.clone()));
+                            }
+                            ms as i32
+                        }
+                        Err(_) => LATENCY_FAILED,
+                    };
+                    this.set_latency(id, ms);
+                }
+                this.set_testing(false);
+                done(best.map(|(_, id)| id));
+            }
+        ));
+    }
+
+    fn set_latency(&self, id: &str, ms: i32) {
+        self.imp().latency.borrow_mut().insert(id.to_owned(), ms);
+        let store = &self.imp().servers;
+        for i in 0..store.n_items() {
+            if let Some(obj) = store.item(i).and_downcast::<ServerObject>()
+                && obj.id() == id
+            {
+                obj.set_latency_ms(ms);
+            }
+        }
+    }
+
+    pub fn set_auto_select_from_ui(&self, auto: bool) {
+        let changed = {
+            let mut p = self.imp().profiles.borrow_mut();
+            let changed = p.auto_select != auto;
+            p.auto_select = auto;
+            changed
+        };
+        if changed {
+            self.save_profiles();
+            self.set_auto_select(auto);
         }
     }
 
@@ -389,6 +656,36 @@ impl ConnectionManager {
     }
 
     pub fn connect(&self) {
+        if self.busy() || self.connected() {
+            return;
+        }
+        if self.imp().profiles.borrow().auto_select
+            && self.imp().profiles.borrow().servers.len() > 1
+        {
+            // Pick the fastest server first, then connect to it.
+            self.set_busy(true);
+            self.set_status_text(gettext("Finding the fastest server…"));
+            self.test_all_latency(clone!(
+                #[weak(rename_to = this)]
+                self,
+                move |best| {
+                    this.set_busy(false);
+                    if let Some(id) = best {
+                        let mut p = this.imp().profiles.borrow_mut();
+                        p.selected = Some(id);
+                        drop(p);
+                        this.save_profiles();
+                        this.sync_from_profiles();
+                    }
+                    this.connect_selected();
+                }
+            ));
+            return;
+        }
+        self.connect_selected();
+    }
+
+    fn connect_selected(&self) {
         if self.busy() || self.connected() {
             return;
         }
@@ -521,6 +818,10 @@ impl ConnectionManager {
                     ApplyMode::LocalOnly => gettext("Connected · local proxy only"),
                     ApplyMode::Tunnel => gettext("Connected"),
                 });
+                self.emit_by_name::<()>(
+                    "notification",
+                    &[&gettext("Connected"), &self.selected_name(), &false],
+                );
             }
             UiEvent::Disconnected => {
                 self.finish_disconnected();
@@ -532,8 +833,12 @@ impl ConnectionManager {
                 self.push_log(format!("error: {err}"));
                 self.finish_disconnected();
                 *self.imp().last_error.borrow_mut() = Some(msg.clone());
-                self.set_status_text(msg);
+                self.set_status_text(msg.clone());
                 self.emit_by_name::<()>("failed", &[]);
+                self.emit_by_name::<()>(
+                    "notification",
+                    &[&gettext("Connection failed"), &msg, &true],
+                );
             }
         }
     }

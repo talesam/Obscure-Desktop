@@ -28,6 +28,9 @@ pub enum Protocol {
     Vmess,
     Trojan,
     Shadowsocks,
+    Wireguard,
+    Socks,
+    Http,
 }
 
 impl Protocol {
@@ -37,6 +40,9 @@ impl Protocol {
             Protocol::Vmess => "VMess",
             Protocol::Trojan => "Trojan",
             Protocol::Shadowsocks => "Shadowsocks",
+            Protocol::Wireguard => "WireGuard",
+            Protocol::Socks => "SOCKS",
+            Protocol::Http => "HTTP",
         }
     }
 }
@@ -64,6 +70,26 @@ pub enum Auth {
     Shadowsocks {
         method: String,
         password: String,
+    },
+    Wireguard {
+        private_key: String,
+        public_key: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        preshared_key: Option<String>,
+        /// Local tunnel addresses, e.g. `172.16.0.2/32`.
+        #[serde(default)]
+        address: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        reserved: Vec<u8>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        mtu: Option<u32>,
+    },
+    /// SOCKS5 or HTTP upstream proxy with optional credentials.
+    UserPass {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        user: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pass: Option<String>,
     },
 }
 
@@ -199,9 +225,18 @@ impl Server {
 /// Returns `true` if the text looks like a share link we can import.
 pub fn looks_like_link(text: &str) -> bool {
     let t = text.trim();
-    ["vless://", "vmess://", "trojan://", "ss://"]
-        .iter()
-        .any(|p| t.len() > p.len() && t[..p.len()].eq_ignore_ascii_case(p))
+    [
+        "vless://",
+        "vmess://",
+        "trojan://",
+        "ss://",
+        "wireguard://",
+        "wg://",
+        "socks://",
+        "socks5://",
+    ]
+    .iter()
+    .any(|p| t.len() > p.len() && t[..p.len()].eq_ignore_ascii_case(p))
 }
 
 /// Parses every share link found in `text` (one per line). Lines that are
@@ -234,6 +269,8 @@ pub fn parse_link(link: &str) -> Result<Server> {
         "vmess" => parse_vmess(link),
         "trojan" => parse_trojan(link),
         "ss" => parse_shadowsocks(link),
+        "wireguard" | "wg" => parse_wireguard(link),
+        "socks" | "socks5" => parse_socks(link),
         other => Err(Error::UnsupportedScheme(other.to_owned())),
     }
 }
@@ -713,6 +750,91 @@ fn parse_shadowsocks(link: &str) -> Result<Server> {
 }
 
 // ---------------------------------------------------------------------------
+// WireGuard (v2rayN / Hiddify style link)
+
+fn parse_wireguard(link: &str) -> Result<Server> {
+    let p = parse_url_like(link)?;
+    if p.userinfo.is_empty() {
+        return Err(Error::MalformedLink(
+            "wireguard link without private key".into(),
+        ));
+    }
+    let public_key = opt(&p.query, "publickey")
+        .or_else(|| opt(&p.query, "pbk"))
+        .ok_or_else(|| Error::MalformedLink("wireguard link without `publickey`".into()))?;
+    let list = |key: &str| -> Vec<String> {
+        opt(&p.query, key)
+            .map(|v| {
+                v.split(',')
+                    .map(|s| s.trim().to_owned())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let reserved: Vec<u8> = list("reserved")
+        .iter()
+        .filter_map(|s| s.parse().ok())
+        .collect();
+    let name = p
+        .name
+        .clone()
+        .unwrap_or_else(|| Server::default_name(&p.host, p.port));
+    Ok(Server {
+        name,
+        protocol: Protocol::Wireguard,
+        address: p.host.clone(),
+        port: p.port,
+        auth: Auth::Wireguard {
+            private_key: p.userinfo.clone(),
+            public_key,
+            preshared_key: opt(&p.query, "presharedkey").or_else(|| opt(&p.query, "psk")),
+            address: list("address"),
+            reserved,
+            mtu: opt(&p.query, "mtu").and_then(|m| m.parse().ok()),
+        },
+        transport: Transport::Tcp { header_type: None },
+        security: Security::None,
+    })
+}
+
+// ---------------------------------------------------------------------------
+// SOCKS5 upstream
+
+fn parse_socks(link: &str) -> Result<Server> {
+    let p = parse_url_like(link)?;
+    let (user, pass) = if p.userinfo.is_empty() {
+        (None, None)
+    } else {
+        // Plain `user:pass` or base64(user:pass), as some clients emit.
+        let raw = if p.userinfo.contains(':') {
+            p.userinfo.clone()
+        } else {
+            decode_base64_lenient(&p.userinfo)
+                .map(|b| String::from_utf8_lossy(&b).into_owned())
+                .unwrap_or_else(|| p.userinfo.clone())
+        };
+        match raw.split_once(':') {
+            Some((u, pw)) => (Some(u.to_owned()), Some(pw.to_owned())),
+            None => (Some(raw), None),
+        }
+    };
+    let name = p
+        .name
+        .clone()
+        .unwrap_or_else(|| Server::default_name(&p.host, p.port));
+    Ok(Server {
+        name,
+        protocol: Protocol::Socks,
+        address: p.host.clone(),
+        port: p.port,
+        auth: Auth::UserPass { user, pass },
+        transport: Transport::Tcp { header_type: None },
+        security: security_from_query(&p.query, false)?,
+    })
+}
+
+// ---------------------------------------------------------------------------
 // Serialising
 
 /// Produces a share link for the server.
@@ -808,6 +930,79 @@ pub fn to_link(server: &Server) -> String {
             };
             let json = serde_json::to_string(&j).expect("vmess json is serialisable");
             format!("vmess://{}", STANDARD.encode(json))
+        }
+        (
+            Protocol::Wireguard,
+            Auth::Wireguard {
+                private_key,
+                public_key,
+                preshared_key,
+                address,
+                reserved,
+                mtu,
+            },
+        ) => {
+            let mut params = vec![("publickey".to_owned(), public_key.clone())];
+            if !address.is_empty() {
+                params.push(("address".into(), address.join(",")));
+            }
+            if !reserved.is_empty() {
+                params.push((
+                    "reserved".into(),
+                    reserved
+                        .iter()
+                        .map(u8::to_string)
+                        .collect::<Vec<_>>()
+                        .join(","),
+                ));
+            }
+            if let Some(psk) = preshared_key {
+                params.push(("presharedkey".into(), psk.clone()));
+            }
+            if let Some(mtu) = mtu {
+                params.push(("mtu".into(), mtu.to_string()));
+            }
+            build_url_like("wireguard", private_key, server, params)
+        }
+        (Protocol::Socks | Protocol::Http, Auth::UserPass { user, pass }) => {
+            let userinfo = match (user, pass) {
+                (Some(u), Some(p)) => format!("{u}:{p}"),
+                (Some(u), None) => u.clone(),
+                _ => String::new(),
+            };
+            let scheme = if server.protocol == Protocol::Socks {
+                "socks"
+            } else {
+                "http"
+            };
+            let mut params = Vec::new();
+            if server.security != Security::None {
+                push_security_params(&server.security, &mut params);
+            }
+            let host = if server.address.contains(':') {
+                format!("[{}]", server.address)
+            } else {
+                server.address.clone()
+            };
+            let mut out = format!("{scheme}://");
+            if !userinfo.is_empty() {
+                out.push_str(&encode(&userinfo));
+                out.push('@');
+            }
+            out.push_str(&format!("{host}:{}", server.port));
+            if !params.is_empty() {
+                out.push('?');
+                out.push_str(
+                    &params
+                        .iter()
+                        .map(|(k, v)| format!("{k}={}", encode(v)))
+                        .collect::<Vec<_>>()
+                        .join("&"),
+                );
+            }
+            out.push('#');
+            out.push_str(&encode(&server.name));
+            out
         }
         _ => unreachable!("protocol/auth mismatch"),
     }
@@ -984,6 +1179,68 @@ mod tests {
         assert_eq!(s.address, "legacy.example");
         assert_eq!(s.port, 9000);
         assert_eq!(s.name, "Legacy");
+    }
+
+    #[test]
+    fn wireguard_roundtrip() {
+        let s = parse_link("wireguard://cHJpdmF0ZUtleQ%3D%3D@wg.example:51820?publickey=cHVibGlj&address=172.16.0.2/32,fd00::2/128&reserved=1,2,3&mtu=1280#WG").unwrap();
+        assert_eq!(s.protocol, Protocol::Wireguard);
+        match &s.auth {
+            Auth::Wireguard {
+                private_key,
+                public_key,
+                address,
+                reserved,
+                mtu,
+                ..
+            } => {
+                assert_eq!(private_key, "cHJpdmF0ZUtleQ==");
+                assert_eq!(public_key, "cHVibGlj");
+                assert_eq!(
+                    address,
+                    &vec!["172.16.0.2/32".to_owned(), "fd00::2/128".to_owned()]
+                );
+                assert_eq!(reserved, &vec![1, 2, 3]);
+                assert_eq!(*mtu, Some(1280));
+            }
+            other => panic!("wrong auth {other:?}"),
+        }
+        assert_eq!(parse_link(&to_link(&s)).unwrap(), s);
+    }
+
+    #[test]
+    fn socks_with_and_without_credentials() {
+        let s = parse_link("socks://usr:p%40ss@s.example:1080#S").unwrap();
+        assert_eq!(s.protocol, Protocol::Socks);
+        assert_eq!(
+            s.auth,
+            Auth::UserPass {
+                user: Some("usr".into()),
+                pass: Some("p@ss".into())
+            }
+        );
+        let plain = parse_link("socks5://s.example:1080").unwrap();
+        assert_eq!(
+            plain.auth,
+            Auth::UserPass {
+                user: None,
+                pass: None
+            }
+        );
+        assert_eq!(plain.name, "s.example:1080");
+        let b64 = parse_link(&format!(
+            "socks://{}@s.example:1080#B",
+            STANDARD.encode("u:p")
+        ))
+        .unwrap();
+        assert_eq!(
+            b64.auth,
+            Auth::UserPass {
+                user: Some("u".into()),
+                pass: Some("p".into())
+            }
+        );
+        assert_eq!(parse_link(&to_link(&plain)).unwrap(), plain);
     }
 
     #[test]

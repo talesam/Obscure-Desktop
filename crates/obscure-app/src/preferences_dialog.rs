@@ -18,6 +18,10 @@ mod imp {
         #[template_child]
         pub background_row: TemplateChild<adw::SwitchRow>,
         #[template_child]
+        pub autostart_row: TemplateChild<adw::SwitchRow>,
+        #[template_child]
+        pub connect_on_start_row: TemplateChild<adw::SwitchRow>,
+        #[template_child]
         pub port_row: TemplateChild<adw::SpinRow>,
         #[template_child]
         pub dns_row: TemplateChild<adw::EntryRow>,
@@ -64,6 +68,53 @@ impl PreferencesDialog {
             .build();
         // Without a tray there is no way back to the window: disable the option.
         imp.background_row.set_sensitive(has_tray);
+        settings
+            .bind("connect-on-start", &*imp.connect_on_start_row, "active")
+            .build();
+        // Autostart goes through the Background portal, which may refuse;
+        // the switch reflects the stored value and requests on toggle.
+        imp.autostart_row.set_active(settings.boolean("autostart"));
+        let settings_clone = settings.clone();
+        imp.autostart_row.connect_active_notify(clone!(
+            #[weak]
+            dialog,
+            move |row| {
+                let enable = row.is_active();
+                if enable == settings_clone.boolean("autostart") {
+                    return;
+                }
+                let settings = settings_clone.clone();
+                let task = crate::runtime::runtime().spawn(crate::autostart::request(enable));
+                glib::spawn_future_local(clone!(
+                    #[weak]
+                    dialog,
+                    async move {
+                        match task.await {
+                            Ok(Ok(granted)) => {
+                                let _ = settings.set_boolean("autostart", granted);
+                                dialog.imp().autostart_row.set_active(granted);
+                                if enable && !granted {
+                                    dialog.add_toast(adw::Toast::new(&gettextrs::gettext(
+                                        "The system did not allow Obscure to start automatically.",
+                                    )));
+                                }
+                            }
+                            Ok(Err(e)) => {
+                                tracing::warn!("background portal: {e}");
+                                dialog
+                                    .imp()
+                                    .autostart_row
+                                    .set_active(settings.boolean("autostart"));
+                                dialog.add_toast(adw::Toast::new(&gettextrs::gettext(
+                                    "Automatic start is not available on this system.",
+                                )));
+                            }
+                            Err(_) => {}
+                        }
+                    }
+                ));
+            }
+        ));
 
         let profiles = manager.profiles();
         imp.port_row.set_value(f64::from(profiles.local_port));

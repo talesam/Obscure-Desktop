@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
 use crate::links::Server;
+use crate::subscription::{Fetched, UserInfo};
 
 pub const CURRENT_VERSION: u32 = 1;
 
@@ -40,6 +41,9 @@ pub enum RoutePreset {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ServerEntry {
     pub id: String,
+    /// Subscription this server belongs to, if any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group: Option<String>,
     #[serde(flatten)]
     pub server: Server,
 }
@@ -48,9 +52,55 @@ impl ServerEntry {
     pub fn new(server: Server) -> Self {
         Self {
             id: uuid::Uuid::new_v4().to_string(),
+            group: None,
             server,
         }
     }
+}
+
+/// A subscription: a URL that yields a group of servers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Subscription {
+    pub id: String,
+    pub url: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user_info: Option<UserInfo>,
+    /// Unix timestamp of the last successful update.
+    #[serde(default)]
+    pub last_update: u64,
+    /// Refresh interval in seconds (from the server or the default).
+    #[serde(default = "default_update_interval")]
+    pub update_interval: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub web_page_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub support_url: Option<String>,
+}
+
+pub const DEFAULT_UPDATE_INTERVAL: u64 = 24 * 3600;
+
+fn default_update_interval() -> u64 {
+    DEFAULT_UPDATE_INTERVAL
+}
+
+fn now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
+
+impl Subscription {
+    pub fn needs_update(&self) -> bool {
+        now().saturating_sub(self.last_update) >= self.update_interval
+    }
+}
+
+/// Returns `true` if the text is an `http(s)://` URL (a subscription).
+pub fn looks_like_subscription_url(text: &str) -> bool {
+    let t = text.trim();
+    (t.starts_with("http://") || t.starts_with("https://")) && !t.contains(char::is_whitespace)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -59,7 +109,12 @@ pub struct Profiles {
     #[serde(default)]
     pub servers: Vec<ServerEntry>,
     #[serde(default)]
+    pub subscriptions: Vec<Subscription>,
+    #[serde(default)]
     pub selected: Option<String>,
+    /// Connect to the server with the lowest latency instead of `selected`.
+    #[serde(default)]
+    pub auto_select: bool,
     #[serde(default)]
     pub apply_mode: ApplyMode,
     #[serde(default)]
@@ -92,7 +147,9 @@ impl Default for Profiles {
         Self {
             version: CURRENT_VERSION,
             servers: Vec::new(),
+            subscriptions: Vec::new(),
             selected: None,
+            auto_select: false,
             apply_mode: ApplyMode::default(),
             route_preset: RoutePreset::default(),
             local_port: default_local_port(),
@@ -132,6 +189,10 @@ impl Profiles {
     fn migrate(&mut self) {
         // Future versions bump CURRENT_VERSION and transform fields here.
         self.version = CURRENT_VERSION;
+        // Drop servers whose subscription no longer exists.
+        let ids: Vec<String> = self.subscriptions.iter().map(|s| s.id.clone()).collect();
+        self.servers
+            .retain(|e| e.group.as_ref().is_none_or(|g| ids.contains(g)));
         if let Some(sel) = &self.selected
             && !self.servers.iter().any(|s| &s.id == sel)
         {
@@ -155,6 +216,109 @@ impl Profiles {
             added += 1;
         }
         added
+    }
+
+    /// Adds a subscription from a successful fetch. Servers are tagged with
+    /// the subscription id. Returns the new subscription's id.
+    pub fn add_subscription(&mut self, url: &str, fetched: &Fetched) -> String {
+        let id = uuid::Uuid::new_v4().to_string();
+        let name = fetched
+            .title
+            .clone()
+            .unwrap_or_else(|| host_of(url).unwrap_or_else(|| url.to_owned()));
+        self.subscriptions.push(Subscription {
+            id: id.clone(),
+            url: fetched.new_url.clone().unwrap_or_else(|| url.to_owned()),
+            name,
+            user_info: fetched.user_info,
+            last_update: now(),
+            update_interval: fetched
+                .update_interval
+                .map(|d| d.as_secs())
+                .unwrap_or(DEFAULT_UPDATE_INTERVAL),
+            web_page_url: fetched.web_page_url.clone(),
+            support_url: fetched.support_url.clone(),
+        });
+        self.replace_group_servers(&id, &fetched.servers);
+        id
+    }
+
+    /// Applies a fresh fetch to an existing subscription: metadata is
+    /// refreshed and the server list replaced. The selected server survives
+    /// if an identical server is still present.
+    pub fn update_subscription(&mut self, id: &str, fetched: &Fetched) -> bool {
+        let Some(sub) = self.subscriptions.iter_mut().find(|s| s.id == id) else {
+            return false;
+        };
+        if let Some(t) = &fetched.title {
+            sub.name = t.clone();
+        }
+        if let Some(u) = &fetched.new_url {
+            sub.url = u.clone();
+        }
+        sub.user_info = fetched.user_info.or(sub.user_info);
+        sub.last_update = now();
+        if let Some(d) = fetched.update_interval {
+            sub.update_interval = d.as_secs();
+        }
+        sub.web_page_url = fetched.web_page_url.clone().or(sub.web_page_url.take());
+        sub.support_url = fetched.support_url.clone().or(sub.support_url.take());
+        self.replace_group_servers(id, &fetched.servers);
+        true
+    }
+
+    fn replace_group_servers(&mut self, group: &str, servers: &[Server]) {
+        let selected_server = self.selected_entry().map(|e| e.server.clone());
+        let old: Vec<ServerEntry> = self
+            .servers
+            .iter()
+            .filter(|e| e.group.as_deref() == Some(group))
+            .cloned()
+            .collect();
+        self.servers.retain(|e| e.group.as_deref() != Some(group));
+        for server in servers {
+            // Keep ids stable for unchanged servers so the UI selection holds.
+            let id = old
+                .iter()
+                .find(|e| e.server == *server)
+                .map(|e| e.id.clone())
+                .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+            self.servers.push(ServerEntry {
+                id,
+                group: Some(group.to_owned()),
+                server: server.clone(),
+            });
+        }
+        // Restore or fix the selection.
+        let still_there = selected_server
+            .as_ref()
+            .and_then(|s| self.servers.iter().find(|e| e.server == *s))
+            .map(|e| e.id.clone());
+        self.selected = still_there.or_else(|| self.servers.first().map(|e| e.id.clone()));
+    }
+
+    pub fn remove_subscription(&mut self, id: &str) -> bool {
+        let before = self.subscriptions.len();
+        self.subscriptions.retain(|s| s.id != id);
+        if self.subscriptions.len() == before {
+            return false;
+        }
+        self.servers.retain(|e| e.group.as_deref() != Some(id));
+        if self.selected_entry().is_none() {
+            self.selected = self.servers.first().map(|e| e.id.clone());
+        }
+        true
+    }
+
+    pub fn subscription(&self, id: &str) -> Option<&Subscription> {
+        self.subscriptions.iter().find(|s| s.id == id)
+    }
+
+    pub fn servers_in_group(&self, id: &str) -> usize {
+        self.servers
+            .iter()
+            .filter(|e| e.group.as_deref() == Some(id))
+            .count()
     }
 
     pub fn remove(&mut self, id: &str) -> Option<ServerEntry> {
@@ -190,10 +354,94 @@ impl Profiles {
     }
 }
 
+fn host_of(url: &str) -> Option<String> {
+    url::Url::parse(url).ok()?.host_str().map(str::to_owned)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::links::parse_link;
+
+    fn fetched(names: &[u16]) -> Fetched {
+        Fetched {
+            servers: names.iter().map(|n| sample(*n)).collect(),
+            failed: vec![],
+            user_info: Some(UserInfo {
+                upload: Some(1),
+                download: Some(2),
+                total: Some(10),
+                expire: None,
+            }),
+            title: Some("Panel".into()),
+            update_interval: Some(std::time::Duration::from_secs(3600)),
+            web_page_url: None,
+            support_url: None,
+            new_url: None,
+        }
+    }
+
+    #[test]
+    fn subscription_lifecycle_keeps_selection() {
+        let mut p = Profiles::default();
+        p.add_servers([sample(1)]);
+        let id = p.add_subscription("https://x.example/sub", &fetched(&[10, 11, 12]));
+        assert_eq!(p.servers.len(), 4);
+        assert_eq!(p.servers_in_group(&id), 3);
+        assert_eq!(p.subscription(&id).unwrap().name, "Panel");
+        assert_eq!(p.subscription(&id).unwrap().update_interval, 3600);
+        assert!(!p.subscription(&id).unwrap().needs_update());
+
+        // Select a subscription server, then update: 11 stays, 10 goes, 13 arrives.
+        let sel = p
+            .servers
+            .iter()
+            .find(|e| e.server.name == "S11")
+            .unwrap()
+            .id
+            .clone();
+        p.selected = Some(sel.clone());
+        assert!(p.update_subscription(&id, &fetched(&[11, 12, 13])));
+        assert_eq!(p.servers_in_group(&id), 3);
+        assert_eq!(
+            p.selected.as_deref(),
+            Some(sel.as_str()),
+            "id of unchanged server is stable"
+        );
+        assert!(p.servers.iter().all(|e| e.server.name != "S10"));
+
+        // Removing the subscription removes its servers and fixes selection.
+        assert!(p.remove_subscription(&id));
+        assert_eq!(p.servers.len(), 1);
+        assert_eq!(p.selected, Some(p.servers[0].id.clone()));
+        assert!(!p.remove_subscription(&id));
+    }
+
+    #[test]
+    fn subscription_url_detection_and_host_name() {
+        assert!(looks_like_subscription_url(
+            " https://x.example/sub?token=1 "
+        ));
+        assert!(!looks_like_subscription_url("vless://x@h:1"));
+        assert!(!looks_like_subscription_url("https://x.example/a b"));
+        let mut p = Profiles::default();
+        let mut f = fetched(&[1]);
+        f.title = None;
+        let id = p.add_subscription("https://panel.example.org/sub", &f);
+        assert_eq!(p.subscription(&id).unwrap().name, "panel.example.org");
+    }
+
+    #[test]
+    fn orphan_group_servers_are_dropped_on_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("p.json");
+        let mut p = Profiles::default();
+        let id = p.add_subscription("https://x.example/s", &fetched(&[1]));
+        p.subscriptions.clear();
+        p.save(&path).unwrap();
+        let loaded = Profiles::load(&path).unwrap();
+        assert!(loaded.servers.is_empty(), "servers of {id} should be gone");
+    }
 
     fn sample(n: u16) -> Server {
         parse_link(&format!(

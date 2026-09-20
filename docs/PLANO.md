@@ -250,14 +250,14 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 **Critério:** uma pessoa leiga cola um link e conecta em < 30 s sem ler nada.
 **Estado (2026-09-20):** fluxo principal completo e testado. Pendências da fase: sidebar/busca, filtro de nível no log, "Só listados".
 
-### Fase 3 — Assinaturas e conforto (2 semanas)
-- [ ] Grupos = assinaturas com auto-update, barra de tráfego/expiração quando houver `userinfo`.
-- [ ] "Testar todos" + "Auto (melhor)".
+### Fase 3 — Assinaturas e conforto (2 semanas) — **concluída em 2026-09-20** (exceto Hysteria2)
+- [x] Grupos = assinaturas com auto-update (intervalo do servidor ou 24 h, checado ao abrir), barra de tráfego e data de expiração quando houver `userinfo`; atualizar/remover na tela; seleção preservada por id estável.
+- [x] "Testar todos" (badge colorido por servidor) + "Automático: servidor mais rápido" (testa ao conectar e escolhe).
 - [x] Tray (ksni): ícone simbólico (`-symbolic` / `-connected-symbolic`, recolorido pelo tema), menu Mostrar/Conectar/Sair, app segue vivo ao fechar a janela (preferência "Continuar em segundo plano", desativada sem host SNI). *(feito em 2026-09-20)*
-- [ ] Notificações + autostart (portal Background).
-- [ ] Importar por QR code: (a) imagem — arquivo ou colar da área de transferência — e (b) pela tela (portal Screenshot + rqrr). Também gerar QR do servidor para compartilhar.
-- [ ] Protocolos extras: WireGuard, Hysteria2, SOCKS/HTTP upstream.
-- [ ] i18n completa (pt-BR, en), `AdwShortcutsDialog`.
+- [x] Notificações (`gio::Notification`: falhas sempre; conectado só com a janela oculta) + autostart pelo portal Background com `--start-minimized` + "Conectar ao iniciar".
+- [x] Importar por QR code: imagem (arquivo ou colar imagem), pela tela (portal Screenshot + `rqrr`); QR do servidor no detalhe.
+- [x] Protocolos extras: WireGuard (`wireguard://`), SOCKS (`socks://`) e HTTP upstream (config). **Hysteria2 fora**: o Xray 26.3.27 não aceita outbound `hysteria2` (verificado com `xray run -test`); reavaliar quando o core suportar.
+- [x] i18n (inglês + 28 idiomas), `AdwShortcutsDialog`.
 
 ### Fase 4 — TUN e Avançado (2 semanas)
 - [ ] Seletor "Túnel (todo o tráfego)" + botão "Conceder permissão" (pkexec setcap + `.policy`).
@@ -298,6 +298,19 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ---
 
 ## 8. Registro de progresso e pendências
+
+### Fase 3 (2026-09-20)
+Feito: assinaturas (núcleo + tela), latência com badges e modo automático, notificações, autostart
+(portal Background) e `--start-minimized`, QR por imagem/área de transferência/tela, WireGuard e
+SOCKS. 33 strings novas traduzidas.
+
+Pendências/observações:
+- Hysteria2 não existe como outbound no Xray 26.3.27; item removido até o core suportar.
+- HTTP upstream só via config (não há esquema de link padrão que não colida com URLs de assinatura).
+- Autostart e QR pela tela dependem de `xdg-desktop-portal` (Background e Screenshot); não foi
+  possível testar o diálogo do portal de forma automatizada — testar manualmente.
+- Preset "Só listados" continua aguardando o editor de domínios (Fase 4).
+- Ao rodar testes de UI com `xdotool`, cuidado com `pgrep -f`: ele casa com o próprio shell.
 
 ### Fase 1 + fatia da Fase 2 (2026-09-20)
 Feito: `obscure-core` (links, profile, config, core_manager, supervisor, sysproxy, paths), teste de

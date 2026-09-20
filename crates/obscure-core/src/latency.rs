@@ -98,15 +98,31 @@ pub async fn tcp_ping_all(
     concurrency: usize,
     timeout: Duration,
 ) -> Vec<Result<u32>> {
+    let targets: Vec<(String, u16)> = servers
+        .iter()
+        .map(|s| (s.address.clone(), s.port))
+        .collect();
+    tcp_ping_targets(targets, concurrency, timeout).await
+}
+
+/// Same as [`tcp_ping_all`] for plain `(host, port)` pairs.
+pub async fn tcp_ping_targets(
+    targets: Vec<(String, u16)>,
+    concurrency: usize,
+    timeout: Duration,
+) -> Vec<Result<u32>> {
     use futures_util::StreamExt;
-    futures_util::stream::iter(
-        servers
-            .iter()
-            .map(|s| async move { tcp_ping(&s.address, s.port, timeout).await }),
-    )
-    .buffered(concurrency.max(1))
-    .collect()
-    .await
+    use futures_util::future::BoxFuture;
+    let futures: Vec<BoxFuture<'static, Result<u32>>> = targets
+        .into_iter()
+        .map(|(host, port)| {
+            Box::pin(async move { tcp_ping(&host, port, timeout).await }) as BoxFuture<'static, _>
+        })
+        .collect();
+    futures_util::stream::iter(futures)
+        .buffered(concurrency.max(1))
+        .collect()
+        .await
 }
 
 #[cfg(test)]

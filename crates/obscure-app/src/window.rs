@@ -12,6 +12,7 @@ use crate::import_dialog::{ImportDialog, ServersBox};
 use crate::log_dialog::LogDialog;
 use crate::server_dialog::ServerDialog;
 use crate::server_object::ServerObject;
+use crate::subscription_object::SubscriptionObject;
 
 mod imp {
     use super::*;
@@ -47,6 +48,14 @@ mod imp {
         pub route_group: TemplateChild<adw::ToggleGroup>,
         #[template_child]
         pub servers_list: TemplateChild<gtk::ListBox>,
+        #[template_child]
+        pub subscriptions_group: TemplateChild<adw::PreferencesGroup>,
+        #[template_child]
+        pub subscriptions_list: TemplateChild<gtk::ListBox>,
+        #[template_child]
+        pub test_all_button: TemplateChild<gtk::Button>,
+        #[template_child]
+        pub auto_row: TemplateChild<adw::SwitchRow>,
 
         pub manager: std::cell::OnceCell<ConnectionManager>,
     }
@@ -92,6 +101,18 @@ mod imp {
             if let Some(name) = self.route_group.active_name() {
                 self.obj().manager().set_route_preset_from_ui(&name);
             }
+        }
+
+        #[template_callback]
+        fn on_test_all_clicked(&self, _b: &gtk::Button) {
+            self.obj().manager().test_all_latency(|_| {});
+        }
+
+        #[template_callback]
+        fn on_auto_toggled(&self, _pspec: glib::ParamSpec, row: &adw::SwitchRow) {
+            self.obj()
+                .manager()
+                .set_auto_select_from_ui(row.is_active());
         }
 
         #[template_callback]
@@ -191,7 +212,9 @@ impl ObscureWindow {
             async move {
                 match clipboard.read_text_future().await {
                     Ok(Some(text))
-                        if looks_like_link(&text) || text.lines().any(looks_like_link) =>
+                        if looks_like_link(&text)
+                            || text.lines().any(looks_like_link)
+                            || obscure_core::profile::looks_like_subscription_url(&text) =>
                     {
                         win.show_import_dialog(Some(&text));
                     }
@@ -288,6 +311,28 @@ impl ObscureWindow {
             None => ImportDialog::new(),
         };
         dialog.connect_closure(
+            "subscription-url",
+            false,
+            glib::closure_local!(
+                #[weak(rename_to = win)]
+                self,
+                move |_dialog: ImportDialog, url: String| {
+                    win.toast(&downloading_subscription_message());
+                    win.manager().add_subscription_url(
+                        url,
+                        clone!(
+                            #[weak]
+                            win,
+                            move |result| match result {
+                                Ok(n) => win.toast(&added_message(n)),
+                                Err(e) => win.toast(&crate::humanize::error_message(&e)),
+                            }
+                        ),
+                    );
+                }
+            ),
+        );
+        dialog.connect_closure(
             "servers-parsed",
             false,
             glib::closure_local!(
@@ -381,6 +426,129 @@ impl ObscureWindow {
                 move |item| win.build_server_row(item)
             ),
         );
+        imp.subscriptions_list.bind_model(
+            Some(m.subscriptions()),
+            clone!(
+                #[weak(rename_to = win)]
+                self,
+                #[upgrade_or_panic]
+                move |item| win.build_subscription_row(item)
+            ),
+        );
+        m.bind_property("has_subscriptions", &*imp.subscriptions_group, "visible")
+            .sync_create()
+            .build();
+        m.bind_property("auto_select", &*imp.auto_row, "active")
+            .sync_create()
+            .build();
+        m.bind_property("testing", &*imp.test_all_button, "sensitive")
+            .invert_boolean()
+            .sync_create()
+            .build();
+    }
+
+    fn build_subscription_row(&self, item: &glib::Object) -> gtk::Widget {
+        let sub = item
+            .downcast_ref::<SubscriptionObject>()
+            .expect("SubscriptionObject");
+        let row = adw::ActionRow::builder()
+            .title(sub.name())
+            .subtitle(sub.subtitle())
+            .build();
+
+        let bar = gtk::LevelBar::builder()
+            .min_value(0.0)
+            .max_value(1.0)
+            .valign(gtk::Align::Center)
+            .width_request(72)
+            .build();
+        bar.add_offset_value(gtk::LEVEL_BAR_OFFSET_LOW, 0.8);
+        bar.add_offset_value(gtk::LEVEL_BAR_OFFSET_HIGH, 0.95);
+        bar.add_offset_value(gtk::LEVEL_BAR_OFFSET_FULL, 1.0);
+        sub.bind_property("fraction", &bar, "value")
+            .sync_create()
+            .build();
+        sub.bind_property("has_quota", &bar, "visible")
+            .sync_create()
+            .build();
+        row.add_suffix(&bar);
+
+        let spinner = adw::Spinner::new();
+        sub.bind_property("updating", &spinner, "visible")
+            .sync_create()
+            .build();
+        row.add_suffix(&spinner);
+
+        let update = gtk::Button::builder()
+            .icon_name("view-refresh-symbolic")
+            .tooltip_text(gettext("Update now"))
+            .valign(gtk::Align::Center)
+            .css_classes(["flat"])
+            .build();
+        sub.bind_property("updating", &update, "visible")
+            .invert_boolean()
+            .sync_create()
+            .build();
+        let id = sub.id();
+        update.connect_clicked(clone!(
+            #[weak(rename_to = win)]
+            self,
+            move |_| {
+                win.manager().update_subscription(
+                    id.clone(),
+                    clone!(
+                        #[weak]
+                        win,
+                        move |result| match result {
+                            Ok(n) => win.toast(&subscription_updated_message(n)),
+                            Err(e) => win.toast(&crate::humanize::error_message(&e)),
+                        }
+                    ),
+                );
+            }
+        ));
+        row.add_suffix(&update);
+
+        let remove = gtk::Button::builder()
+            .icon_name("user-trash-symbolic")
+            .tooltip_text(gettext("Remove subscription"))
+            .valign(gtk::Align::Center)
+            .css_classes(["flat"])
+            .build();
+        let id = sub.id();
+        let name = sub.name();
+        remove.connect_clicked(clone!(
+            #[weak(rename_to = win)]
+            self,
+            move |_| win.confirm_remove_subscription(&id, &name)
+        ));
+        row.add_suffix(&remove);
+        row.upcast()
+    }
+
+    fn confirm_remove_subscription(&self, id: &str, name: &str) {
+        let dialog = adw::AlertDialog::builder()
+            .heading(gettext("Remove “%s” and all its servers?").replace("%s", name))
+            .body(gettext(
+                "You can add the subscription again later by pasting its address.",
+            ))
+            .build();
+        dialog.add_responses(&[
+            ("cancel", &gettext("Cancel")),
+            ("remove", &gettext("Remove")),
+        ]);
+        dialog.set_response_appearance("remove", adw::ResponseAppearance::Destructive);
+        dialog.set_default_response(Some("cancel"));
+        let id = id.to_owned();
+        dialog.connect_response(
+            Some("remove"),
+            clone!(
+                #[weak(rename_to = win)]
+                self,
+                move |_, _| win.manager().remove_subscription(&id)
+            ),
+        );
+        dialog.present(Some(self));
     }
 
     fn update_connect_button(&self, m: &ConnectionManager) {
@@ -433,6 +601,29 @@ impl ObscureWindow {
             .build();
         // Stash the id on the row for `on_server_activated`.
         unsafe { row.set_data("server-id", server.id()) };
+
+        let latency = gtk::Label::builder()
+            .valign(gtk::Align::Center)
+            .css_classes(["caption", "numeric", "obscure-latency"])
+            .build();
+        let update_badge = clone!(
+            #[weak]
+            latency,
+            move |s: &ServerObject| match ServerObject::latency_badge(s.latency_ms()) {
+                Some((text, class)) => {
+                    latency.set_label(&text);
+                    for c in ["success", "warning", "error", "dim-label"] {
+                        latency.remove_css_class(c);
+                    }
+                    latency.add_css_class(class);
+                    latency.set_visible(true);
+                }
+                None => latency.set_visible(false),
+            }
+        );
+        server.connect_latency_ms_notify(update_badge.clone());
+        update_badge(server);
+        row.add_suffix(&latency);
 
         let check = gtk::Image::from_icon_name("object-select-symbolic");
         server
@@ -490,4 +681,17 @@ fn added_message(added: usize) -> String {
         ngettext("%n server added.", "%n servers added.", added as u32)
             .replace("%n", &added.to_string())
     }
+}
+
+fn downloading_subscription_message() -> String {
+    gettext("Downloading the subscription…")
+}
+
+fn subscription_updated_message(n: usize) -> String {
+    ngettext(
+        "Subscription updated: %n server.",
+        "Subscription updated: %n servers.",
+        n as u32,
+    )
+    .replace("%n", &n.to_string())
 }
