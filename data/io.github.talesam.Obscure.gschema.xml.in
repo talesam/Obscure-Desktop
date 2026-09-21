@@ -21,6 +21,10 @@
       <default>false</default>
       <summary>Start with the session (via the Background portal)</summary>
     </key>
+    <key name="global-shortcut" type="b">
+      <default>false</default>
+      <summary>Register a system-wide shortcut through the GlobalShortcuts portal</summary>
+    </key>
     <key name="connect-on-start" type="b">
       <default>false</default>
       <summary>Connect automatically when the app starts</summary>

@@ -11,6 +11,7 @@ blueprint_files = [
   'log-dialog',
   'server-dialog',
   'connections-dialog',
+  'json-dialog',
 ]
 
 blueprints = []

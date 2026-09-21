@@ -1475,6 +1475,7 @@ version = "0.1.0"
 dependencies = [
  "ashpd",
  "async-channel",
+ "futures-util",
  "gettext-rs",
  "gio",
  "glib",
@@ -1522,6 +1523,11 @@ dependencies = [
 [[package]]
 name = "obscure-helper"
 version = "0.1.0"
+dependencies = [
+ "tempfile",
+ "tokio",
+ "zbus",
+]
 
 [[package]]
 name = "once_cell"

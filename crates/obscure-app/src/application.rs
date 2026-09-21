@@ -59,6 +59,7 @@ mod imp {
             self.obj().handle_termination_signals();
             self.obj().setup_tray();
             self.obj().setup_notifications();
+            self.obj().setup_global_shortcut();
             self.first_activation.set(true);
             self.obj().manager().refresh_due_subscriptions();
             if self
@@ -169,6 +170,40 @@ impl ObscureApplication {
             None,
         );
         app
+    }
+
+    /// Registers the system-wide shortcut when the preference is on, and
+    /// re-evaluates when it changes. The portal session ends when the
+    /// runtime task is dropped (app exit).
+    fn setup_global_shortcut(&self) {
+        let app = self.clone();
+        let start = move |app: &Self| {
+            if !app.settings().boolean("global-shortcut") {
+                return;
+            }
+            let (tx, rx) = async_channel::unbounded::<()>();
+            crate::runtime::runtime().spawn(async move {
+                if let Err(e) = crate::shortcuts::run(tx).await {
+                    tracing::warn!("global shortcut unavailable: {e}");
+                }
+            });
+            let app = app.clone();
+            glib::spawn_future_local(async move {
+                while rx.recv().await.is_ok() {
+                    if app.settings().boolean("global-shortcut") {
+                        app.manager().toggle();
+                    }
+                }
+            });
+        };
+        start(&app);
+        let start2 = start;
+        self.settings()
+            .connect_changed(Some("global-shortcut"), move |s, _| {
+                if s.boolean("global-shortcut") {
+                    start2(&app);
+                }
+            });
     }
 
     /// Desktop notifications for connection events. Routine events are

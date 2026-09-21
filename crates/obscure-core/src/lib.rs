@@ -13,6 +13,7 @@ pub mod stats;
 pub mod subscription;
 pub mod supervisor;
 pub mod sysproxy;
+pub mod tun;
 
 pub use error::{Error, Result};
 

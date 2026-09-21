@@ -14,10 +14,11 @@ use obscure_core::access::{AccessEvent, parse_access_line};
 use obscure_core::config::{ConfigOptions, build};
 use obscure_core::core_manager::{CoreManager, Progress};
 use obscure_core::links::Server;
-use obscure_core::profile::{ApplyMode, Profiles, RoutePreset};
+use obscure_core::profile::{ApplyMode, Profiles, RoutePreset, RouteRule};
 use obscure_core::stats::{RateMeter, StatsClient, TrafficSample, format_bytes, format_rate};
 use obscure_core::supervisor::{CoreEvent, RestartPolicy, RunningCore, Supervisor, write_config};
 use obscure_core::sysproxy::SysProxy;
+use obscure_core::tun::{CapStatus, capabilities, grant};
 use obscure_core::{Error, paths};
 
 use crate::humanize::error_message;
@@ -56,6 +57,8 @@ struct SessionParams {
     apply_mode: ApplyMode,
     dns: String,
     prerelease: bool,
+    custom_rules: Vec<RouteRule>,
+    config_override: Option<String>,
 }
 
 /// Commands from the UI to the actor.
@@ -316,6 +319,50 @@ impl ConnectionManager {
         if changed {
             self.save_profiles();
             self.set_route_preset(preset_to_str(preset));
+            if self.connected() {
+                self.reconnect();
+            }
+        }
+    }
+
+    /// The configuration Obscure would generate right now (for the JSON editor).
+    pub fn generated_config_json(&self) -> Option<String> {
+        let p = self.imp().profiles.borrow();
+        let entry = p.selected_entry()?;
+        let mut opts = ConfigOptions::new(&entry.server);
+        opts.local_port = p.local_port;
+        opts.route_preset = p.route_preset;
+        opts.listed_domains = &p.listed_domains;
+        opts.dns = &p.dns;
+        opts.tunnel = p.apply_mode == ApplyMode::Tunnel;
+        opts.custom_rules = &p.custom_rules;
+        serde_json::to_string_pretty(&build(&opts)).ok()
+    }
+
+    pub fn set_custom_rules(&self, rules: Vec<RouteRule>) {
+        let changed = {
+            let mut p = self.imp().profiles.borrow_mut();
+            let changed = p.custom_rules != rules;
+            p.custom_rules = rules;
+            changed
+        };
+        if changed {
+            self.save_profiles();
+            if self.connected() {
+                self.reconnect();
+            }
+        }
+    }
+
+    pub fn set_config_override(&self, json: Option<String>) {
+        let changed = {
+            let mut p = self.imp().profiles.borrow_mut();
+            let changed = p.config_override != json;
+            p.config_override = json;
+            changed
+        };
+        if changed {
+            self.save_profiles();
             if self.connected() {
                 self.reconnect();
             }
@@ -799,7 +846,16 @@ impl ConnectionManager {
             self.set_status_text(gettext("Choose a server to connect"));
             return;
         };
-        let (local_port, preset, listed, apply_mode, dns, prerelease) = {
+        let (
+            local_port,
+            preset,
+            listed,
+            apply_mode,
+            dns,
+            prerelease,
+            custom_rules,
+            config_override,
+        ) = {
             let p = self.imp().profiles.borrow();
             (
                 p.local_port,
@@ -808,6 +864,8 @@ impl ConnectionManager {
                 p.apply_mode,
                 p.dns.clone(),
                 p.prerelease,
+                p.custom_rules.clone(),
+                p.config_override.clone(),
             )
         };
 
@@ -823,6 +881,8 @@ impl ConnectionManager {
             apply_mode,
             dns,
             prerelease,
+            custom_rules,
+            config_override,
         };
 
         let (ui_tx, ui_rx) = async_channel::unbounded::<UiEvent>();
@@ -922,7 +982,7 @@ impl ConnectionManager {
                 self.set_status_text(match mode {
                     ApplyMode::SystemProxy => gettext("Connected · system proxy active"),
                     ApplyMode::LocalOnly => gettext("Connected · local proxy only"),
-                    ApplyMode::Tunnel => gettext("Connected"),
+                    ApplyMode::Tunnel => gettext("Connected · all traffic through the tunnel"),
                 });
                 self.emit_by_name::<()>(
                     "notification",
@@ -1034,19 +1094,65 @@ async fn actor(
             return;
         }
     };
-    let cfg = {
-        let mut opts = ConfigOptions::new(&params.server);
-        opts.local_port = params.local_port;
-        opts.route_preset = params.route_preset;
-        opts.listed_domains = &params.listed_domains;
-        opts.dns = &params.dns;
-        opts.api_port = Some(api_port);
-        build(&opts)
+    let tunnel = params.apply_mode == ApplyMode::Tunnel;
+    let cfg = match &params.config_override {
+        Some(raw) => match serde_json::from_str::<serde_json::Value>(raw) {
+            Ok(mut v) => {
+                // Keep stats reachable even with a custom config.
+                v["api"] = serde_json::json!({ "tag": "api", "listen": format!("127.0.0.1:{api_port}"), "services": ["StatsService"] });
+                if v.get("stats").is_none() {
+                    v["stats"] = serde_json::json!({});
+                }
+                v
+            }
+            Err(e) => {
+                send(UiEvent::Failed(Error::InvalidOverride(e.to_string())));
+                return;
+            }
+        },
+        None => {
+            let mut opts = ConfigOptions::new(&params.server);
+            opts.local_port = params.local_port;
+            opts.route_preset = params.route_preset;
+            opts.listed_domains = &params.listed_domains;
+            opts.dns = &params.dns;
+            opts.api_port = Some(api_port);
+            opts.tunnel = tunnel;
+            opts.custom_rules = &params.custom_rules;
+            build(&opts)
+        }
     };
     let cfg_path = paths::runtime_config_file();
     if let Err(e) = write_config(&cfg_path, &cfg) {
         send(UiEvent::Failed(e));
         return;
+    }
+
+    // Tunnel mode: the binary needs file capabilities. Ask once through
+    // polkit; a core update replaces the binary, so this is re-checked on
+    // every connection.
+    if tunnel {
+        let xray = manager.xray_path();
+        let status = capabilities(&xray);
+        if status != CapStatus::Granted {
+            send(UiEvent::Log(format!(
+                "tunnel: capabilities {status:?}, requesting grant"
+            )));
+            send(UiEvent::Progress(Progress::Resolving));
+            match grant(&helper_path(), &xray).await {
+                Ok(CapStatus::Granted) => send(UiEvent::Log("tunnel: capabilities granted".into())),
+                Ok(other) => {
+                    send(UiEvent::Failed(Error::Tun(format!(
+                        "capabilities still {other:?} after grant"
+                    ))));
+                    return;
+                }
+                Err(e) => {
+                    send(UiEvent::Failed(e));
+                    return;
+                }
+            }
+        }
     }
 
     let supervisor = Supervisor::new(manager.xray_path(), manager.dir().to_path_buf());
@@ -1178,4 +1284,17 @@ async fn geoip_db(path: &std::path::Path) -> Option<std::sync::Arc<obscure_core:
     let db = Arc::new(db);
     *guard = Some(db.clone());
     Some(db)
+}
+
+/// Installed helper if present, otherwise the one from the build tree.
+fn helper_path() -> std::path::PathBuf {
+    let installed = std::path::Path::new(crate::config::LIBEXECDIR).join("obscure-helper");
+    if installed.exists() {
+        return installed;
+    }
+    let build = std::path::Path::new(crate::config::BUILD_HELPER);
+    if !crate::config::BUILD_HELPER.is_empty() && build.exists() {
+        return build.to_path_buf();
+    }
+    installed
 }

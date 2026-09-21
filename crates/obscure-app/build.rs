@@ -31,6 +31,8 @@ pub const GETTEXT_PACKAGE: &str = "obscure";
 pub const LOCALEDIR: &str = "/usr/share/locale";
 pub const PKGDATADIR: &str = "/usr/share/obscure";
 pub const BUILD_DATADIR: &str = "";
+pub const LIBEXECDIR: &str = "/usr/lib/obscure";
+pub const BUILD_HELPER: &str = "";
 "#,
     );
     fs::write(&dest, contents).expect("cannot write config.rs");

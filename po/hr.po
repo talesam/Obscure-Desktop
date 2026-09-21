@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
-"Report-Msgid-Bugs-To: https://github.com/talesam/Obscure-Desktop/issues\n"
-"POT-Creation-Date: 2026-09-20 19:23\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-20 23:55-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Hrvatski\n"
@@ -16,9 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: data/io.github.talesam.Obscure.desktop.in.in:2
-#: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
-#: crates/obscure-app/src/ui/window.blp:5
+#: data/io.github.talesam.Obscure.desktop.in.in:2 data/io.github.talesam.Obscure.metainfo.xml.in.in:7 crates/obscure-app/src/ui/window.blp:5
 msgid "Obscure"
 msgstr "Obscure"
 
@@ -28,9 +26,7 @@ msgid "Proxy Client"
 msgstr "Proxy klijent"
 
 #. Translators: the slogan of the app
-#: data/io.github.talesam.Obscure.desktop.in.in:6
-#: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:399
+#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:435
 msgid "Connect. That's it."
 msgstr "Povežite se. To je sve."
 
@@ -92,12 +88,14 @@ msgid "Start with the session (via the Background portal)"
 msgstr "Pokreni sa sesijom (putem portala Background)"
 
 #: data/io.github.talesam.Obscure.gschema.xml.in:26
+msgid "Register a system-wide shortcut through the GlobalShortcuts portal"
+msgstr "Registriraj prečac na razini sustava putem portala GlobalShortcuts"
+
+#: data/io.github.talesam.Obscure.gschema.xml.in:30
 msgid "Connect automatically when the app starts"
 msgstr "Automatski se poveži pri pokretanju aplikacije"
 
-#: crates/obscure-app/src/ui/window.blp:17
-#: crates/obscure-app/src/ui/window.blp:51
-#: crates/obscure-app/src/ui/import-dialog.blp:5
+#: crates/obscure-app/src/ui/window.blp:17 crates/obscure-app/src/ui/window.blp:51 crates/obscure-app/src/ui/import-dialog.blp:5
 msgid "Add Server"
 msgstr "Dodaj poslužitelj"
 
@@ -109,122 +107,119 @@ msgstr "Glavni izbornik"
 msgid "Paste a link or a subscription to get started."
 msgstr "Zalijepite poveznicu ili pretplatu za početak."
 
-#: crates/obscure-app/src/ui/window.blp:137
-#: crates/obscure-app/src/window.rs:578 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Poveži"
 
-#: crates/obscure-app/src/ui/window.blp:149
+#: crates/obscure-app/src/ui/window.blp:164
 msgid "How to apply"
 msgstr "Način primjene"
 
-#: crates/obscure-app/src/ui/window.blp:157
+#: crates/obscure-app/src/ui/window.blp:172
 msgid "System proxy"
 msgstr "Proxy sustava"
 
-#: crates/obscure-app/src/ui/window.blp:158
+#: crates/obscure-app/src/ui/window.blp:173
 msgid "Browsers and most apps use the connection. No administrator password needed."
 msgstr "Preglednici i većina aplikacija koristit će vezu. Nije potrebna administratorska lozinka."
 
-#: crates/obscure-app/src/ui/window.blp:163
+#: crates/obscure-app/src/ui/window.blp:178
 msgid "Local proxy only"
 msgstr "Samo lokalni proxy"
 
-#: crates/obscure-app/src/ui/window.blp:164
+#: crates/obscure-app/src/ui/window.blp:179
 msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
 msgstr "Ništa se u sustavu ne mijenja. Usmjerite željene programe na 127.0.0.1:2080."
 
-#: crates/obscure-app/src/ui/window.blp:169
+#: crates/obscure-app/src/ui/window.blp:184
 msgid "Tunnel"
 msgstr "Tunel"
 
-#: crates/obscure-app/src/ui/window.blp:171
-msgid "All traffic from this computer. Coming in a future version."
-msgstr "Sav promet ovog računala. Dolazi u budućoj verziji."
+#: crates/obscure-app/src/ui/window.blp:185
+msgid "All traffic from this computer, every app. Asks for your password once."
+msgstr "Sav promet ovog računala, svaka aplikacija. Jednom traži vašu lozinku."
 
-#: crates/obscure-app/src/ui/window.blp:177
+#: crates/obscure-app/src/ui/window.blp:191
 msgid "What goes through the connection"
 msgstr "Što ide kroz vezu"
 
-#: crates/obscure-app/src/ui/window.blp:185
+#: crates/obscure-app/src/ui/window.blp:199
 msgid "Smart"
 msgstr "Pametno"
 
-#: crates/obscure-app/src/ui/window.blp:186
+#: crates/obscure-app/src/ui/window.blp:200
 msgid "Everything, except local network addresses. Ads are blocked."
 msgstr "Sve, osim adresa lokalne mreže. Oglasi su blokirani."
 
-#: crates/obscure-app/src/ui/window.blp:191
+#: crates/obscure-app/src/ui/window.blp:205
 msgid "Everything"
 msgstr "Sve"
 
-#: crates/obscure-app/src/ui/window.blp:192
+#: crates/obscure-app/src/ui/window.blp:206
 msgid "All traffic goes through the connection, except local network addresses."
 msgstr "Sav promet ide kroz vezu, osim adresa lokalne mreže."
 
-#: crates/obscure-app/src/ui/window.blp:198
+#: crates/obscure-app/src/ui/window.blp:212
 msgid "Subscriptions"
 msgstr "Pretplate"
 
-#: crates/obscure-app/src/ui/window.blp:211
+#: crates/obscure-app/src/ui/window.blp:225
 msgid "Servers"
 msgstr "Poslužitelji"
 
-#: crates/obscure-app/src/ui/window.blp:220
+#: crates/obscure-app/src/ui/window.blp:234
 msgid "Automatic"
 msgstr "Automatski"
 
-#: crates/obscure-app/src/ui/window.blp:221
+#: crates/obscure-app/src/ui/window.blp:235
 msgid "Tests all servers when you connect and picks the quickest one."
 msgstr "Pri povezivanju testira sve poslužitelje i bira najbrži."
 
-#: crates/obscure-app/src/ui/window.blp:231
+#: crates/obscure-app/src/ui/window.blp:245
 msgid "Automatic: fastest server"
 msgstr "Automatski: najbrži poslužitelj"
 
-#: crates/obscure-app/src/ui/window.blp:237
+#: crates/obscure-app/src/ui/window.blp:251
 msgid "Measure the response time of every server"
 msgstr "Izmjeri vrijeme odziva svakog poslužitelja"
 
-#: crates/obscure-app/src/ui/window.blp:242
+#: crates/obscure-app/src/ui/window.blp:256
 msgid "Test All"
 msgstr "Testiraj sve"
 
-#: crates/obscure-app/src/ui/window.blp:272
+#: crates/obscure-app/src/ui/window.blp:286
 msgid "_Import from File…"
 msgstr "_Uvezi iz datoteke…"
 
-#: crates/obscure-app/src/ui/window.blp:277
+#: crates/obscure-app/src/ui/window.blp:291
 msgid "_Live Connections"
 msgstr "_Veze uživo"
 
-#: crates/obscure-app/src/ui/window.blp:282
+#: crates/obscure-app/src/ui/window.blp:296
 msgid "_Connection Log"
 msgstr "_Zapisnik veze"
 
-#: crates/obscure-app/src/ui/window.blp:287
+#: crates/obscure-app/src/ui/window.blp:301
 msgid "_Copy Environment Variables"
 msgstr "_Kopiraj varijable okruženja"
 
-#: crates/obscure-app/src/ui/window.blp:294
+#: crates/obscure-app/src/ui/window.blp:308
 msgid "_Preferences"
 msgstr "_Postavke"
 
-#: crates/obscure-app/src/ui/window.blp:299
+#: crates/obscure-app/src/ui/window.blp:313
 msgid "_Keyboard Shortcuts"
 msgstr "_Tipkovnički prečaci"
 
-#: crates/obscure-app/src/ui/window.blp:304
+#: crates/obscure-app/src/ui/window.blp:318
 msgid "_About Obscure"
 msgstr "_O programu Obscure"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
-#: crates/obscure-app/src/ui/preferences-dialog.blp:10
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6 crates/obscure-app/src/ui/preferences-dialog.blp:10
 msgid "General"
 msgstr "Općenito"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9
-#: crates/obscure-app/src/ui/preferences-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9 crates/obscure-app/src/ui/preferences-dialog.blp:5
 msgid "Preferences"
 msgstr "Postavke"
 
@@ -232,8 +227,7 @@ msgstr "Postavke"
 msgid "Keyboard Shortcuts"
 msgstr "Tipkovnički prečaci"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
-#: crates/obscure-app/src/ui/connections-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19 crates/obscure-app/src/ui/connections-dialog.blp:5
 msgid "Live Connections"
 msgstr "Veze uživo"
 
@@ -241,8 +235,7 @@ msgstr "Veze uživo"
 msgid "Close Window"
 msgstr "Zatvori prozor"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29
-#: crates/obscure-app/src/tray.rs:101
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29 crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Izađi"
 
@@ -298,13 +291,51 @@ msgstr "Probaj predizdanja pogona"
 msgid "Newer features, but less tested. Off is the safe choice."
 msgstr "Novije značajke, ali manje testirane. Isključeno je siguran izbor."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:541 crates/obscure-app/src/window.rs:570
-#: crates/obscure-app/src/window.rs:662
+#: crates/obscure-app/src/ui/preferences-dialog.blp:61
+msgid "Advanced"
+msgstr "Napredno"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:65
+msgid "Shortcut"
+msgstr "Prečac"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:68
+msgid "System-wide shortcut to connect or disconnect"
+msgstr "Prečac na razini sustava za povezivanje ili odspajanje"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:69
+msgid "Works even when Obscure is hidden. The system lets you choose the keys."
+msgstr "Radi i kad je Obscure skriven. Sustav vam daje odabrati tipke."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:74
+msgid "Route rules"
+msgstr "Pravila usmjeravanja"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:75
+msgid "Your rules win over the preset. Use a domain (example.com), an address (10.0.0.0/8) or a category (geosite:netflix)."
+msgstr "Vaša pravila imaju prednost pred predloškom. Koristite domenu (example.com), adresu (10.0.0.0/8) ili kategoriju (geosite:netflix)."
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:80
+msgid "Add rule"
+msgstr "Dodaj pravilo"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:99
+msgid "Engine configuration"
+msgstr "Konfiguracija pogona"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:102
+msgid "Edit the engine configuration"
+msgstr "Uredi konfiguraciju pogona"
+
+#: crates/obscure-app/src/ui/preferences-dialog.blp:103
+msgid "See or replace the JSON that Obscure sends to Xray."
+msgstr "Pogledajte ili zamijenite JSON koji Obscure šalje Xrayu."
+
+#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579 crates/obscure-app/src/window.rs:691 crates/obscure-app/src/preferences_dialog.rs:242
 msgid "Cancel"
 msgstr "Odustani"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:23
+#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:242
 msgid "Add"
 msgstr "Dodaj"
 
@@ -332,158 +363,158 @@ msgstr "Snimi zaslon i pročitaj QR kod na njemu"
 msgid "QR from Screen"
 msgstr "QR sa zaslona"
 
-#: crates/obscure-app/src/application.rs:96
+#: crates/obscure-app/src/application.rs:98
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Postavke proxyja sustava iz prethodne sesije su vraćene."
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:396
+#: crates/obscure-app/src/application.rs:432
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:400
+#: crates/obscure-app/src/application.rs:436
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure koristi Xray-core, koji se zasebno preuzima pri prvom pokretanju."
 
-#: crates/obscure-app/src/application.rs:406
+#: crates/obscure-app/src/application.rs:442
 msgid "Project plan"
 msgstr "Plan projekta"
 
-#: crates/obscure-app/src/window.rs:221
+#: crates/obscure-app/src/window.rs:223
 msgid "The clipboard does not contain a server link."
 msgstr "Međuspremnik ne sadrži poveznicu poslužitelja."
 
-#: crates/obscure-app/src/window.rs:243
+#: crates/obscure-app/src/window.rs:245
 msgid "Text files"
 msgstr "Tekstualne datoteke"
 
-#: crates/obscure-app/src/window.rs:250
+#: crates/obscure-app/src/window.rs:252
 msgid "Import servers from a file"
 msgstr "Uvezi poslužitelje iz datoteke"
 
-#: crates/obscure-app/src/window.rs:270
+#: crates/obscure-app/src/window.rs:272
 msgid "Could not read that file."
 msgstr "Nije moguće pročitati tu datoteku."
 
-#: crates/obscure-app/src/window.rs:358
+#: crates/obscure-app/src/window.rs:360
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Varijable okruženja kopirane. Zalijepite ih u terminal."
 
-#: crates/obscure-app/src/window.rs:488
+#: crates/obscure-app/src/window.rs:497
 msgid "Update now"
 msgstr "Ažuriraj sada"
 
-#: crates/obscure-app/src/window.rs:518
+#: crates/obscure-app/src/window.rs:527
 msgid "Remove subscription"
 msgstr "Ukloni pretplatu"
 
-#: crates/obscure-app/src/window.rs:535
+#: crates/obscure-app/src/window.rs:544
 msgid "Remove “%s” and all its servers?"
 msgstr "Ukloniti „%s” i sve njegove poslužitelje?"
 
-#: crates/obscure-app/src/window.rs:537
+#: crates/obscure-app/src/window.rs:546
 msgid "You can add the subscription again later by pasting its address."
 msgstr "Pretplatu možete kasnije ponovno dodati lijepljenjem njezine adrese."
 
-#: crates/obscure-app/src/window.rs:542 crates/obscure-app/src/window.rs:663
-#: crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692 crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Ukloni"
 
-#: crates/obscure-app/src/window.rs:562 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:571 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Odspoji"
 
-#: crates/obscure-app/src/window.rs:641
+#: crates/obscure-app/src/window.rs:670
 msgid "Server details"
 msgstr "Detalji poslužitelja"
 
-#: crates/obscure-app/src/window.rs:658
+#: crates/obscure-app/src/window.rs:687
 msgid "Remove “%s”?"
 msgstr "Ukloniti „%s”?"
 
-#: crates/obscure-app/src/window.rs:659
+#: crates/obscure-app/src/window.rs:688
 msgid "You can add it again later by pasting its link."
 msgstr "Kasnije ga možete ponovno dodati lijepljenjem poveznice."
 
-#: crates/obscure-app/src/window.rs:683
+#: crates/obscure-app/src/window.rs:712
 msgid "These servers were already added."
 msgstr "Ovi poslužitelji već su bili dodani."
 
-#: crates/obscure-app/src/window.rs:685
+#: crates/obscure-app/src/window.rs:714
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "Dodan %n poslužitelj."
 msgstr[1] "Dodana %n poslužitelja."
 msgstr[2] "Dodano %n poslužitelja."
 
-#: crates/obscure-app/src/window.rs:691
+#: crates/obscure-app/src/window.rs:720
 msgid "Downloading the subscription…"
 msgstr "Preuzimanje pretplate…"
 
-#: crates/obscure-app/src/window.rs:696
+#: crates/obscure-app/src/window.rs:725
 msgid "Subscription updated: %n server."
 msgid_plural "Subscription updated: %n servers."
 msgstr[0] "Pretplata ažurirana: %n poslužitelj."
 msgstr[1] "Pretplata ažurirana: %n poslužitelja."
 msgstr[2] "Pretplata ažurirana: %n poslužitelja."
 
-#: crates/obscure-app/src/connection.rs:199
-#: crates/obscure-app/src/connection.rs:855
+#: crates/obscure-app/src/connection.rs:206 crates/obscure-app/src/connection.rs:994
 msgid "Disconnected"
 msgstr "Odspojeno"
 
-#: crates/obscure-app/src/connection.rs:694
+#: crates/obscure-app/src/connection.rs:820
 msgid "Finding the fastest server…"
 msgstr "Traženje najbržeg poslužitelja…"
 
-#: crates/obscure-app/src/connection.rs:720
+#: crates/obscure-app/src/connection.rs:846
 msgid "Choose a server to connect"
 msgstr "Odaberite poslužitelj za povezivanje"
 
-#: crates/obscure-app/src/connection.rs:737
-#: crates/obscure-app/src/connection.rs:827
+#: crates/obscure-app/src/connection.rs:874 crates/obscure-app/src/connection.rs:966
 msgid "Connecting…"
 msgstr "Povezivanje…"
 
-#: crates/obscure-app/src/connection.rs:771
+#: crates/obscure-app/src/connection.rs:910
 msgid "Disconnecting…"
 msgstr "Odspajanje…"
 
-#: crates/obscure-app/src/connection.rs:794
+#: crates/obscure-app/src/connection.rs:933
 msgid "Preparing the connection engine…"
 msgstr "Priprema pogona veze…"
 
-#: crates/obscure-app/src/connection.rs:805
+#: crates/obscure-app/src/connection.rs:944
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "Preuzimanje pogona veze: %a od %b MB"
 
-#: crates/obscure-app/src/connection.rs:808
+#: crates/obscure-app/src/connection.rs:947
 msgid "Downloading the connection engine: %a MB"
 msgstr "Preuzimanje pogona veze: %a MB"
 
-#: crates/obscure-app/src/connection.rs:813
+#: crates/obscure-app/src/connection.rs:952
 msgid "Verifying the download…"
 msgstr "Provjera preuzimanja…"
 
-#: crates/obscure-app/src/connection.rs:815
+#: crates/obscure-app/src/connection.rs:954
 msgid "Installing the connection engine…"
 msgstr "Instalacija pogona veze…"
 
-#: crates/obscure-app/src/connection.rs:844
+#: crates/obscure-app/src/connection.rs:983
 msgid "Connected · system proxy active"
 msgstr "Povezano · proxy sustava aktivan"
 
-#: crates/obscure-app/src/connection.rs:845
+#: crates/obscure-app/src/connection.rs:984
 msgid "Connected · local proxy only"
 msgstr "Povezano · samo lokalni proxy"
 
-#: crates/obscure-app/src/connection.rs:846
-#: crates/obscure-app/src/connection.rs:850
+#: crates/obscure-app/src/connection.rs:985
+msgid "Connected · all traffic through the tunnel"
+msgstr "Povezano · sav promet kroz tunel"
+
+#: crates/obscure-app/src/connection.rs:989
 msgid "Connected"
 msgstr "Povezano"
 
-#: crates/obscure-app/src/connection.rs:867
+#: crates/obscure-app/src/connection.rs:1006
 msgid "Connection failed"
 msgstr "Povezivanje nije uspjelo"
 
@@ -575,8 +606,23 @@ msgstr "Pretplatu nije moguće pročitati. Provjerite adresu."
 msgid "This subscription is in Clash format, which Obscure does not support yet."
 msgstr "Ova pretplata je u Clash formatu, koji Obscure još ne podržava."
 
-#: crates/obscure-app/src/import_dialog.rs:60
-#: crates/obscure-app/src/import_dialog.rs:253
+#: crates/obscure-app/src/humanize.rs:60
+msgid "Tunnel mode is not possible here: the engine is stored on a filesystem that ignores permissions (nosuid)."
+msgstr "Način tunela ovdje nije moguć: pogon je na datotečnom sustavu koji ignorira dozvole (nosuid)."
+
+#: crates/obscure-app/src/humanize.rs:62
+msgid "Could not get permission for tunnel mode."
+msgstr "Nije moguće dobiti dozvolu za način tunela."
+
+#: crates/obscure-app/src/humanize.rs:63
+msgid "Tunnel mode needs your permission to route all traffic."
+msgstr "Način tunela treba vašu dozvolu za usmjeravanje svog prometa."
+
+#: crates/obscure-app/src/humanize.rs:64
+msgid "The custom configuration is not valid JSON."
+msgstr "Prilagođena konfiguracija nije valjan JSON."
+
+#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:253
 msgid "No valid link found."
 msgstr "Nije pronađena valjana poveznica."
 
@@ -588,8 +634,7 @@ msgstr "Slike"
 msgid "Choose an image with a QR code"
 msgstr "Odaberite sliku s QR kodom"
 
-#: crates/obscure-app/src/import_dialog.rs:97
-#: crates/obscure-app/src/import_dialog.rs:149
+#: crates/obscure-app/src/import_dialog.rs:97 crates/obscure-app/src/import_dialog.rs:149
 msgid "No QR code was found in that image."
 msgstr "Na toj slici nije pronađen QR kod."
 
@@ -655,13 +700,45 @@ msgstr "Još ništa nije zapisano. Povežite se da vidite što pogon javlja."
 msgid "Link copied."
 msgstr "Poveznica kopirana."
 
-#: crates/obscure-app/src/preferences_dialog.rs:98
+#: crates/obscure-app/src/preferences_dialog.rs:128
 msgid "The system did not allow Obscure to start automatically."
 msgstr "Sustav nije dopustio da se Obscure automatski pokreće."
 
-#: crates/obscure-app/src/preferences_dialog.rs:109
+#: crates/obscure-app/src/preferences_dialog.rs:139
 msgid "Automatic start is not available on this system."
 msgstr "Automatsko pokretanje nije dostupno na ovom sustavu."
+
+#: crates/obscure-app/src/preferences_dialog.rs:197
+msgid "Remove rule"
+msgstr "Ukloni pravilo"
+
+#: crates/obscure-app/src/preferences_dialog.rs:223
+msgid "New rule"
+msgstr "Novo pravilo"
+
+#: crates/obscure-app/src/preferences_dialog.rs:224
+msgid "What should match, and where it goes."
+msgstr "Što treba odgovarati i kamo ide."
+
+#: crates/obscure-app/src/preferences_dialog.rs:228
+msgid "Domain, address or category"
+msgstr "Domena, adresa ili kategorija"
+
+#: crates/obscure-app/src/preferences_dialog.rs:231 crates/obscure-app/src/preferences_dialog.rs:282
+msgid "Through the server"
+msgstr "Preko poslužitelja"
+
+#: crates/obscure-app/src/preferences_dialog.rs:232 crates/obscure-app/src/preferences_dialog.rs:283
+msgid "Direct"
+msgstr "Izravno"
+
+#: crates/obscure-app/src/preferences_dialog.rs:233 crates/obscure-app/src/preferences_dialog.rs:284
+msgid "Block"
+msgstr "Blokiraj"
+
+#: crates/obscure-app/src/preferences_dialog.rs:236
+msgid "Send to"
+msgstr "Pošalji na"
 
 #: crates/obscure-app/src/subscription_object.rs:50
 msgid "%n server"
@@ -730,3 +807,59 @@ msgstr "preko poslužitelja"
 #: crates/obscure-app/src/connections_dialog.rs:162
 msgid "DNS lookup"
 msgstr "DNS upit"
+
+#: crates/obscure-app/src/ui/json-dialog.blp:5
+msgid "Engine Configuration"
+msgstr "Konfiguracija pogona"
+
+#: crates/obscure-app/src/ui/json-dialog.blp:21
+msgid "Validate"
+msgstr "Provjeri"
+
+#: crates/obscure-app/src/ui/json-dialog.blp:27
+msgid "Use This Configuration"
+msgstr "Koristi ovu konfiguraciju"
+
+#: crates/obscure-app/src/ui/json-dialog.blp:37
+msgid "Back to Automatic"
+msgstr "Natrag na automatsko"
+
+#: crates/obscure-app/src/ui/json-dialog.blp:38
+msgid "Discard the custom configuration and let Obscure generate it again"
+msgstr "Odbaci prilagođenu konfiguraciju i pusti Obscure da je ponovno generira"
+
+#: crates/obscure-app/src/ui/json-dialog.blp:47
+msgid "Only change this if you know the Xray configuration format. A broken configuration stops connections."
+msgstr "Mijenjajte ovo samo ako poznajete format konfiguracije Xraya. Pokvarena konfiguracija zaustavlja veze."
+
+#: crates/obscure-app/src/json_dialog.rs:71
+msgid "Back to the automatic configuration."
+msgstr "Natrag na automatsku konfiguraciju."
+
+#: crates/obscure-app/src/json_dialog.rs:97
+msgid "Select a server first."
+msgstr "Prvo odaberite poslužitelj."
+
+#: crates/obscure-app/src/json_dialog.rs:124
+msgid "Not valid JSON: %s"
+msgstr "Nevaljan JSON: %s"
+
+#: crates/obscure-app/src/json_dialog.rs:157
+msgid "Configuration accepted by the engine and in use."
+msgstr "Konfiguraciju je pogon prihvatio i u uporabi je."
+
+#: crates/obscure-app/src/json_dialog.rs:162
+msgid "Configuration accepted by the engine."
+msgstr "Konfiguraciju je pogon prihvatio."
+
+#: crates/obscure-app/src/json_dialog.rs:172
+msgid "The engine accepted the configuration but cannot open the tunnel without permission. Connect once in Tunnel mode to grant it."
+msgstr "Pogon je prihvatio konfiguraciju, ali ne može otvoriti tunel bez dozvole. Povežite se jednom u načinu Tunel da je dodijelite."
+
+#: crates/obscure-app/src/json_dialog.rs:175
+msgid "The engine rejected it: %s"
+msgstr "Pogon ju je odbio: %s"
+
+#: crates/obscure-app/src/shortcuts.rs:19
+msgid "Connect or disconnect Obscure"
+msgstr "Poveži ili odspoji Obscure"

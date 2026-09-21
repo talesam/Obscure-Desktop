@@ -1,6 +1,6 @@
 [package]
 name = "obscure-helper"
-description = "Minimal privileged helper for Obscure (TUN mode, phase 4). Placeholder for now."
+description = "Minimal privileged helper for Obscure: grants TUN capabilities to the Xray binary (via pkexec or a polkit-checked D-Bus service)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -12,3 +12,8 @@ name = "obscure-helper"
 path = "src/main.rs"
 
 [dependencies]
+zbus = { version = "5", default-features = false, features = ["tokio"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
+
+[dev-dependencies]
+tempfile = "3"

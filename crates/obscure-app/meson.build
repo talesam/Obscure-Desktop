@@ -1,3 +1,9 @@
+if get_option('profile') == 'default'
+  rust_target = 'release'
+else
+  rust_target = 'debug'
+endif
+
 global_conf = configuration_data()
 global_conf.set_quoted('APP_ID', application_id)
 global_conf.set_quoted('PROFILE', get_option('profile'))
@@ -5,6 +11,8 @@ global_conf.set_quoted('GETTEXT_PACKAGE', gettext_package)
 global_conf.set_quoted('LOCALEDIR', localedir)
 global_conf.set_quoted('PKGDATADIR', pkgdatadir)
 global_conf.set_quoted('BUILD_DATADIR', meson.project_build_root() / 'data')
+global_conf.set_quoted('LIBEXECDIR', get_option('prefix') / get_option('libexecdir'))
+global_conf.set_quoted('BUILD_HELPER', meson.project_build_root() / 'target' / rust_target / 'obscure-helper')
 
 config_rs = configure_file(
   input: 'src/config.rs.in',
@@ -16,14 +24,12 @@ cargo_options = [
   '--manifest-path', meson.project_source_root() / 'Cargo.toml',
   '--target-dir', meson.project_build_root() / 'target',
   '--package', 'obscure-app',
+  '--package', 'obscure-helper',
 ]
-
-if get_option('profile') == 'default'
+if rust_target == 'release'
   cargo_options += ['--release']
-  rust_target = 'release'
-else
-  rust_target = 'debug'
 endif
+
 
 if get_option('offline')
   cargo_options += ['--offline']
@@ -60,4 +66,20 @@ test(
          '--target-dir', meson.project_build_root() / 'target'],
   env: cargo_env,
   timeout: 1200,
+)
+
+cargo_helper = custom_target(
+  'cargo-build-helper',
+  build_by_default: true,
+  build_always_stale: true,
+  output: 'obscure-helper',
+  console: true,
+  install: true,
+  install_dir: get_option('libexecdir'),
+  depends: cargo_build,
+  command: [
+    'cp',
+    meson.project_build_root() / 'target' / rust_target / 'obscure-helper',
+    '@OUTPUT@',
+  ],
 )

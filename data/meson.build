@@ -66,3 +66,35 @@ test(
   glib_compile_schemas,
   args: ['--strict', '--dry-run', meson.current_build_dir()],
 )
+
+# Privileged helper integration (phase 4): polkit action used by
+# `pkexec obscure-helper grant-tun`, plus the D-Bus system service prototype.
+helper_path = get_option('prefix') / get_option('libexecdir') / 'obscure-helper'
+priv_conf = configuration_data()
+priv_conf.set('app-id', application_id)
+priv_conf.set('helper', helper_path)
+configure_file(
+  input: '@0@.policy.in'.format(base_id),
+  output: '@0@.policy'.format(base_id),
+  configuration: priv_conf,
+  install: true,
+  install_dir: datadir / 'polkit-1' / 'actions',
+)
+configure_file(
+  input: '@0@.Helper.service.in'.format(base_id),
+  output: '@0@.Helper.service'.format(base_id),
+  configuration: priv_conf,
+  install: true,
+  install_dir: datadir / 'dbus-1' / 'system-services',
+)
+install_data(
+  '@0@.Helper.conf'.format(base_id),
+  install_dir: datadir / 'dbus-1' / 'system.d',
+)
+configure_file(
+  input: 'obscure-helper.service.in',
+  output: 'obscure-helper.service',
+  configuration: priv_conf,
+  install: true,
+  install_dir: get_option('prefix') / 'lib' / 'systemd' / 'system',
+)
