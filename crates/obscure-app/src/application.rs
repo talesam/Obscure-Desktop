@@ -23,6 +23,10 @@ mod imp {
         /// `--start-minimized`: do not show the window if a tray exists.
         pub start_minimized: std::cell::Cell<bool>,
         pub first_activation: std::cell::Cell<bool>,
+        /// Window kept hidden at startup until the tray answers; a temporary
+        /// hold keeps the process alive meanwhile.
+        pub startup_hold: std::cell::RefCell<Option<gio::ApplicationHoldGuard>>,
+        pub tray_decided: std::cell::Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -84,9 +88,18 @@ mod imp {
         fn activate(&self) {
             let app = self.obj();
             let first = self.first_activation.replace(false);
-            if first && self.start_minimized.get() && self.tray.borrow().is_some() {
-                tracing::info!("started minimized: window stays hidden");
-                return;
+            if first && self.start_minimized.get() {
+                // The tray registers asynchronously; do not show the window
+                // yet. `setup_tray` shows it if no tray host turns up.
+                if self.tray_decided.get() && self.tray.borrow().is_none() {
+                    tracing::info!("started minimized but no tray: showing the window");
+                } else {
+                    tracing::info!("started minimized: window stays hidden");
+                    if self.startup_hold.borrow().is_none() {
+                        *self.startup_hold.borrow_mut() = Some(app.hold());
+                    }
+                    return;
+                }
             }
             let window = match app.active_window() {
                 Some(window) => window,
@@ -356,7 +369,17 @@ impl ObscureApplication {
 
         let app = self.clone();
         glib::spawn_future_local(async move {
-            let Ok(Some(handle)) = handle_rx.recv().await else {
+            let result = handle_rx.recv().await;
+            app.imp().tray_decided.set(true);
+            let Ok(Some(handle)) = result else {
+                // No tray host: a hidden app would be unreachable, so show
+                // the window even when started minimized.
+                if app.imp().startup_hold.borrow().is_some() && app.active_window().is_none() {
+                    tracing::info!("no tray available: showing the window");
+                    app.imp().first_activation.set(false);
+                    app.activate();
+                }
+                app.imp().startup_hold.borrow_mut().take();
                 return;
             };
             tracing::info!("tray icon registered");
@@ -364,6 +387,8 @@ impl ObscureApplication {
             if app.imp().hold_guard.borrow().is_none() {
                 *app.imp().hold_guard.borrow_mut() = Some(app.hold());
             }
+            // The permanent tray hold replaces the startup hold.
+            app.imp().startup_hold.borrow_mut().take();
             if let Some(win) = app.active_window().and_downcast::<ObscureWindow>() {
                 app.apply_background_policy(&win);
             }

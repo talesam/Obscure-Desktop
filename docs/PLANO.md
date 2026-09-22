@@ -299,6 +299,12 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 
 ## 8. Registro de progresso e pendências
 
+### Correção 2026-09-22
+- `--start-minimized` abria a janela porque a bandeja registra de forma assíncrona e a primeira
+  ativação acontecia antes. Agora a janela fica oculta com um `hold` temporário até a bandeja
+  responder; se não houver host de bandeja, a janela abre (para o app não ficar inalcançável).
+  `OBSCURE_NO_TRAY=1` simula ausência de bandeja nos testes.
+
 ### Fase 4 (2026-09-21)
 Feito: modo Túnel com inbound `tun` nativo (gateway 172.19.0.1/30 + fdfe:dcba:9876::1/126,
 `autoSystemRoutingTable`, `autoOutboundsInterface: auto`, DNS do sistema capturado para o
