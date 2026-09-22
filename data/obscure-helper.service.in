@@ -1,0 +1,7 @@
+[Unit]
+Description=Obscure privileged helper (tunnel permissions)
+
+[Service]
+Type=dbus
+BusName=io.github.talesam.Obscure.Helper
+ExecStart=@helper@ --dbus

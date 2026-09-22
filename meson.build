@@ -1,7 +1,12 @@
 project(
   'obscure',
   'rust',
-  version: '0.1.0',
+  # The version lives in crates/obscure-core/src/lib.rs (APP_VERSION).
+  version: run_command(
+    'grep', '-oP', '(?<=pub const APP_VERSION: &str = ")[^"]+',
+    'crates/obscure-core/src/lib.rs',
+    check: true,
+  ).stdout().strip(),
   meson_version: '>= 1.3.0',
   license: 'GPL-3.0-or-later',
   default_options: ['warning_level=2'],
@@ -38,17 +43,10 @@ gettext_package = meson.project_name()
 
 if get_option('profile') == 'development'
   profile = 'Devel'
-  vcs_tag = run_command('git', 'rev-parse', '--short', 'HEAD', check: false).stdout().strip()
-  if vcs_tag == ''
-    version_suffix = '-devel'
-  else
-    version_suffix = '-@0@'.format(vcs_tag)
-  endif
   # Enable the repository's git hooks for contributors (harmless if not a checkout).
   run_command('git', 'config', 'core.hooksPath', '.githooks', check: false)
 else
   profile = ''
-  version_suffix = ''
 endif
 
 application_id = '@0@@1@'.format(base_id, profile == '' ? '' : '.' + profile)

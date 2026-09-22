@@ -1,8 +1,10 @@
 //! Core library of Obscure. Must never depend on GTK.
 
+pub mod access;
 pub mod config;
 pub mod core_manager;
 pub mod error;
+pub mod geoip;
 pub mod latency;
 pub mod links;
 pub mod paths;
@@ -11,8 +13,13 @@ pub mod stats;
 pub mod subscription;
 pub mod supervisor;
 pub mod sysproxy;
+pub mod tun;
 
 pub use error::{Error, Result};
+
+/// Application version. Single source of truth: meson reads it from here
+/// and the release tooling bumps it automatically (semantic version).
+pub const APP_VERSION: &str = "0.1.0";
 
 /// Default local port of the mixed (HTTP + SOCKS) inbound.
 pub const DEFAULT_LOCAL_PORT: u16 = 2080;

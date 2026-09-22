@@ -1,15 +1,17 @@
 [Desktop Entry]
 Name=Obscure
+# Translators: short description shown next to the app name in menus
+GenericName=Proxy Client
 # Translators: the slogan of the app
 Comment=Connect. That's it.
-GenericName=Proxy Client
 Exec=obscure %U
 Icon=@app-id@
+StartupWMClass=@app-id@
+StartupNotify=true
 Terminal=false
 Type=Application
-Categories=Network;
-MimeType=x-scheme-handler/vless;x-scheme-handler/vmess;x-scheme-handler/trojan;x-scheme-handler/ss;
-# Translators: search terms, keep the trailing semicolon
-Keywords=proxy;vpn;xray;vless;vmess;trojan;shadowsocks;
-StartupNotify=true
+Categories=Network;Security;
+MimeType=x-scheme-handler/vless;x-scheme-handler/vmess;x-scheme-handler/trojan;x-scheme-handler/ss;x-scheme-handler/wireguard;x-scheme-handler/socks;
+# Translators: search terms, keep the trailing semicolon and add local words
+Keywords=proxy;vpn;xray;vless;vmess;trojan;shadowsocks;wireguard;privacy;censorship;
 X-GNOME-UsesNotifications=true

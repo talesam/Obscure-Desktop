@@ -1,0 +1,78 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $ObscureJsonDialog: Adw.Dialog {
+  title: _("Engine Configuration");
+  content-width: 640;
+  content-height: 620;
+
+  child: Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {}
+
+    [bottom]
+    ActionBar {
+      [start]
+      Button validate_button {
+        clicked => $on_validate_clicked() swapped;
+
+        Adw.ButtonContent {
+          icon-name: "emblem-ok-symbolic";
+          label: _("Validate");
+        }
+      }
+
+      [end]
+      Button apply_button {
+        label: _("Use This Configuration");
+        clicked => $on_apply_clicked() swapped;
+
+        styles [
+          "suggested-action",
+        ]
+      }
+
+      [end]
+      Button reset_button {
+        label: _("Back to Automatic");
+        tooltip-text: _("Discard the custom configuration and let Obscure generate it again");
+        clicked => $on_reset_clicked() swapped;
+      }
+    }
+
+    content: Box {
+      orientation: vertical;
+
+      Adw.Banner banner {
+        title: _("Only change this if you know the Xray configuration format. A broken configuration stops connections.");
+        revealed: true;
+      }
+
+      ScrolledWindow {
+        vexpand: true;
+
+        TextView text_view {
+          monospace: true;
+          top-margin: 8;
+          bottom-margin: 8;
+          left-margin: 12;
+          right-margin: 12;
+        }
+      }
+
+      Label result_label {
+        wrap: true;
+        xalign: 0;
+        margin-start: 12;
+        margin-end: 12;
+        margin-top: 6;
+        margin-bottom: 6;
+        visible: false;
+
+        styles [
+          "caption",
+        ]
+      }
+    };
+  };
+}

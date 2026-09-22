@@ -3,10 +3,11 @@ use adw::subclass::prelude::*;
 use gettextrs::gettext;
 use gtk::{gio, glib};
 
-use crate::config::{APP_ID, PROFILE, VERSION};
+use crate::config::{APP_ID, PROFILE};
 use crate::connection::ConnectionManager;
 use crate::tray::{ObscureTray, TrayCmd};
 use crate::window::ObscureWindow;
+use obscure_core::APP_VERSION;
 
 mod imp {
     use super::*;
@@ -22,6 +23,10 @@ mod imp {
         /// `--start-minimized`: do not show the window if a tray exists.
         pub start_minimized: std::cell::Cell<bool>,
         pub first_activation: std::cell::Cell<bool>,
+        /// Window kept hidden at startup until the tray answers; a temporary
+        /// hold keeps the process alive meanwhile.
+        pub startup_hold: std::cell::RefCell<Option<gio::ApplicationHoldGuard>>,
+        pub tray_decided: std::cell::Cell<bool>,
     }
 
     #[glib::object_subclass]
@@ -39,6 +44,7 @@ mod imp {
             app.set_accels_for_action("app.quit", &["<primary>q"]);
             app.set_accels_for_action("app.preferences", &["<primary>comma"]);
             app.set_accels_for_action("app.shortcuts", &["<primary>question"]);
+            app.set_accels_for_action("win.show-connections", &["<primary>l"]);
             app.set_accels_for_action("window.close", &["<primary>w"]);
         }
     }
@@ -57,6 +63,7 @@ mod imp {
             self.obj().handle_termination_signals();
             self.obj().setup_tray();
             self.obj().setup_notifications();
+            self.obj().setup_global_shortcut();
             self.first_activation.set(true);
             self.obj().manager().refresh_due_subscriptions();
             if self
@@ -81,9 +88,18 @@ mod imp {
         fn activate(&self) {
             let app = self.obj();
             let first = self.first_activation.replace(false);
-            if first && self.start_minimized.get() && self.tray.borrow().is_some() {
-                tracing::info!("started minimized: window stays hidden");
-                return;
+            if first && self.start_minimized.get() {
+                // The tray registers asynchronously; do not show the window
+                // yet. `setup_tray` shows it if no tray host turns up.
+                if self.tray_decided.get() && self.tray.borrow().is_none() {
+                    tracing::info!("started minimized but no tray: showing the window");
+                } else {
+                    tracing::info!("started minimized: window stays hidden");
+                    if self.startup_hold.borrow().is_none() {
+                        *self.startup_hold.borrow_mut() = Some(app.hold());
+                    }
+                    return;
+                }
             }
             let window = match app.active_window() {
                 Some(window) => window,
@@ -167,6 +183,40 @@ impl ObscureApplication {
             None,
         );
         app
+    }
+
+    /// Registers the system-wide shortcut when the preference is on, and
+    /// re-evaluates when it changes. The portal session ends when the
+    /// runtime task is dropped (app exit).
+    fn setup_global_shortcut(&self) {
+        let app = self.clone();
+        let start = move |app: &Self| {
+            if !app.settings().boolean("global-shortcut") {
+                return;
+            }
+            let (tx, rx) = async_channel::unbounded::<()>();
+            crate::runtime::runtime().spawn(async move {
+                if let Err(e) = crate::shortcuts::run(tx).await {
+                    tracing::warn!("global shortcut unavailable: {e}");
+                }
+            });
+            let app = app.clone();
+            glib::spawn_future_local(async move {
+                while rx.recv().await.is_ok() {
+                    if app.settings().boolean("global-shortcut") {
+                        app.manager().toggle();
+                    }
+                }
+            });
+        };
+        start(&app);
+        let start2 = start;
+        self.settings()
+            .connect_changed(Some("global-shortcut"), move |s, _| {
+                if s.boolean("global-shortcut") {
+                    start2(&app);
+                }
+            });
     }
 
     /// Desktop notifications for connection events. Routine events are
@@ -319,7 +369,17 @@ impl ObscureApplication {
 
         let app = self.clone();
         glib::spawn_future_local(async move {
-            let Ok(Some(handle)) = handle_rx.recv().await else {
+            let result = handle_rx.recv().await;
+            app.imp().tray_decided.set(true);
+            let Ok(Some(handle)) = result else {
+                // No tray host: a hidden app would be unreachable, so show
+                // the window even when started minimized.
+                if app.imp().startup_hold.borrow().is_some() && app.active_window().is_none() {
+                    tracing::info!("no tray available: showing the window");
+                    app.imp().first_activation.set(false);
+                    app.activate();
+                }
+                app.imp().startup_hold.borrow_mut().take();
                 return;
             };
             tracing::info!("tray icon registered");
@@ -327,6 +387,8 @@ impl ObscureApplication {
             if app.imp().hold_guard.borrow().is_none() {
                 *app.imp().hold_guard.borrow_mut() = Some(app.hold());
             }
+            // The permanent tray hold replaces the startup hold.
+            app.imp().startup_hold.borrow_mut().take();
             if let Some(win) = app.active_window().and_downcast::<ObscureWindow>() {
                 app.apply_background_policy(&win);
             }
@@ -386,7 +448,7 @@ impl ObscureApplication {
             .application_name("Obscure")
             .application_icon(APP_ID)
             .developer_name("Tales A. Mendonça")
-            .version(VERSION)
+            .version(APP_VERSION)
             .website("https://github.com/talesam/Obscure-Desktop")
             .issue_url("https://github.com/talesam/Obscure-Desktop/issues")
             .license_type(gtk::License::Gpl30)

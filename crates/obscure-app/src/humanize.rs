@@ -56,5 +56,11 @@ pub fn error_message(err: &Error) -> String {
         Error::ClashYaml => {
             gettext("This subscription is in Clash format, which Obscure does not support yet.")
         }
+        Error::Tun(detail) if detail.contains("nosuid") => gettext(
+            "Tunnel mode is not possible here: the engine is stored on a filesystem that ignores permissions (nosuid).",
+        ),
+        Error::Tun(_) => gettext("Could not get permission for tunnel mode."),
+        Error::TunDismissed => gettext("Tunnel mode needs your permission to route all traffic."),
+        Error::InvalidOverride(_) => gettext("The custom configuration is not valid JSON."),
     }
 }

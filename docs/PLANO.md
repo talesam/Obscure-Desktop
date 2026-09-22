@@ -134,7 +134,7 @@ Obscure-Desktop/
 │   ├── io.github.talesam.Obscure.gschema.xml.in
 │   └── io.github.talesam.Obscure.policy.in       # polkit (fase 4)
 ├── po/  (POTFILES.in, LINGUAS, pt_BR.po, en.po)
-├── packaging/arch/PKGBUILD
+├── pkgbuild/PKGBUILD + pkgbuild.install   # padrão BigCommunity (pkgver por data, usado pelo CI/CD)
 ├── docs/PLANO.md  (este)
 └── .github/workflows/ (ci.yml: fmt+clippy+test; flatpak.yml)
 ```
@@ -259,16 +259,16 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 - [x] Protocolos extras: WireGuard (`wireguard://`), SOCKS (`socks://`) e HTTP upstream (config). **Hysteria2 fora**: o Xray 26.3.27 não aceita outbound `hysteria2` (verificado com `xray run -test`); reavaliar quando o core suportar.
 - [x] i18n (inglês + 28 idiomas), `AdwShortcutsDialog`.
 
-### Fase 4 — TUN e Avançado (2 semanas)
-- [ ] Seletor "Túnel (todo o tráfego)" + botão "Conceder permissão" (pkexec setcap + `.policy`).
-- [ ] Reaplicar capabilities após update do core; detecção de `nosuid`.
-- [ ] Seção Avançado: editor de regras de rota (lista de domínios/IPs → destino), editor JSON bruto com validação `-test`, portas, hotkeys.
-- [ ] Protótipo do `obscure-helper` D-Bus para Flatpak.
+### Fase 4 — TUN e Avançado (2 semanas) — **concluída em 2026-09-21** (túnel real pendente de teste manual)
+- [x] Seletor "Túnel" ativo. A permissão é pedida automaticamente ao conectar: `pkexec obscure-helper grant-tun <xray>` com `io.github.talesam.Obscure.policy` (ação `grant-tun`, `exec.path` fixo no helper). O helper valida o caminho (`…/obscure/core/xray`, arquivo regular, sem symlink) antes do `setcap`.
+- [x] Capabilities checadas com `getcap` a cada conexão em modo túnel (um update do core troca o binário e perde as caps → pede de novo). `nosuid` detectado via `/proc/self/mounts` com mensagem própria.
+- [x] Preferências → Avançado: regras de rota (domínio/IP-CIDR/geosite/geoip → servidor/direto/bloquear, avaliadas antes do preset), editor do JSON do motor com `xray run -test` (validar, usar como override, voltar ao automático), atalho global via portal GlobalShortcuts. Portas já estavam em Conexão.
+- [x] Protótipo do `obscure-helper --dbus`: serviço de sistema `io.github.talesam.Obscure.Helper` com `GrantTun(path)` autorizado por `CheckAuthorization` do polkit; arquivos `.service`, `system.d/*.conf` e unit systemd instalados pelo meson. Compila e tem testes de validação; ativação real depende de instalação como root (Fase 5).
 
 ### Fase 5 — Distribuição (1 semana)
-- [ ] Ícone final (128 px full-color + simbólico), screenshots, metainfo completo (releases, branding color).
-- [ ] Flathub (modo proxy) — verificar com `flatpak-builder-lint`.
-- [ ] AUR: `obscure-desktop` (PKGBUILD com cargo + meson, `options=(!lto)`).
+- [~] Ícone final (escudo-prisma, feito em 2026-09-20) + simbólico; faltam screenshots e metainfo completo (releases).
+- [ ] Flathub (modo proxy) — verificar com `flatpak-builder-lint`. Em 2026-09-21 o lint acusa `finish-args-dconf-talk-name`, `finish-args-direct-dconf-path` (proxy de sistema GNOME via GSettings) e `finish-args-flatpak-spawn-access` (kwriteconfig6 do KDE + pkexec do helper): pedir exceção no Flathub ou usar o `obscure-helper` D-Bus (`--system-talk-name=io.github.talesam.Obscure.Helper`, já no manifest) e um portal/serviço para o proxy.
+- [~] Arch: `pkgbuild/PKGBUILD` (padrão BigCommunity, versão por data, usado pelo CI/CD) com cargo + meson e `options=(!lto)`; publicação no AUR pendente.
 - [ ] Release GitHub com tarball vendorizado.
 
 ---
@@ -298,6 +298,46 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ---
 
 ## 8. Registro de progresso e pendências
+
+### Correção 2026-09-22
+- `--start-minimized` abria a janela porque a bandeja registra de forma assíncrona e a primeira
+  ativação acontecia antes. Agora a janela fica oculta com um `hold` temporário até a bandeja
+  responder; se não houver host de bandeja, a janela abre (para o app não ficar inalcançável).
+  `OBSCURE_NO_TRAY=1` simula ausência de bandeja nos testes.
+
+### Fase 4 (2026-09-21)
+Feito: modo Túnel com inbound `tun` nativo (gateway 172.19.0.1/30 + fdfe:dcba:9876::1/126,
+`autoSystemRoutingTable`, `autoOutboundsInterface: auto`, DNS do sistema capturado para o
+outbound `dns` → DoH do Xray), permissão via pkexec + polkit, `obscure-helper` (CLI + D-Bus),
+`nosuid`, regras personalizadas, override de JSON com `-test`, atalho global.
+
+Testes feitos: 64 unitários no core (tun/getcap/nosuid/config), 1 no helper (validação de caminho),
+UI: recusa de permissão (pkexec simulado → "precisa da sua permissão"), concessão falsa
+("não foi possível obter permissão"), regra adicionada/removida, JSON validado/aplicado/desfeito.
+`OBSCURE_PKEXEC` substitui o pkexec em testes.
+
+**Pendente de teste manual (precisa de senha de administrador):** conectar em modo Túnel de
+verdade. Esperado: diálogo do polkit uma vez, `getcap` mostra `cap_net_admin,cap_net_raw,
+cap_net_bind_service=ep`, interface `obscure0` sobe, rotas 0.0.0.0/0 e ::/0 via túnel, DNS do
+sistema respondido pelo Xray. Também manual: atalho global (o portal mostra diálogo próprio).
+Observação: `xray run -test` com inbound tun tenta criar o dispositivo, então sem caps ele falha
+com "operation not permitted" — o app checa as caps antes e o editor JSON explica isso.
+
+### Ajustes pedidos em 2026-09-20 (branch `dev-talesam`)
+- **Bandeira do país** do servidor no hero e na lista. Lookup **offline** em `obscure-core/src/geoip.rs`
+  (protobuf `GeoIPList` do `geoip.dat` do Xray, carregado uma vez por processo), após resolver o
+  host via DNS do sistema. Resultado persistido em `ServerEntry.country`; bandeira é emoji de
+  indicadores regionais (fonte Noto Color Emoji). Servidores atrás de CDN mostram o país da borda.
+- **Conexões ao vivo** (menu e Ctrl+L): fluxo estilo terminal com hora, protocolo, destino e rota
+  (pelo servidor / direto / bloqueado / DNS), a partir do access log do Xray (`log.access = ""`;
+  parser em `obscure-core/src/access.rs`). Pausar, copiar, limpar, contador.
+- Versão: literal único `APP_VERSION` em `crates/obscure-core/src/lib.rs`, lido pelo meson e
+  incrementado automaticamente pelo gitrepo (bumper semântico). Sem hash na versão exibida; o
+  perfil development não desenha mais as faixas `.devel`. O app ID `.Devel` continua.
+- Ícone do app: **escudo-prisma** (`docs/assets/icones/icone-1-escudo-prisma.svg` do projeto
+  `obscure`), adaptado com cantos arredondados em `data/icons/hicolor/scalable/apps/`. Cores da
+  marca no metainfo atualizadas (#a99bff / #4b3fbf). Os simbólicos (janela e bandeja) mantêm o
+  escudo com fechadura.
 
 ### Fase 3 (2026-09-20)
 Feito: assinaturas (núcleo + tela), latência com badges e modo automático, notificações, autostart

@@ -7,6 +7,8 @@
     <file compressed="true" preprocess="xml-stripblanks" alias="ui/import-dialog.ui">import-dialog.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="ui/log-dialog.ui">log-dialog.ui</file>
     <file compressed="true" preprocess="xml-stripblanks" alias="ui/server-dialog.ui">server-dialog.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="ui/connections-dialog.ui">connections-dialog.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks" alias="ui/json-dialog.ui">json-dialog.ui</file>
     <file compressed="true">style.css</file>
   </gresource>
 </gresources>

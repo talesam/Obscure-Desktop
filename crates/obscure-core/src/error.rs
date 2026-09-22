@@ -47,6 +47,12 @@ pub enum Error {
     Subscription(String),
     #[error("the subscription server returned a Clash/YAML profile instead of share links")]
     ClashYaml,
+    #[error("tunnel mode: {0}")]
+    Tun(String),
+    #[error("the permission request was dismissed")]
+    TunDismissed,
+    #[error("the custom configuration is not valid JSON: {0}")]
+    InvalidOverride(String),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

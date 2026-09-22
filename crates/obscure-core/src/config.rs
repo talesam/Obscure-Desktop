@@ -4,7 +4,10 @@
 use serde_json::{Value, json};
 
 use crate::links::{Auth, Protocol, Security, Server, Transport};
-use crate::profile::RoutePreset;
+use crate::profile::{RoutePreset, RouteRule, RuleTarget};
+
+/// TUN interface name created in tunnel mode.
+pub const TUN_NAME: &str = "obscure0";
 
 /// Everything needed to build a runtime configuration.
 #[derive(Debug, Clone)]
@@ -18,6 +21,10 @@ pub struct ConfigOptions<'a> {
     /// Enable the gRPC API (stats) on this port.
     pub api_port: Option<u16>,
     pub log_level: &'a str,
+    /// Add the `tun` inbound (all system traffic). Needs capabilities.
+    pub tunnel: bool,
+    /// User rules evaluated before the preset.
+    pub custom_rules: &'a [RouteRule],
 }
 
 impl<'a> ConfigOptions<'a> {
@@ -30,6 +37,8 @@ impl<'a> ConfigOptions<'a> {
             dns: "https://1.1.1.1/dns-query",
             api_port: None,
             log_level: "warning",
+            tunnel: false,
+            custom_rules: &[],
         }
     }
 }
@@ -37,20 +46,17 @@ impl<'a> ConfigOptions<'a> {
 /// Builds the full Xray configuration as JSON.
 pub fn build(opts: &ConfigOptions) -> Value {
     let mut cfg = json!({
-        "log": { "loglevel": opts.log_level },
+        // `access: ""` sends one line per connection to stdout, which feeds
+        // the connections view; DNS chatter stays off.
+        "log": { "loglevel": opts.log_level, "access": "", "dnsLog": false },
         "dns": dns(opts),
-        "inbounds": [ {
-            "tag": "mixed-in",
-            "listen": "127.0.0.1",
-            "port": opts.local_port,
-            "protocol": "mixed",
-            "settings": { "udp": true },
-            "sniffing": { "enabled": true, "destOverride": ["http", "tls", "quic"] }
-        } ],
+        "inbounds": inbounds(opts),
         "outbounds": [
             outbound(opts.server),
             { "tag": "direct", "protocol": "freedom", "settings": { "domainStrategy": "UseIP" } },
-            { "tag": "block", "protocol": "blackhole", "settings": {} }
+            { "tag": "block", "protocol": "blackhole", "settings": {} },
+            // Answers DNS queries captured from the tunnel with Xray's own DNS.
+            { "tag": "dns-out", "protocol": "dns", "settings": {} }
         ],
         "routing": routing(opts),
         "stats": {},
@@ -63,6 +69,58 @@ pub fn build(opts: &ConfigOptions) -> Value {
         cfg["api"] = json!({ "tag": "api", "listen": format!("127.0.0.1:{port}"), "services": ["StatsService"] });
     }
     cfg
+}
+
+fn inbounds(opts: &ConfigOptions) -> Value {
+    let mut list = vec![json!({
+        "tag": "mixed-in",
+        "listen": "127.0.0.1",
+        "port": opts.local_port,
+        "protocol": "mixed",
+        "settings": { "udp": true },
+        "sniffing": { "enabled": true, "destOverride": ["http", "tls", "quic"] }
+    })];
+    if opts.tunnel {
+        list.push(json!({
+            "tag": "tun-in",
+            "protocol": "tun",
+            "settings": {
+                "name": TUN_NAME,
+                "mtu": 1500,
+                "gateway": ["172.19.0.1/30", "fdfe:dcba:9876::1/126"],
+                "autoSystemRoutingTable": ["0.0.0.0/0", "::/0"],
+                "autoOutboundsInterface": "auto"
+            },
+            "sniffing": { "enabled": true, "destOverride": ["http", "tls", "quic"], "routeOnly": false }
+        }));
+    }
+    Value::Array(list)
+}
+
+/// Converts a user pattern into an Xray routing rule fragment.
+fn custom_rule(rule: &RouteRule) -> Value {
+    let tag = match rule.target {
+        RuleTarget::Proxy => "proxy",
+        RuleTarget::Direct => "direct",
+        RuleTarget::Block => "block",
+    };
+    let p = rule.pattern.trim();
+    let is_ip = p.parse::<std::net::IpAddr>().is_ok()
+        || p.split_once('/').is_some_and(|(ip, len)| {
+            ip.parse::<std::net::IpAddr>().is_ok() && len.parse::<u8>().is_ok()
+        });
+    if is_ip || p.starts_with("geoip:") {
+        json!({ "type": "field", "ip": [p], "outboundTag": tag })
+    } else if p.starts_with("geosite:")
+        || p.starts_with("domain:")
+        || p.starts_with("full:")
+        || p.starts_with("regexp:")
+        || p.starts_with("keyword:")
+    {
+        json!({ "type": "field", "domain": [p], "outboundTag": tag })
+    } else {
+        json!({ "type": "field", "domain": [format!("domain:{p}")], "outboundTag": tag })
+    }
 }
 
 fn dns(opts: &ConfigOptions) -> Value {
@@ -80,6 +138,11 @@ fn routing(opts: &ConfigOptions) -> Value {
         // Never proxy the proxy itself.
         json!({ "type": "field", "domain": [ format!("full:{}", opts.server.address) ], "outboundTag": "direct" }),
     ];
+    if opts.tunnel {
+        // DNS from the system goes to Xray's resolver (DoH), not to the LAN resolver.
+        rules.push(json!({ "type": "field", "inboundTag": ["tun-in"], "port": 53, "network": "udp,tcp", "outboundTag": "dns-out" }));
+    }
+    rules.extend(opts.custom_rules.iter().map(custom_rule));
     match opts.route_preset {
         RoutePreset::All => {
             rules
@@ -329,6 +392,7 @@ mod tests {
         opts.api_port = Some(10085);
         let cfg = build(&opts);
         assert_eq!(cfg["inbounds"][0]["port"], 2080);
+        assert_eq!(cfg["log"]["access"], "");
         assert_eq!(cfg["inbounds"][0]["protocol"], "mixed");
         assert_eq!(cfg["outbounds"][0]["tag"], "proxy");
         assert_eq!(cfg["outbounds"][1]["tag"], "direct");
@@ -346,6 +410,76 @@ mod tests {
             cfg["outbounds"][0]["streamSettings"]["tlsSettings"]["serverName"],
             "h.example"
         );
+    }
+
+    #[test]
+    fn tunnel_mode_adds_tun_inbound_and_dns_capture() {
+        let s = parse_link(&format!("vless://{UUID}@h.example:443?security=none#T")).unwrap();
+        let mut opts = ConfigOptions::new(&s);
+        opts.tunnel = true;
+        let cfg = build(&opts);
+        let inbounds = cfg["inbounds"].as_array().unwrap();
+        assert_eq!(inbounds.len(), 2);
+        assert_eq!(inbounds[1]["protocol"], "tun");
+        assert_eq!(inbounds[1]["settings"]["name"], TUN_NAME);
+        assert_eq!(inbounds[1]["settings"]["autoOutboundsInterface"], "auto");
+        assert!(
+            cfg["outbounds"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|o| o["tag"] == "dns-out")
+        );
+        let rules = cfg["routing"]["rules"].as_array().unwrap();
+        assert!(
+            rules
+                .iter()
+                .any(|r| r["outboundTag"] == "dns-out" && r["port"] == 53)
+        );
+        // Without tunnel: no tun inbound and no dns capture rule.
+        let plain = build(&ConfigOptions::new(&s));
+        assert_eq!(plain["inbounds"].as_array().unwrap().len(), 1);
+        assert!(
+            !plain["routing"]["rules"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|r| r["outboundTag"] == "dns-out")
+        );
+    }
+
+    #[test]
+    fn custom_rules_come_before_preset() {
+        let s = parse_link(&format!("vless://{UUID}@h.example:443?security=none#T")).unwrap();
+        let rules = vec![
+            RouteRule {
+                pattern: "example.com".into(),
+                target: RuleTarget::Direct,
+            },
+            RouteRule {
+                pattern: "10.0.0.0/8".into(),
+                target: RuleTarget::Block,
+            },
+            RouteRule {
+                pattern: "geosite:netflix".into(),
+                target: RuleTarget::Proxy,
+            },
+            RouteRule {
+                pattern: "1.2.3.4".into(),
+                target: RuleTarget::Proxy,
+            },
+        ];
+        let mut opts = ConfigOptions::new(&s);
+        opts.custom_rules = &rules;
+        let cfg = build(&opts);
+        let r = cfg["routing"]["rules"].as_array().unwrap();
+        assert_eq!(r[1]["domain"][0], "domain:example.com");
+        assert_eq!(r[1]["outboundTag"], "direct");
+        assert_eq!(r[2]["ip"][0], "10.0.0.0/8");
+        assert_eq!(r[3]["domain"][0], "geosite:netflix");
+        assert_eq!(r[4]["ip"][0], "1.2.3.4");
+        // Preset rules follow.
+        assert!(r[5..].iter().any(|x| x["outboundTag"] == "block"));
     }
 
     #[test]

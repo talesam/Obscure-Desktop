@@ -32,6 +32,9 @@ mod imp {
         /// Milliseconds, or one of the LATENCY_* sentinels.
         #[property(get, set, default = -1)]
         pub latency_ms: Cell<i32>,
+        /// ISO alpha-2 country code ("" when unknown).
+        #[property(get, set)]
+        pub country: RefCell<String>,
         #[property(get, set)]
         pub address: RefCell<String>,
         #[property(get, set)]
@@ -72,9 +75,15 @@ impl ServerObject {
             .property("selected", selected)
             .property("group", entry.group.clone().unwrap_or_default())
             .property("latency-ms", LATENCY_UNKNOWN)
+            .property("country", entry.country.clone().unwrap_or_default())
             .property("address", &s.address)
             .property("port", u32::from(s.port))
             .build()
+    }
+
+    /// Flag emoji for the country, or `None` when unknown.
+    pub fn flag(&self) -> Option<String> {
+        obscure_core::geoip::flag_emoji(&self.country())
     }
 
     /// Text and CSS class for the latency badge.

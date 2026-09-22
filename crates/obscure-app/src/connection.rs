@@ -10,13 +10,15 @@ use gtk::glib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gio, glib::clone};
+use obscure_core::access::{AccessEvent, parse_access_line};
 use obscure_core::config::{ConfigOptions, build};
 use obscure_core::core_manager::{CoreManager, Progress};
 use obscure_core::links::Server;
-use obscure_core::profile::{ApplyMode, Profiles, RoutePreset};
+use obscure_core::profile::{ApplyMode, Profiles, RoutePreset, RouteRule};
 use obscure_core::stats::{RateMeter, StatsClient, TrafficSample, format_bytes, format_rate};
 use obscure_core::supervisor::{CoreEvent, RestartPolicy, RunningCore, Supervisor, write_config};
 use obscure_core::sysproxy::SysProxy;
+use obscure_core::tun::{CapStatus, capabilities, grant};
 use obscure_core::{Error, paths};
 
 use crate::humanize::error_message;
@@ -25,6 +27,12 @@ use crate::server_object::{LATENCY_FAILED, LATENCY_TESTING, ServerObject};
 use crate::subscription_object::SubscriptionObject;
 
 const MAX_LOG_LINES: usize = 500;
+const MAX_ACCESS_EVENTS: usize = 1000;
+
+/// Boxed access event so it can travel through a GLib signal.
+#[derive(Clone, Debug, glib::Boxed)]
+#[boxed_type(name = "ObscureAccessEventBox")]
+pub struct AccessEventBox(pub AccessEvent);
 
 /// Messages from the tokio side to the UI.
 #[derive(Debug)]
@@ -49,6 +57,8 @@ struct SessionParams {
     apply_mode: ApplyMode,
     dns: String,
     prerelease: bool,
+    custom_rules: Vec<RouteRule>,
+    config_override: Option<String>,
 }
 
 /// Commands from the UI to the actor.
@@ -99,6 +109,9 @@ mod imp {
         pub testing: Cell<bool>,
         #[property(get, set)]
         pub has_subscriptions: Cell<bool>,
+        /// Flag emoji of the selected server ("" when unknown).
+        #[property(get, set)]
+        pub selected_flag: RefCell<String>,
 
         pub profiles: RefCell<Profiles>,
         pub servers: gio::ListStore,
@@ -106,6 +119,7 @@ mod imp {
         /// Last latency result per server id (survives list rebuilds).
         pub latency: RefCell<HashMap<String, i32>>,
         pub log: RefCell<VecDeque<String>>,
+        pub access: RefCell<VecDeque<AccessEvent>>,
         pub cmd_tx: RefCell<Option<tokio::sync::mpsc::Sender<Cmd>>>,
         pub last_error: RefCell<Option<String>>,
     }
@@ -126,11 +140,13 @@ mod imp {
                 auto_select: Cell::new(false),
                 testing: Cell::new(false),
                 has_subscriptions: Cell::new(false),
+                selected_flag: RefCell::new(String::new()),
                 profiles: RefCell::new(Profiles::default()),
                 servers: gio::ListStore::new::<ServerObject>(),
                 subscriptions: gio::ListStore::new::<SubscriptionObject>(),
                 latency: RefCell::new(HashMap::new()),
                 log: RefCell::new(VecDeque::new()),
+                access: RefCell::new(VecDeque::new()),
                 cmd_tx: RefCell::new(None),
                 last_error: RefCell::new(None),
             }
@@ -154,6 +170,10 @@ mod imp {
                     // Emitted for every new log line (String).
                     glib::subclass::Signal::builder("log-line")
                         .param_types([String::static_type()])
+                        .build(),
+                    // One parsed access-log record.
+                    glib::subclass::Signal::builder("access-event")
+                        .param_types([AccessEventBox::static_type()])
                         .build(),
                     // Something worth a desktop notification: (title, body, important).
                     glib::subclass::Signal::builder("notification")
@@ -199,6 +219,7 @@ impl ConnectionManager {
         };
         *self.imp().profiles.borrow_mut() = profiles;
         self.sync_from_profiles();
+        self.resolve_countries();
     }
 
     fn save_profiles(&self) {
@@ -251,6 +272,13 @@ impl ConnectionManager {
                 .map(|e| e.server.name.clone())
                 .unwrap_or_default(),
         );
+        self.set_selected_flag(
+            profiles
+                .selected_entry()
+                .and_then(|e| e.country.as_deref())
+                .and_then(obscure_core::geoip::flag_emoji)
+                .unwrap_or_default(),
+        );
         self.set_apply_mode(mode_to_str(profiles.apply_mode));
         self.set_route_preset(preset_to_str(profiles.route_preset));
         self.set_auto_select(profiles.auto_select);
@@ -297,6 +325,50 @@ impl ConnectionManager {
         }
     }
 
+    /// The configuration Obscure would generate right now (for the JSON editor).
+    pub fn generated_config_json(&self) -> Option<String> {
+        let p = self.imp().profiles.borrow();
+        let entry = p.selected_entry()?;
+        let mut opts = ConfigOptions::new(&entry.server);
+        opts.local_port = p.local_port;
+        opts.route_preset = p.route_preset;
+        opts.listed_domains = &p.listed_domains;
+        opts.dns = &p.dns;
+        opts.tunnel = p.apply_mode == ApplyMode::Tunnel;
+        opts.custom_rules = &p.custom_rules;
+        serde_json::to_string_pretty(&build(&opts)).ok()
+    }
+
+    pub fn set_custom_rules(&self, rules: Vec<RouteRule>) {
+        let changed = {
+            let mut p = self.imp().profiles.borrow_mut();
+            let changed = p.custom_rules != rules;
+            p.custom_rules = rules;
+            changed
+        };
+        if changed {
+            self.save_profiles();
+            if self.connected() {
+                self.reconnect();
+            }
+        }
+    }
+
+    pub fn set_config_override(&self, json: Option<String>) {
+        let changed = {
+            let mut p = self.imp().profiles.borrow_mut();
+            let changed = p.config_override != json;
+            p.config_override = json;
+            changed
+        };
+        if changed {
+            self.save_profiles();
+            if self.connected() {
+                self.reconnect();
+            }
+        }
+    }
+
     /// Updates connection settings from Preferences. Reconnects if needed.
     pub fn update_settings(&self, local_port: u16, dns: &str, prerelease: bool) {
         let dns = if dns.trim().is_empty() {
@@ -323,7 +395,7 @@ impl ConnectionManager {
     // -- subscriptions -------------------------------------------------------
 
     fn http_client() -> obscure_core::HttpClient {
-        obscure_core::http_client(&obscure_core::user_agent(crate::config::VERSION))
+        obscure_core::http_client(&obscure_core::user_agent(obscure_core::APP_VERSION))
     }
 
     /// Fetches `url` and adds it as a subscription. `done` receives the
@@ -540,7 +612,74 @@ impl ConnectionManager {
         let added = self.imp().profiles.borrow_mut().add_servers(servers);
         self.save_profiles();
         self.sync_from_profiles();
+        self.resolve_countries();
         added
+    }
+
+    /// Looks up the country of every server that does not have one yet,
+    /// offline, using the geoip.dat shipped with Xray. Runs in the
+    /// background; the list refreshes when done.
+    pub fn resolve_countries(&self) {
+        let pending: Vec<(String, String, u16)> = self
+            .imp()
+            .profiles
+            .borrow()
+            .servers
+            .iter()
+            .filter(|e| e.country.is_none())
+            .map(|e| (e.id.clone(), e.server.address.clone(), e.server.port))
+            .collect();
+        if pending.is_empty() {
+            return;
+        }
+        let geoip_path = paths::core_dir().join("geoip.dat");
+        if !geoip_path.exists() {
+            return;
+        }
+        let task = runtime().spawn(async move {
+            let db = match geoip_db(&geoip_path).await {
+                Some(db) => db,
+                None => return Vec::new(),
+            };
+            let mut out = Vec::new();
+            for (id, host, port) in pending {
+                let ip = match host.parse::<std::net::IpAddr>() {
+                    Ok(ip) => Some(ip),
+                    Err(_) => tokio::time::timeout(
+                        Duration::from_secs(5),
+                        tokio::net::lookup_host((host.as_str(), port)),
+                    )
+                    .await
+                    .ok()
+                    .and_then(|r| r.ok())
+                    .and_then(|mut addrs| addrs.next())
+                    .map(|a| a.ip()),
+                };
+                let country = ip.and_then(|ip| db.lookup(ip).map(str::to_owned));
+                out.push((id, country));
+            }
+            out
+        });
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to = this)]
+            self,
+            async move {
+                let Ok(results) = task.await else { return };
+                let mut changed = false;
+                {
+                    let mut p = this.imp().profiles.borrow_mut();
+                    for (id, country) in results {
+                        if country.is_some() && p.set_country(&id, country) {
+                            changed = true;
+                        }
+                    }
+                }
+                if changed {
+                    this.save_profiles();
+                    this.sync_from_profiles();
+                }
+            }
+        ));
     }
 
     pub fn remove_server(&self, id: &str) {
@@ -596,7 +735,21 @@ impl ConnectionManager {
         self.imp().last_error.borrow().clone()
     }
 
+    pub fn access_events(&self) -> Vec<AccessEvent> {
+        self.imp().access.borrow().iter().cloned().collect()
+    }
+
     fn push_log(&self, line: String) {
+        if let Some(ev) = parse_access_line(&line) {
+            {
+                let mut access = self.imp().access.borrow_mut();
+                if access.len() >= MAX_ACCESS_EVENTS {
+                    access.pop_front();
+                }
+                access.push_back(ev.clone());
+            }
+            self.emit_by_name::<()>("access-event", &[&AccessEventBox(ev)]);
+        }
         {
             let mut log = self.imp().log.borrow_mut();
             if log.len() >= MAX_LOG_LINES {
@@ -693,7 +846,16 @@ impl ConnectionManager {
             self.set_status_text(gettext("Choose a server to connect"));
             return;
         };
-        let (local_port, preset, listed, apply_mode, dns, prerelease) = {
+        let (
+            local_port,
+            preset,
+            listed,
+            apply_mode,
+            dns,
+            prerelease,
+            custom_rules,
+            config_override,
+        ) = {
             let p = self.imp().profiles.borrow();
             (
                 p.local_port,
@@ -702,6 +864,8 @@ impl ConnectionManager {
                 p.apply_mode,
                 p.dns.clone(),
                 p.prerelease,
+                p.custom_rules.clone(),
+                p.config_override.clone(),
             )
         };
 
@@ -717,13 +881,15 @@ impl ConnectionManager {
             apply_mode,
             dns,
             prerelease,
+            custom_rules,
+            config_override,
         };
 
         let (ui_tx, ui_rx) = async_channel::unbounded::<UiEvent>();
         let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel::<Cmd>(4);
         *self.imp().cmd_tx.borrow_mut() = Some(cmd_tx);
 
-        let user_agent = obscure_core::user_agent(crate::config::VERSION);
+        let user_agent = obscure_core::user_agent(obscure_core::APP_VERSION);
         runtime().spawn(actor(params, user_agent, ui_tx, cmd_rx));
 
         glib::spawn_future_local(clone!(
@@ -816,7 +982,7 @@ impl ConnectionManager {
                 self.set_status_text(match mode {
                     ApplyMode::SystemProxy => gettext("Connected · system proxy active"),
                     ApplyMode::LocalOnly => gettext("Connected · local proxy only"),
-                    ApplyMode::Tunnel => gettext("Connected"),
+                    ApplyMode::Tunnel => gettext("Connected · all traffic through the tunnel"),
                 });
                 self.emit_by_name::<()>(
                     "notification",
@@ -928,19 +1094,65 @@ async fn actor(
             return;
         }
     };
-    let cfg = {
-        let mut opts = ConfigOptions::new(&params.server);
-        opts.local_port = params.local_port;
-        opts.route_preset = params.route_preset;
-        opts.listed_domains = &params.listed_domains;
-        opts.dns = &params.dns;
-        opts.api_port = Some(api_port);
-        build(&opts)
+    let tunnel = params.apply_mode == ApplyMode::Tunnel;
+    let cfg = match &params.config_override {
+        Some(raw) => match serde_json::from_str::<serde_json::Value>(raw) {
+            Ok(mut v) => {
+                // Keep stats reachable even with a custom config.
+                v["api"] = serde_json::json!({ "tag": "api", "listen": format!("127.0.0.1:{api_port}"), "services": ["StatsService"] });
+                if v.get("stats").is_none() {
+                    v["stats"] = serde_json::json!({});
+                }
+                v
+            }
+            Err(e) => {
+                send(UiEvent::Failed(Error::InvalidOverride(e.to_string())));
+                return;
+            }
+        },
+        None => {
+            let mut opts = ConfigOptions::new(&params.server);
+            opts.local_port = params.local_port;
+            opts.route_preset = params.route_preset;
+            opts.listed_domains = &params.listed_domains;
+            opts.dns = &params.dns;
+            opts.api_port = Some(api_port);
+            opts.tunnel = tunnel;
+            opts.custom_rules = &params.custom_rules;
+            build(&opts)
+        }
     };
     let cfg_path = paths::runtime_config_file();
     if let Err(e) = write_config(&cfg_path, &cfg) {
         send(UiEvent::Failed(e));
         return;
+    }
+
+    // Tunnel mode: the binary needs file capabilities. Ask once through
+    // polkit; a core update replaces the binary, so this is re-checked on
+    // every connection.
+    if tunnel {
+        let xray = manager.xray_path();
+        let status = capabilities(&xray);
+        if status != CapStatus::Granted {
+            send(UiEvent::Log(format!(
+                "tunnel: capabilities {status:?}, requesting grant"
+            )));
+            send(UiEvent::Progress(Progress::Resolving));
+            match grant(&helper_path(), &xray).await {
+                Ok(CapStatus::Granted) => send(UiEvent::Log("tunnel: capabilities granted".into())),
+                Ok(other) => {
+                    send(UiEvent::Failed(Error::Tun(format!(
+                        "capabilities still {other:?} after grant"
+                    ))));
+                    return;
+                }
+                Err(e) => {
+                    send(UiEvent::Failed(e));
+                    return;
+                }
+            }
+        }
     }
 
     let supervisor = Supervisor::new(manager.xray_path(), manager.dir().to_path_buf());
@@ -1051,4 +1263,38 @@ async fn actor(
             send(UiEvent::Failed(e));
         }
     }
+}
+
+/// The geoip database is ~17 MB; load it once per process, off the UI thread.
+async fn geoip_db(path: &std::path::Path) -> Option<std::sync::Arc<obscure_core::geoip::GeoIpDb>> {
+    use std::sync::{Arc, OnceLock};
+    use tokio::sync::Mutex;
+    static DB: OnceLock<Mutex<Option<Arc<obscure_core::geoip::GeoIpDb>>>> = OnceLock::new();
+    let slot = DB.get_or_init(|| Mutex::new(None));
+    let mut guard = slot.lock().await;
+    if let Some(db) = guard.as_ref() {
+        return Some(db.clone());
+    }
+    let path = path.to_path_buf();
+    let db = tokio::task::spawn_blocking(move || obscure_core::geoip::GeoIpDb::load(&path))
+        .await
+        .ok()?
+        .map_err(|e| tracing::warn!("geoip: {e}"))
+        .ok()?;
+    let db = Arc::new(db);
+    *guard = Some(db.clone());
+    Some(db)
+}
+
+/// Installed helper if present, otherwise the one from the build tree.
+fn helper_path() -> std::path::PathBuf {
+    let installed = std::path::Path::new(crate::config::LIBEXECDIR).join("obscure-helper");
+    if installed.exists() {
+        return installed;
+    }
+    let build = std::path::Path::new(crate::config::BUILD_HELPER);
+    if !crate::config::BUILD_HELPER.is_empty() && build.exists() {
+        return build.to_path_buf();
+    }
+    installed
 }

@@ -56,4 +56,59 @@ template $ObscurePreferencesDialog: Adw.PreferencesDialog {
       }
     }
   }
+
+  Adw.PreferencesPage {
+    title: _("Advanced");
+    icon-name: "applications-engineering-symbolic";
+
+    Adw.PreferencesGroup {
+      title: _("Shortcut");
+
+      Adw.SwitchRow shortcut_row {
+        title: _("System-wide shortcut to connect or disconnect");
+        subtitle: _("Works even when Obscure is hidden. The system lets you choose the keys.");
+      }
+    }
+
+    Adw.PreferencesGroup rules_group {
+      title: _("Route rules");
+      description: _("Your rules win over the preset. Use a domain (example.com), an address (10.0.0.0/8) or a category (geosite:netflix).");
+
+      [header-suffix]
+      Button add_rule_button {
+        valign: center;
+        tooltip-text: _("Add rule");
+        icon-name: "list-add-symbolic";
+        clicked => $on_add_rule_clicked() swapped;
+
+        styles [
+          "flat",
+        ]
+      }
+
+      ListBox rules_list {
+        selection-mode: none;
+
+        styles [
+          "boxed-list",
+        ]
+      }
+    }
+
+    Adw.PreferencesGroup {
+      title: _("Engine configuration");
+
+      Adw.ActionRow json_row {
+        title: _("Edit the engine configuration");
+        subtitle: _("See or replace the JSON that Obscure sends to Xray.");
+        activatable: true;
+        activated => $on_json_activated() swapped;
+
+        [suffix]
+        Image {
+          icon-name: "go-next-symbolic";
+        }
+      }
+    }
+  }
 }

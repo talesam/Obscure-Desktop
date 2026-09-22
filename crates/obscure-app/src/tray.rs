@@ -109,6 +109,11 @@ impl ksni::Tray for ObscureTray {
 
 /// Registers the tray. Returns `None` when no host is available.
 pub async fn spawn(tx: async_channel::Sender<TrayCmd>) -> Option<ksni::Handle<ObscureTray>> {
+    // `OBSCURE_NO_TRAY=1` simulates a desktop without a tray host (tests).
+    if std::env::var_os("OBSCURE_NO_TRAY").is_some() {
+        tracing::info!("tray disabled by OBSCURE_NO_TRAY");
+        return None;
+    }
     let tray = ObscureTray {
         tx,
         connected: false,

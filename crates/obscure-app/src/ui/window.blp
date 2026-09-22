@@ -3,8 +3,8 @@ using Adw 1;
 
 template $ObscureWindow: Adw.ApplicationWindow {
   title: _("Obscure");
-  default-width: 480;
-  default-height: 640;
+  default-width: 500;
+  default-height: 670;
   width-request: 360;
   height-request: 294;
 
@@ -71,20 +71,20 @@ template $ObscureWindow: Adw.ApplicationWindow {
 
               Box {
                 orientation: vertical;
-                spacing: 24;
-                margin-top: 24;
-                margin-bottom: 24;
+                spacing: 14;
+                margin-top: 12;
+                margin-bottom: 12;
                 margin-start: 12;
                 margin-end: 12;
 
                 Box hero {
                   orientation: vertical;
-                  spacing: 12;
+                  spacing: 6;
                   halign: center;
 
                   Image status_icon {
                     icon-name: "network-vpn-disconnected-symbolic";
-                    pixel-size: 96;
+                    pixel-size: 64;
 
                     styles [
                       "obscure-status-icon",
@@ -92,13 +92,28 @@ template $ObscureWindow: Adw.ApplicationWindow {
                     ]
                   }
 
-                  Label server_label {
-                    wrap: true;
-                    justify: center;
+                  Box {
+                    orientation: horizontal;
+                    spacing: 8;
+                    halign: center;
 
-                    styles [
-                      "title-1",
-                    ]
+                    Label flag_label {
+                      visible: false;
+
+                      styles [
+                        "title-2",
+                        "obscure-flag",
+                      ]
+                    }
+
+                    Label server_label {
+                      wrap: true;
+                      justify: center;
+
+                      styles [
+                        "title-2",
+                      ]
+                    }
                   }
 
                   Label status_label {
@@ -128,7 +143,7 @@ template $ObscureWindow: Adw.ApplicationWindow {
 
                   Button connect_button {
                     halign: center;
-                    margin-top: 12;
+                    margin-top: 8;
                     width-request: 200;
                     clicked => $on_connect_clicked() swapped;
 
@@ -167,8 +182,7 @@ template $ObscureWindow: Adw.ApplicationWindow {
                     Adw.Toggle {
                       name: "tunnel";
                       label: _("Tunnel");
-                      enabled: false;
-                      tooltip: _("All traffic from this computer. Coming in a future version.");
+                      tooltip: _("All traffic from this computer, every app. Asks for your password once.");
                     }
                   }
                 }
@@ -211,33 +225,40 @@ template $ObscureWindow: Adw.ApplicationWindow {
                   title: _("Servers");
 
                   [header-suffix]
-                  Button test_all_button {
+                  Box {
+                    orientation: horizontal;
+                    spacing: 6;
                     valign: center;
-                    tooltip-text: _("Measure the response time of every server");
-                    clicked => $on_test_all_clicked() swapped;
 
-                    Adw.ButtonContent {
-                      icon-name: "network-transmit-receive-symbolic";
-                      label: _("Test All");
+                    Label {
+                      label: _("Automatic");
+                      tooltip-text: _("Tests all servers when you connect and picks the quickest one.");
+
+                      styles [
+                        "caption",
+                        "dim-label",
+                      ]
                     }
 
-                    styles [
-                      "flat",
-                    ]
-                  }
-
-                  ListBox {
-                    selection-mode: none;
-                    margin-bottom: 12;
-
-                    styles [
-                      "boxed-list",
-                    ]
-
-                    Adw.SwitchRow auto_row {
-                      title: _("Automatic: fastest server");
-                      subtitle: _("Tests all servers when you connect and picks the quickest one.");
+                    Switch auto_switch {
+                      valign: center;
+                      tooltip-text: _("Automatic: fastest server");
                       notify::active => $on_auto_toggled() swapped;
+                    }
+
+                    Button test_all_button {
+                      valign: center;
+                      tooltip-text: _("Measure the response time of every server");
+                      clicked => $on_test_all_clicked() swapped;
+
+                      Adw.ButtonContent {
+                        icon-name: "network-transmit-receive-symbolic";
+                        label: _("Test All");
+                      }
+
+                      styles [
+                        "flat",
+                      ]
                     }
                   }
 
@@ -264,6 +285,11 @@ menu primary_menu {
     item {
       label: _("_Import from File…");
       action: "win.import-file";
+    }
+
+    item {
+      label: _("_Live Connections");
+      action: "win.show-connections";
     }
 
     item {

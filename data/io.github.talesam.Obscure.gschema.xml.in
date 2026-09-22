@@ -2,11 +2,11 @@
 <schemalist gettext-domain="@gettext-package@">
   <schema id="@app-id@" path="@app-path@">
     <key name="window-width" type="i">
-      <default>480</default>
+      <default>500</default>
       <summary>Window width</summary>
     </key>
     <key name="window-height" type="i">
-      <default>640</default>
+      <default>670</default>
       <summary>Window height</summary>
     </key>
     <key name="window-maximized" type="b">
@@ -20,6 +20,10 @@
     <key name="autostart" type="b">
       <default>false</default>
       <summary>Start with the session (via the Background portal)</summary>
+    </key>
+    <key name="global-shortcut" type="b">
+      <default>false</default>
+      <summary>Register a system-wide shortcut through the GlobalShortcuts portal</summary>
     </key>
     <key name="connect-on-start" type="b">
       <default>false</default>

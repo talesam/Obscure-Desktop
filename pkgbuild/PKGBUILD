@@ -1,0 +1,77 @@
+# Maintainer: Tales A. Mendonça <talesam@gmail.com>
+
+pkgname=obscure-desktop
+# The GitHub repository keeps the capitalised name; the clone dir follows it.
+_repo=Obscure-Desktop
+pkgdesc="Cliente simples para o motor Xray-core - um botão Conectar, proxy de sistema sem root (GTK4 + libadwaita)"
+pkgver=$(date +%y.%m.%d)
+pkgrel=$(date +%H%M)
+arch=('x86_64' 'aarch64')
+license=('GPL-3.0-or-later')
+url="https://github.com/talesam/${_repo}"
+depends=(
+    'gtk4'
+    'libadwaita'
+    'glib2'
+    'hicolor-icon-theme'
+)
+makedepends=(
+    'rust'
+    'meson'
+    'ninja'
+    'blueprint-compiler'
+    'gettext'
+    'desktop-file-utils'
+    'appstream'
+    'git'
+)
+optdepends=(
+    'kconfig: proxy de sistema no KDE Plasma (kwriteconfig6)'
+    'xdg-desktop-portal: iniciar com a sessão e ler QR code da tela'
+    'gnome-shell-extension-appindicator: ícone na bandeja do GNOME'
+)
+options=(!lto)
+source=("git+${url}.git")
+md5sums=('SKIP')
+
+# Automatically detect and use the correct install file
+if [ -e "${pkgname}.install" ]; then
+    install=${pkgname}.install
+elif [ -e "pkgbuild.install" ]; then
+    install=pkgbuild.install
+fi
+
+prepare() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    cargo fetch --locked
+}
+
+build() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    arch-meson . build -Dprofile=default
+    meson compile -C build
+}
+
+check() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    meson test -C build --print-errorlogs
+}
+
+package() {
+    cd "${srcdir}/${_repo}"
+    export CARGO_HOME="${srcdir}/cargo-home"
+    meson install -C build --destdir "${pkgdir}"
+
+    # Instala licença
+    if [ -f "LICENSE" ]; then
+        install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    fi
+
+    # Instala documentação
+    if [ -f "README.md" ]; then
+        install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+    fi
+}
