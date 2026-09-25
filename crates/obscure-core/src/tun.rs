@@ -85,6 +85,56 @@ pub fn is_nosuid_in(path: &Path, mounts: &str) -> bool {
     best.map(|(_, n)| n).unwrap_or(false)
 }
 
+/// `true` when the kernel has an IPv4 default route through `iface`
+/// (parsed from `/proc/net/route`, no privileges needed).
+pub fn has_default_route(iface: &str) -> bool {
+    std::fs::read_to_string("/proc/net/route")
+        .map(|t| has_default_route_in(iface, &t))
+        .unwrap_or(false)
+}
+
+pub fn has_default_route_in(iface: &str, table: &str) -> bool {
+    table.lines().skip(1).any(|line| {
+        let mut f = line.split_whitespace();
+        matches!((f.next(), f.next()), (Some(i), Some("00000000")) if i == iface)
+    })
+}
+
+/// Waits until the tunnel is really usable: the default route points at
+/// `iface` and a TCP handshake with `probe` succeeds through it. Returns
+/// `Err(StartTimeout)` if that does not happen within `timeout`.
+pub async fn wait_until_routed(
+    iface: &str,
+    probe: (&str, u16),
+    timeout: std::time::Duration,
+) -> Result<()> {
+    let deadline = tokio::time::Instant::now() + timeout;
+    let mut routed = false;
+    loop {
+        if !routed {
+            routed = has_default_route(iface);
+        }
+        if routed
+            && crate::latency::tcp_ping(probe.0, probe.1, std::time::Duration::from_secs(3))
+                .await
+                .is_ok()
+        {
+            return Ok(());
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(Error::StartTimeout(format!(
+                "tunnel {iface}: {}",
+                if routed {
+                    "route present but no traffic passes"
+                } else {
+                    "no default route"
+                }
+            )));
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    }
+}
+
 /// Builds the privileged command that grants the capabilities through
 /// polkit: `pkexec <helper> grant-tun <xray>`.
 pub fn grant_command(helper: &Path, xray: &Path) -> Command {
@@ -160,6 +210,32 @@ tmpfs /home/u/.local/share/flatpak tmpfs rw,nosuid,nodev 0 0
         ));
         assert!(is_nosuid_in(Path::new("/mnt/with space/xray"), mounts));
         assert!(!is_nosuid_in(Path::new("/usr/bin/xray"), mounts));
+    }
+
+    #[test]
+    fn default_route_parsing() {
+        let table = "\
+Iface\tDestination\tGateway\tFlags\tRefCnt\tUse\tMetric\tMask\tMTU\tWindow\tIRTT
+obscure0\t00000000\t00000000\t0001\t0\t0\t1\t00000000\t0\t0\t0
+wlp2s0\t00000000\t0144A8C0\t0003\t0\t0\t600\t00000000\t0\t0\t0
+wlp2s0\t0044A8C0\t00000000\t0001\t0\t0\t600\t00FFFFFF\t0\t0\t0
+";
+        assert!(has_default_route_in("obscure0", table));
+        assert!(has_default_route_in("wlp2s0", table));
+        assert!(!has_default_route_in("tun9", table));
+        assert!(!has_default_route_in("obscure0", "Iface\tDestination\n"));
+    }
+
+    #[tokio::test]
+    async fn wait_until_routed_times_out_without_route() {
+        let err = wait_until_routed(
+            "nonexistent0",
+            ("127.0.0.1", 1),
+            std::time::Duration::from_millis(600),
+        )
+        .await
+        .unwrap_err();
+        assert!(matches!(err, Error::StartTimeout(ref m) if m.contains("no default route")));
     }
 
     #[test]

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-25 13:10-0300\n"
+"POT-Creation-Date: 2026-09-25 13:23-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Português do Brasil\n"
@@ -16,9 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: data/io.github.talesam.Obscure.desktop.in.in:2
-#: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
-#: crates/obscure-app/src/ui/window.blp:5
+#: data/io.github.talesam.Obscure.desktop.in.in:2 data/io.github.talesam.Obscure.metainfo.xml.in.in:7 crates/obscure-app/src/ui/window.blp:5
 msgid "Obscure"
 msgstr "Obscure"
 
@@ -28,9 +26,7 @@ msgid "Proxy Client"
 msgstr "Cliente de proxy"
 
 #. Translators: the slogan of the app
-#: data/io.github.talesam.Obscure.desktop.in.in:6
-#: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:460
+#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:460
 msgid "Connect. That's it."
 msgstr "Conecte-se. Só isso."
 
@@ -44,12 +40,8 @@ msgid "Connect to your proxy with one button"
 msgstr "Conecte-se ao seu proxy com um botão"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:10
-msgid ""
-"Obscure is a simple client for the Xray-core engine. Paste a link or a "
-"subscription, tap Connect and you are done."
-msgstr ""
-"O Obscure é um cliente simples para o motor Xray-core. Cole um link ou uma "
-"assinatura, toque em Conectar e pronto."
+msgid "Obscure is a simple client for the Xray-core engine. Paste a link or a subscription, tap Connect and you are done."
+msgstr "O Obscure é um cliente simples para o motor Xray-core. Cole um link ou uma assinatura, toque em Conectar e pronto."
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:14
 msgid "Features:"
@@ -60,8 +52,7 @@ msgid "One Connect button, no technical terms on the main screen"
 msgstr "Um botão Conectar, sem termos técnicos na tela principal"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:17
-msgid ""
-"Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
+msgid "Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
 msgstr "Importa links vless, vmess, trojan e shadowsocks, além de assinaturas"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:18
@@ -70,8 +61,7 @@ msgstr "Aplica o proxy do sistema no GNOME e no KDE, sem precisar de root"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:19
 msgid "Downloads and updates Xray-core automatically, with integrity checks"
-msgstr ""
-"Baixa e atualiza o Xray-core automaticamente, com verificação de integridade"
+msgstr "Baixa e atualiza o Xray-core automaticamente, com verificação de integridade"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:49
 msgid "Initial project skeleton."
@@ -105,9 +95,7 @@ msgstr "Registrar um atalho global pelo portal GlobalShortcuts"
 msgid "Connect automatically when the app starts"
 msgstr "Conectar automaticamente ao iniciar o app"
 
-#: crates/obscure-app/src/ui/window.blp:17
-#: crates/obscure-app/src/ui/window.blp:51
-#: crates/obscure-app/src/ui/import-dialog.blp:5
+#: crates/obscure-app/src/ui/window.blp:17 crates/obscure-app/src/ui/window.blp:51 crates/obscure-app/src/ui/import-dialog.blp:5
 msgid "Add Server"
 msgstr "Adicionar servidor"
 
@@ -119,8 +107,7 @@ msgstr "Menu principal"
 msgid "Paste a link or a subscription to get started."
 msgstr "Cole um link ou uma assinatura para começar."
 
-#: crates/obscure-app/src/ui/window.blp:152
-#: crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Conectar"
 
@@ -133,21 +120,16 @@ msgid "System proxy"
 msgstr "Proxy do sistema"
 
 #: crates/obscure-app/src/ui/window.blp:173
-msgid ""
-"Browsers and most apps use the connection. No administrator password needed."
-msgstr ""
-"Navegadores e a maioria dos apps passam a usar a conexão. Não precisa de "
-"senha de administrador."
+msgid "Browsers and most apps use the connection. No administrator password needed."
+msgstr "Navegadores e a maioria dos apps passam a usar a conexão. Não precisa de senha de administrador."
 
 #: crates/obscure-app/src/ui/window.blp:178
 msgid "Local proxy only"
 msgstr "Só proxy local"
 
 #: crates/obscure-app/src/ui/window.blp:179
-msgid ""
-"Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
-msgstr ""
-"Nada muda no sistema. Aponte os programas que quiser para 127.0.0.1:2080."
+msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
+msgstr "Nada muda no sistema. Aponte os programas que quiser para 127.0.0.1:2080."
 
 #: crates/obscure-app/src/ui/window.blp:184
 msgid "Tunnel"
@@ -155,8 +137,7 @@ msgstr "Túnel"
 
 #: crates/obscure-app/src/ui/window.blp:185
 msgid "All traffic from this computer, every app. Asks for your password once."
-msgstr ""
-"Todo o tráfego deste computador, de todos os apps. Pede sua senha uma vez."
+msgstr "Todo o tráfego deste computador, de todos os apps. Pede sua senha uma vez."
 
 #: crates/obscure-app/src/ui/window.blp:191
 msgid "What goes through the connection"
@@ -175,8 +156,7 @@ msgid "Everything"
 msgstr "Tudo"
 
 #: crates/obscure-app/src/ui/window.blp:206
-msgid ""
-"All traffic goes through the connection, except local network addresses."
+msgid "All traffic goes through the connection, except local network addresses."
 msgstr "Todo o tráfego passa pela conexão, exceto endereços da rede local."
 
 #: crates/obscure-app/src/ui/window.blp:212
@@ -235,13 +215,11 @@ msgstr "_Atalhos de teclado"
 msgid "_About Obscure"
 msgstr "_Sobre o Obscure"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
-#: crates/obscure-app/src/ui/preferences-dialog.blp:10
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6 crates/obscure-app/src/ui/preferences-dialog.blp:10
 msgid "General"
 msgstr "Geral"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9
-#: crates/obscure-app/src/ui/preferences-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9 crates/obscure-app/src/ui/preferences-dialog.blp:5
 msgid "Preferences"
 msgstr "Preferências"
 
@@ -249,8 +227,7 @@ msgstr "Preferências"
 msgid "Keyboard Shortcuts"
 msgstr "Atalhos de teclado"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
-#: crates/obscure-app/src/ui/connections-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19 crates/obscure-app/src/ui/connections-dialog.blp:5
 msgid "Live Connections"
 msgstr "Conexões ao vivo"
 
@@ -258,8 +235,7 @@ msgstr "Conexões ao vivo"
 msgid "Close Window"
 msgstr "Fechar janela"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29
-#: crates/obscure-app/src/tray.rs:101
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29 crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Sair"
 
@@ -292,12 +268,8 @@ msgid "Connection"
 msgstr "Conexão"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:33
-msgid ""
-"Changes apply the next time you connect. If you are connected now, Obscure "
-"reconnects."
-msgstr ""
-"As mudanças valem na próxima conexão. Se você estiver conectado agora, o "
-"Obscure reconecta."
+msgid "Changes apply the next time you connect. If you are connected now, Obscure reconnects."
+msgstr "As mudanças valem na próxima conexão. Se você estiver conectado agora, o Obscure reconecta."
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:36
 msgid "Local port"
@@ -325,20 +297,15 @@ msgstr "Atalho global para conectar ou desconectar"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:64
 msgid "Works even when Obscure is hidden. The system lets you choose the keys."
-msgstr ""
-"Funciona mesmo com o Obscure oculto. O sistema deixa você escolher as teclas."
+msgstr "Funciona mesmo com o Obscure oculto. O sistema deixa você escolher as teclas."
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:69
 msgid "Route rules"
 msgstr "Regras de rota"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:70
-msgid ""
-"Your rules win over the preset. Use a domain (example.com), an address "
-"(10.0.0.0/8) or a category (geosite:netflix)."
-msgstr ""
-"Suas regras vencem o preset. Use um domínio (example.com), um endereço "
-"(10.0.0.0/8) ou uma categoria (geosite:netflix)."
+msgid "Your rules win over the preset. Use a domain (example.com), an address (10.0.0.0/8) or a category (geosite:netflix)."
+msgstr "Suas regras vencem o preset. Use um domínio (example.com), um endereço (10.0.0.0/8) ou uma categoria (geosite:netflix)."
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:75
 msgid "Add rule"
@@ -356,22 +323,17 @@ msgstr "Editar a configuração do motor"
 msgid "See or replace the JSON that Obscure sends to Xray."
 msgstr "Veja ou substitua o JSON que o Obscure envia ao Xray."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579
-#: crates/obscure-app/src/window.rs:691
-#: crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579 crates/obscure-app/src/window.rs:691 crates/obscure-app/src/preferences_dialog.rs:234
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:23
-#: crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:234
 msgid "Add"
 msgstr "Adicionar"
 
 #: crates/obscure-app/src/ui/import-dialog.blp:42
 msgid "Paste server links (one per line) or the address of your subscription."
-msgstr ""
-"Cole links de servidores (um por linha) ou o endereço da sua assinatura."
+msgstr "Cole links de servidores (um por linha) ou o endereço da sua assinatura."
 
 #: crates/obscure-app/src/ui/import-dialog.blp:79
 msgid "Paste"
@@ -395,8 +357,7 @@ msgstr "QR da tela"
 
 #: crates/obscure-app/src/application.rs:111
 msgid "The system proxy settings from a previous session were restored."
-msgstr ""
-"As configurações de proxy do sistema da sessão anterior foram restauradas."
+msgstr "As configurações de proxy do sistema da sessão anterior foram restauradas."
 
 #. Translators: replace with your name and, optionally, e-mail.
 #: crates/obscure-app/src/application.rs:457
@@ -447,8 +408,7 @@ msgstr "Remover “%s” e todos os seus servidores?"
 msgid "You can add the subscription again later by pasting its address."
 msgstr "Você pode adicionar a assinatura de novo depois colando o endereço."
 
-#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692
-#: crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692 crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Remover"
 
@@ -488,9 +448,7 @@ msgid_plural "Subscription updated: %n servers."
 msgstr[0] "Assinatura atualizada: %n servidor."
 msgstr[1] "Assinatura atualizada: %n servidores."
 
-#: crates/obscure-app/src/connection.rs:212
-#: crates/obscure-app/src/connection.rs:833
-#: crates/obscure-app/src/connection.rs:1007
+#: crates/obscure-app/src/connection.rs:212 crates/obscure-app/src/connection.rs:833 crates/obscure-app/src/connection.rs:1007
 msgid "Disconnected"
 msgstr "Desconectado"
 
@@ -502,8 +460,7 @@ msgstr "Procurando o servidor mais rápido…"
 msgid "Choose a server to connect"
 msgstr "Escolha um servidor para conectar"
 
-#: crates/obscure-app/src/connection.rs:874
-#: crates/obscure-app/src/connection.rs:979
+#: crates/obscure-app/src/connection.rs:874 crates/obscure-app/src/connection.rs:979
 msgid "Connecting…"
 msgstr "Conectando…"
 
@@ -569,16 +526,11 @@ msgstr "Não foi possível acessar a internet para baixar o motor de conexão."
 
 #: crates/obscure-app/src/humanize.rs:17
 msgid "Could not download the connection engine. Try again later."
-msgstr ""
-"Não foi possível baixar o motor de conexão. Tente novamente mais tarde."
+msgstr "Não foi possível baixar o motor de conexão. Tente novamente mais tarde."
 
 #: crates/obscure-app/src/humanize.rs:20
-msgid ""
-"The downloaded file is corrupted. It will be downloaded again on the next "
-"attempt."
-msgstr ""
-"O arquivo baixado está corrompido. O download será refeito na próxima "
-"tentativa."
+msgid "The downloaded file is corrupted. It will be downloaded again on the next attempt."
+msgstr "O arquivo baixado está corrompido. O download será refeito na próxima tentativa."
 
 #: crates/obscure-app/src/humanize.rs:22
 msgid "Could not extract the connection engine."
@@ -605,76 +557,66 @@ msgid "This server has a configuration the engine did not accept."
 msgstr "Este servidor tem uma configuração que o motor não aceitou."
 
 #: crates/obscure-app/src/humanize.rs:41
-msgid ""
-"The local port is already in use by another program. Change it in "
-"Preferences."
-msgstr ""
-"A porta local já está em uso por outro programa. Mude a porta nas "
-"Preferências."
+msgid "The local port is already in use by another program. Change it in Preferences."
+msgstr "A porta local já está em uso por outro programa. Mude a porta nas Preferências."
 
 #: crates/obscure-app/src/humanize.rs:44
 msgid "The connection engine stopped unexpectedly."
 msgstr "O motor de conexão encerrou inesperadamente."
 
-#: crates/obscure-app/src/humanize.rs:47
+#: crates/obscure-app/src/humanize.rs:48
+msgid "The tunnel came up but no traffic passes through it. Check the connection log."
+msgstr "O túnel subiu, mas nenhum tráfego passa por ele. Veja o log da conexão."
+
+#: crates/obscure-app/src/humanize.rs:50
 msgid "The connection engine did not respond in time."
 msgstr "O motor de conexão não respondeu a tempo."
 
-#: crates/obscure-app/src/humanize.rs:49
-msgid ""
-"Could not change the system proxy. The local connection is still available."
-msgstr ""
-"Não foi possível alterar o proxy do sistema. A conexão local continua "
-"disponível."
+#: crates/obscure-app/src/humanize.rs:52
+msgid "Could not change the system proxy. The local connection is still available."
+msgstr "Não foi possível alterar o proxy do sistema. A conexão local continua disponível."
 
-#: crates/obscure-app/src/humanize.rs:51
+#: crates/obscure-app/src/humanize.rs:54
 msgid "Could not notify the system about the new proxy."
 msgstr "Não foi possível avisar o sistema sobre o novo proxy."
 
-#: crates/obscure-app/src/humanize.rs:52
+#: crates/obscure-app/src/humanize.rs:55
 msgid "Could not read or write Obscure's files."
 msgstr "Não foi possível ler ou gravar os arquivos do Obscure."
 
-#: crates/obscure-app/src/humanize.rs:53
+#: crates/obscure-app/src/humanize.rs:56
 msgid "Could not read traffic statistics."
 msgstr "Não foi possível ler as estatísticas de tráfego."
 
-#: crates/obscure-app/src/humanize.rs:54
+#: crates/obscure-app/src/humanize.rs:57
 msgid "The server did not respond to the latency test."
 msgstr "O servidor não respondeu ao teste de latência."
 
-#: crates/obscure-app/src/humanize.rs:55
+#: crates/obscure-app/src/humanize.rs:58
 msgid "The subscription could not be read. Check the address."
 msgstr "Não foi possível ler a assinatura. Verifique o endereço."
 
-#: crates/obscure-app/src/humanize.rs:57
-msgid ""
-"This subscription is in Clash format, which Obscure does not support yet."
-msgstr ""
-"Esta assinatura está no formato Clash, que o Obscure ainda não suporta."
-
 #: crates/obscure-app/src/humanize.rs:60
-msgid ""
-"Tunnel mode is not possible here: the engine is stored on a filesystem that "
-"ignores permissions (nosuid)."
-msgstr ""
-"O modo túnel não é possível aqui: o motor está em um sistema de arquivos que "
-"ignora permissões (nosuid)."
+msgid "This subscription is in Clash format, which Obscure does not support yet."
+msgstr "Esta assinatura está no formato Clash, que o Obscure ainda não suporta."
 
-#: crates/obscure-app/src/humanize.rs:62
+#: crates/obscure-app/src/humanize.rs:63
+msgid "Tunnel mode is not possible here: the engine is stored on a filesystem that ignores permissions (nosuid)."
+msgstr "O modo túnel não é possível aqui: o motor está em um sistema de arquivos que ignora permissões (nosuid)."
+
+#: crates/obscure-app/src/humanize.rs:65
 msgid "Could not get permission for tunnel mode."
 msgstr "Não foi possível obter permissão para o modo túnel."
 
-#: crates/obscure-app/src/humanize.rs:63
+#: crates/obscure-app/src/humanize.rs:66
 msgid "Tunnel mode needs your permission to route all traffic."
 msgstr "O modo túnel precisa da sua permissão para direcionar todo o tráfego."
 
-#: crates/obscure-app/src/humanize.rs:64
+#: crates/obscure-app/src/humanize.rs:67
 msgid "The custom configuration is not valid JSON."
 msgstr "A configuração personalizada não é um JSON válido."
 
-#: crates/obscure-app/src/import_dialog.rs:60
-#: crates/obscure-app/src/import_dialog.rs:253
+#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:253
 msgid "No valid link found."
 msgstr "Nenhum link válido encontrado."
 
@@ -686,24 +628,17 @@ msgstr "Imagens"
 msgid "Choose an image with a QR code"
 msgstr "Escolha uma imagem com um QR code"
 
-#: crates/obscure-app/src/import_dialog.rs:97
-#: crates/obscure-app/src/import_dialog.rs:149
+#: crates/obscure-app/src/import_dialog.rs:97 crates/obscure-app/src/import_dialog.rs:149
 msgid "No QR code was found in that image."
 msgstr "Nenhum QR code encontrado nessa imagem."
 
 #: crates/obscure-app/src/import_dialog.rs:119
-msgid ""
-"No QR code was found on the screen. Make sure it is fully visible and try "
-"again."
-msgstr ""
-"Nenhum QR code encontrado na tela. Confira se ele está totalmente visível e "
-"tente de novo."
+msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
+msgstr "Nenhum QR code encontrado na tela. Confira se ele está totalmente visível e tente de novo."
 
 #: crates/obscure-app/src/import_dialog.rs:246
-msgid ""
-"Subscription address: the servers will be downloaded and kept up to date."
-msgstr ""
-"Endereço de assinatura: os servidores serão baixados e mantidos atualizados."
+msgid "Subscription address: the servers will be downloaded and kept up to date."
+msgstr "Endereço de assinatura: os servidores serão baixados e mantidos atualizados."
 
 #: crates/obscure-app/src/import_dialog.rs:256
 msgid "%n server ready to add."
@@ -781,18 +716,15 @@ msgstr "O que deve combinar e para onde vai."
 msgid "Domain, address or category"
 msgstr "Domínio, endereço ou categoria"
 
-#: crates/obscure-app/src/preferences_dialog.rs:223
-#: crates/obscure-app/src/preferences_dialog.rs:274
+#: crates/obscure-app/src/preferences_dialog.rs:223 crates/obscure-app/src/preferences_dialog.rs:274
 msgid "Through the server"
 msgstr "Pelo servidor"
 
-#: crates/obscure-app/src/preferences_dialog.rs:224
-#: crates/obscure-app/src/preferences_dialog.rs:275
+#: crates/obscure-app/src/preferences_dialog.rs:224 crates/obscure-app/src/preferences_dialog.rs:275
 msgid "Direct"
 msgstr "Direto"
 
-#: crates/obscure-app/src/preferences_dialog.rs:225
-#: crates/obscure-app/src/preferences_dialog.rs:276
+#: crates/obscure-app/src/preferences_dialog.rs:225 crates/obscure-app/src/preferences_dialog.rs:276
 msgid "Block"
 msgstr "Bloquear"
 
@@ -885,16 +817,11 @@ msgstr "Voltar ao automático"
 
 #: crates/obscure-app/src/ui/json-dialog.blp:38
 msgid "Discard the custom configuration and let Obscure generate it again"
-msgstr ""
-"Descartar a configuração personalizada e deixar o Obscure gerar de novo"
+msgstr "Descartar a configuração personalizada e deixar o Obscure gerar de novo"
 
 #: crates/obscure-app/src/ui/json-dialog.blp:47
-msgid ""
-"Only change this if you know the Xray configuration format. A broken "
-"configuration stops connections."
-msgstr ""
-"Só mude isto se conhecer o formato de configuração do Xray. Uma configuração "
-"quebrada impede as conexões."
+msgid "Only change this if you know the Xray configuration format. A broken configuration stops connections."
+msgstr "Só mude isto se conhecer o formato de configuração do Xray. Uma configuração quebrada impede as conexões."
 
 #: crates/obscure-app/src/json_dialog.rs:71
 msgid "Back to the automatic configuration."
@@ -917,12 +844,8 @@ msgid "Configuration accepted by the engine."
 msgstr "Configuração aceita pelo motor."
 
 #: crates/obscure-app/src/json_dialog.rs:172
-msgid ""
-"The engine accepted the configuration but cannot open the tunnel without "
-"permission. Connect once in Tunnel mode to grant it."
-msgstr ""
-"O motor aceitou a configuração, mas não consegue abrir o túnel sem "
-"permissão. Conecte uma vez no modo Túnel para conceder."
+msgid "The engine accepted the configuration but cannot open the tunnel without permission. Connect once in Tunnel mode to grant it."
+msgstr "O motor aceitou a configuração, mas não consegue abrir o túnel sem permissão. Conecte uma vez no modo Túnel para conceder."
 
 #: crates/obscure-app/src/json_dialog.rs:175
 msgid "The engine rejected it: %s"
@@ -931,10 +854,3 @@ msgstr "O motor rejeitou: %s"
 #: crates/obscure-app/src/shortcuts.rs:19
 msgid "Connect or disconnect Obscure"
 msgstr "Conectar ou desconectar o Obscure"
-
-#~ msgid "Try pre-release versions of the engine"
-#~ msgstr "Experimentar versões prévias do motor"
-
-#~ msgid "Newer features, but less tested. Off is the safe choice."
-#~ msgstr ""
-#~ "Recursos mais novos, porém menos testados. Desligado é a opção segura."

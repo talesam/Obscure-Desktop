@@ -114,10 +114,10 @@ mod imp {
         }
 
         #[template_callback]
-        fn on_auto_toggled(&self, _pspec: glib::ParamSpec, row: &adw::SwitchRow) {
+        fn on_auto_toggled(&self, _pspec: glib::ParamSpec, switch: &gtk::Switch) {
             self.obj()
                 .manager()
-                .set_auto_select_from_ui(row.is_active());
+                .set_auto_select_from_ui(switch.is_active());
         }
 
         #[template_callback]

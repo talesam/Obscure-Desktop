@@ -1198,6 +1198,28 @@ async fn actor(
         }
     };
 
+    if tunnel {
+        // Xray installs the address and routes right after start-up; only
+        // report "connected" once traffic really flows through the tunnel.
+        send(UiEvent::Log(
+            "tunnel: waiting for the route and a probe through it".into(),
+        ));
+        if let Err(e) = obscure_core::tun::wait_until_routed(
+            obscure_core::config::TUN_NAME,
+            ("1.1.1.1", 443),
+            Duration::from_secs(20),
+        )
+        .await
+        {
+            core.stop().await;
+            send(UiEvent::Failed(e));
+            return;
+        }
+        send(UiEvent::Log(
+            "tunnel: route installed and traffic flowing".into(),
+        ));
+    }
+
     let sysproxy = SysProxy::new(paths::state_file());
     let mut proxy_applied = false;
     if params.apply_mode == ApplyMode::SystemProxy {

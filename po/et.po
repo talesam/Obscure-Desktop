@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-25 13:10-0300\n"
+"POT-Creation-Date: 2026-09-25 13:23-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Eesti\n"
@@ -16,9 +16,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: data/io.github.talesam.Obscure.desktop.in.in:2
-#: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
-#: crates/obscure-app/src/ui/window.blp:5
+#: data/io.github.talesam.Obscure.desktop.in.in:2 data/io.github.talesam.Obscure.metainfo.xml.in.in:7 crates/obscure-app/src/ui/window.blp:5
 msgid "Obscure"
 msgstr "Obscure"
 
@@ -28,9 +26,7 @@ msgid "Proxy Client"
 msgstr "Puhverserveri klient"
 
 #. Translators: the slogan of the app
-#: data/io.github.talesam.Obscure.desktop.in.in:6
-#: crates/obscure-app/src/ui/window.blp:38
-#: crates/obscure-app/src/application.rs:460
+#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:460
 msgid "Connect. That's it."
 msgstr "Ühendu. See on kõik."
 
@@ -44,12 +40,8 @@ msgid "Connect to your proxy with one button"
 msgstr "Ühendu oma puhverserveriga ühe nupuvajutusega"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:10
-msgid ""
-"Obscure is a simple client for the Xray-core engine. Paste a link or a "
-"subscription, tap Connect and you are done."
-msgstr ""
-"Obscure on lihtne klient Xray-core mootorile. Kleebi link või tellimus, "
-"vajuta Ühenda ja valmis."
+msgid "Obscure is a simple client for the Xray-core engine. Paste a link or a subscription, tap Connect and you are done."
+msgstr "Obscure on lihtne klient Xray-core mootorile. Kleebi link või tellimus, vajuta Ühenda ja valmis."
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:14
 msgid "Features:"
@@ -60,8 +52,7 @@ msgid "One Connect button, no technical terms on the main screen"
 msgstr "Üks Ühenda nupp, põhikuval pole tehnilisi termineid"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:17
-msgid ""
-"Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
+msgid "Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
 msgstr "Impordib vless, vmess, trojan ja shadowsocks lingid ning tellimused"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:18
@@ -70,8 +61,7 @@ msgstr "Rakendab süsteemi puhverserveri GNOME-is ja KDE-s ilma root-õigusteta"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:19
 msgid "Downloads and updates Xray-core automatically, with integrity checks"
-msgstr ""
-"Laadib Xray-core automaatselt alla ja uuendab seda terviklusekontrolliga"
+msgstr "Laadib Xray-core automaatselt alla ja uuendab seda terviklusekontrolliga"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:49
 msgid "Initial project skeleton."
@@ -105,9 +95,7 @@ msgstr "Registreeri süsteemiülene kiirklahv GlobalShortcuts-portaali kaudu"
 msgid "Connect automatically when the app starts"
 msgstr "Ühendu automaatselt rakenduse käivitumisel"
 
-#: crates/obscure-app/src/ui/window.blp:17
-#: crates/obscure-app/src/ui/window.blp:51
-#: crates/obscure-app/src/ui/import-dialog.blp:5
+#: crates/obscure-app/src/ui/window.blp:17 crates/obscure-app/src/ui/window.blp:51 crates/obscure-app/src/ui/import-dialog.blp:5
 msgid "Add Server"
 msgstr "Lisa server"
 
@@ -119,8 +107,7 @@ msgstr "Peamenüü"
 msgid "Paste a link or a subscription to get started."
 msgstr "Alustamiseks kleebi link või tellimus."
 
-#: crates/obscure-app/src/ui/window.blp:152
-#: crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Ühenda"
 
@@ -133,22 +120,16 @@ msgid "System proxy"
 msgstr "Süsteemi puhverserver"
 
 #: crates/obscure-app/src/ui/window.blp:173
-msgid ""
-"Browsers and most apps use the connection. No administrator password needed."
-msgstr ""
-"Brauserid ja enamik rakendusi kasutavad ühendust. Administraatori parooli "
-"pole vaja."
+msgid "Browsers and most apps use the connection. No administrator password needed."
+msgstr "Brauserid ja enamik rakendusi kasutavad ühendust. Administraatori parooli pole vaja."
 
 #: crates/obscure-app/src/ui/window.blp:178
 msgid "Local proxy only"
 msgstr "Ainult kohalik puhverserver"
 
 #: crates/obscure-app/src/ui/window.blp:179
-msgid ""
-"Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
-msgstr ""
-"Süsteemis ei muutu midagi. Suuna soovitud programmid aadressile "
-"127.0.0.1:2080."
+msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
+msgstr "Süsteemis ei muutu midagi. Suuna soovitud programmid aadressile 127.0.0.1:2080."
 
 #: crates/obscure-app/src/ui/window.blp:184
 msgid "Tunnel"
@@ -175,8 +156,7 @@ msgid "Everything"
 msgstr "Kõik"
 
 #: crates/obscure-app/src/ui/window.blp:206
-msgid ""
-"All traffic goes through the connection, except local network addresses."
+msgid "All traffic goes through the connection, except local network addresses."
 msgstr "Kogu liiklus läbib ühendust, välja arvatud kohaliku võrgu aadressid."
 
 #: crates/obscure-app/src/ui/window.blp:212
@@ -235,13 +215,11 @@ msgstr "_Kiirklahvid"
 msgid "_About Obscure"
 msgstr "_Obscure'i teave"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
-#: crates/obscure-app/src/ui/preferences-dialog.blp:10
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6 crates/obscure-app/src/ui/preferences-dialog.blp:10
 msgid "General"
 msgstr "Üldine"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9
-#: crates/obscure-app/src/ui/preferences-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9 crates/obscure-app/src/ui/preferences-dialog.blp:5
 msgid "Preferences"
 msgstr "Eelistused"
 
@@ -249,8 +227,7 @@ msgstr "Eelistused"
 msgid "Keyboard Shortcuts"
 msgstr "Kiirklahvid"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
-#: crates/obscure-app/src/ui/connections-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19 crates/obscure-app/src/ui/connections-dialog.blp:5
 msgid "Live Connections"
 msgstr "Reaalajas ühendused"
 
@@ -258,8 +235,7 @@ msgstr "Reaalajas ühendused"
 msgid "Close Window"
 msgstr "Sulge aken"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29
-#: crates/obscure-app/src/tray.rs:101
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29 crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "Välju"
 
@@ -292,12 +268,8 @@ msgid "Connection"
 msgstr "Ühendus"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:33
-msgid ""
-"Changes apply the next time you connect. If you are connected now, Obscure "
-"reconnects."
-msgstr ""
-"Muudatused jõustuvad järgmisel ühendumisel. Kui oled praegu ühendatud, "
-"ühendub Obscure uuesti."
+msgid "Changes apply the next time you connect. If you are connected now, Obscure reconnects."
+msgstr "Muudatused jõustuvad järgmisel ühendumisel. Kui oled praegu ühendatud, ühendub Obscure uuesti."
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:36
 msgid "Local port"
@@ -332,12 +304,8 @@ msgid "Route rules"
 msgstr "Marsruutimisreeglid"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:70
-msgid ""
-"Your rules win over the preset. Use a domain (example.com), an address "
-"(10.0.0.0/8) or a category (geosite:netflix)."
-msgstr ""
-"Sinu reeglid on eelseadistusest tähtsamad. Kasuta domeeni (example.com), "
-"aadressi (10.0.0.0/8) või kategooriat (geosite:netflix)."
+msgid "Your rules win over the preset. Use a domain (example.com), an address (10.0.0.0/8) or a category (geosite:netflix)."
+msgstr "Sinu reeglid on eelseadistusest tähtsamad. Kasuta domeeni (example.com), aadressi (10.0.0.0/8) või kategooriat (geosite:netflix)."
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:75
 msgid "Add rule"
@@ -355,15 +323,11 @@ msgstr "Muuda mootori seadistust"
 msgid "See or replace the JSON that Obscure sends to Xray."
 msgstr "Vaata või asenda JSON, mille Obscure Xrayle saadab."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17
-#: crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579
-#: crates/obscure-app/src/window.rs:691
-#: crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579 crates/obscure-app/src/window.rs:691 crates/obscure-app/src/preferences_dialog.rs:234
 msgid "Cancel"
 msgstr "Loobu"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:23
-#: crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:234
 msgid "Add"
 msgstr "Lisa"
 
@@ -402,9 +366,7 @@ msgstr ""
 
 #: crates/obscure-app/src/application.rs:461
 msgid "Obscure uses Xray-core, downloaded separately on first run."
-msgstr ""
-"Obscure kasutab Xray-core mootorit, mis laaditakse esimesel käivitusel "
-"eraldi alla."
+msgstr "Obscure kasutab Xray-core mootorit, mis laaditakse esimesel käivitusel eraldi alla."
 
 #: crates/obscure-app/src/application.rs:467
 msgid "Project plan"
@@ -446,8 +408,7 @@ msgstr "Kas eemaldada „%s” ja kõik selle serverid?"
 msgid "You can add the subscription again later by pasting its address."
 msgstr "Tellimuse saab hiljem aadressi kleepimisega uuesti lisada."
 
-#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692
-#: crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692 crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Eemalda"
 
@@ -487,9 +448,7 @@ msgid_plural "Subscription updated: %n servers."
 msgstr[0] "Tellimus uuendatud: %n server."
 msgstr[1] "Tellimus uuendatud: %n serverit."
 
-#: crates/obscure-app/src/connection.rs:212
-#: crates/obscure-app/src/connection.rs:833
-#: crates/obscure-app/src/connection.rs:1007
+#: crates/obscure-app/src/connection.rs:212 crates/obscure-app/src/connection.rs:833 crates/obscure-app/src/connection.rs:1007
 msgid "Disconnected"
 msgstr "Ühendus puudub"
 
@@ -501,8 +460,7 @@ msgstr "Otsitakse kiireimat serverit…"
 msgid "Choose a server to connect"
 msgstr "Vali server, millega ühenduda"
 
-#: crates/obscure-app/src/connection.rs:874
-#: crates/obscure-app/src/connection.rs:979
+#: crates/obscure-app/src/connection.rs:874 crates/obscure-app/src/connection.rs:979
 msgid "Connecting…"
 msgstr "Ühendamine…"
 
@@ -571,11 +529,8 @@ msgid "Could not download the connection engine. Try again later."
 msgstr "Ühendusmootorit ei õnnestunud alla laadida. Proovi hiljem uuesti."
 
 #: crates/obscure-app/src/humanize.rs:20
-msgid ""
-"The downloaded file is corrupted. It will be downloaded again on the next "
-"attempt."
-msgstr ""
-"Allalaaditud fail on rikutud. Järgmisel katsel laaditakse see uuesti alla."
+msgid "The downloaded file is corrupted. It will be downloaded again on the next attempt."
+msgstr "Allalaaditud fail on rikutud. Järgmisel katsel laaditakse see uuesti alla."
 
 #: crates/obscure-app/src/humanize.rs:22
 msgid "Could not extract the connection engine."
@@ -602,74 +557,66 @@ msgid "This server has a configuration the engine did not accept."
 msgstr "Sellel serveril on seadistus, mida mootor ei aktsepteerinud."
 
 #: crates/obscure-app/src/humanize.rs:41
-msgid ""
-"The local port is already in use by another program. Change it in "
-"Preferences."
-msgstr ""
-"Kohalik port on juba teise programmi kasutuses. Muuda seda Eelistustes."
+msgid "The local port is already in use by another program. Change it in Preferences."
+msgstr "Kohalik port on juba teise programmi kasutuses. Muuda seda Eelistustes."
 
 #: crates/obscure-app/src/humanize.rs:44
 msgid "The connection engine stopped unexpectedly."
 msgstr "Ühendusmootor peatus ootamatult."
 
-#: crates/obscure-app/src/humanize.rs:47
+#: crates/obscure-app/src/humanize.rs:48
+msgid "The tunnel came up but no traffic passes through it. Check the connection log."
+msgstr "Tunnel tuli üles, aga liiklus seda ei läbi. Vaata ühenduse logi."
+
+#: crates/obscure-app/src/humanize.rs:50
 msgid "The connection engine did not respond in time."
 msgstr "Ühendusmootor ei vastanud õigel ajal."
 
-#: crates/obscure-app/src/humanize.rs:49
-msgid ""
-"Could not change the system proxy. The local connection is still available."
-msgstr ""
-"Süsteemi puhverserverit ei õnnestunud muuta. Kohalik ühendus on endiselt "
-"saadaval."
+#: crates/obscure-app/src/humanize.rs:52
+msgid "Could not change the system proxy. The local connection is still available."
+msgstr "Süsteemi puhverserverit ei õnnestunud muuta. Kohalik ühendus on endiselt saadaval."
 
-#: crates/obscure-app/src/humanize.rs:51
+#: crates/obscure-app/src/humanize.rs:54
 msgid "Could not notify the system about the new proxy."
 msgstr "Süsteemi ei õnnestunud uuest puhverserverist teavitada."
 
-#: crates/obscure-app/src/humanize.rs:52
+#: crates/obscure-app/src/humanize.rs:55
 msgid "Could not read or write Obscure's files."
 msgstr "Obscure'i faile ei õnnestunud lugeda või kirjutada."
 
-#: crates/obscure-app/src/humanize.rs:53
+#: crates/obscure-app/src/humanize.rs:56
 msgid "Could not read traffic statistics."
 msgstr "Liikluse statistikat ei õnnestunud lugeda."
 
-#: crates/obscure-app/src/humanize.rs:54
+#: crates/obscure-app/src/humanize.rs:57
 msgid "The server did not respond to the latency test."
 msgstr "Server ei vastanud latentsuse testile."
 
-#: crates/obscure-app/src/humanize.rs:55
+#: crates/obscure-app/src/humanize.rs:58
 msgid "The subscription could not be read. Check the address."
 msgstr "Tellimust ei õnnestunud lugeda. Kontrolli aadressi."
 
-#: crates/obscure-app/src/humanize.rs:57
-msgid ""
-"This subscription is in Clash format, which Obscure does not support yet."
+#: crates/obscure-app/src/humanize.rs:60
+msgid "This subscription is in Clash format, which Obscure does not support yet."
 msgstr "See tellimus on Clash-vormingus, mida Obscure veel ei toeta."
 
-#: crates/obscure-app/src/humanize.rs:60
-msgid ""
-"Tunnel mode is not possible here: the engine is stored on a filesystem that "
-"ignores permissions (nosuid)."
-msgstr ""
-"Tunnelirežiim pole siin võimalik: mootor asub failisüsteemis, mis eirab "
-"õigusi (nosuid)."
+#: crates/obscure-app/src/humanize.rs:63
+msgid "Tunnel mode is not possible here: the engine is stored on a filesystem that ignores permissions (nosuid)."
+msgstr "Tunnelirežiim pole siin võimalik: mootor asub failisüsteemis, mis eirab õigusi (nosuid)."
 
-#: crates/obscure-app/src/humanize.rs:62
+#: crates/obscure-app/src/humanize.rs:65
 msgid "Could not get permission for tunnel mode."
 msgstr "Tunnelirežiimi luba ei õnnestunud saada."
 
-#: crates/obscure-app/src/humanize.rs:63
+#: crates/obscure-app/src/humanize.rs:66
 msgid "Tunnel mode needs your permission to route all traffic."
 msgstr "Tunnelirežiim vajab sinu luba kogu liikluse suunamiseks."
 
-#: crates/obscure-app/src/humanize.rs:64
+#: crates/obscure-app/src/humanize.rs:67
 msgid "The custom configuration is not valid JSON."
 msgstr "Kohandatud seadistus ei ole kehtiv JSON."
 
-#: crates/obscure-app/src/import_dialog.rs:60
-#: crates/obscure-app/src/import_dialog.rs:253
+#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:253
 msgid "No valid link found."
 msgstr "Kehtivat linki ei leitud."
 
@@ -681,22 +628,16 @@ msgstr "Pildid"
 msgid "Choose an image with a QR code"
 msgstr "Vali pilt, millel on QR-kood"
 
-#: crates/obscure-app/src/import_dialog.rs:97
-#: crates/obscure-app/src/import_dialog.rs:149
+#: crates/obscure-app/src/import_dialog.rs:97 crates/obscure-app/src/import_dialog.rs:149
 msgid "No QR code was found in that image."
 msgstr "Sellelt pildilt QR-koodi ei leitud."
 
 #: crates/obscure-app/src/import_dialog.rs:119
-msgid ""
-"No QR code was found on the screen. Make sure it is fully visible and try "
-"again."
-msgstr ""
-"Ekraanilt QR-koodi ei leitud. Veendu, et see on täielikult nähtav, ja proovi "
-"uuesti."
+msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
+msgstr "Ekraanilt QR-koodi ei leitud. Veendu, et see on täielikult nähtav, ja proovi uuesti."
 
 #: crates/obscure-app/src/import_dialog.rs:246
-msgid ""
-"Subscription address: the servers will be downloaded and kept up to date."
+msgid "Subscription address: the servers will be downloaded and kept up to date."
 msgstr "Tellimuse aadress: serverid laaditakse alla ja hoitakse ajakohasena."
 
 #: crates/obscure-app/src/import_dialog.rs:256
@@ -775,18 +716,15 @@ msgstr "Mis peab sobima ja kuhu see läheb."
 msgid "Domain, address or category"
 msgstr "Domeen, aadress või kategooria"
 
-#: crates/obscure-app/src/preferences_dialog.rs:223
-#: crates/obscure-app/src/preferences_dialog.rs:274
+#: crates/obscure-app/src/preferences_dialog.rs:223 crates/obscure-app/src/preferences_dialog.rs:274
 msgid "Through the server"
 msgstr "Serveri kaudu"
 
-#: crates/obscure-app/src/preferences_dialog.rs:224
-#: crates/obscure-app/src/preferences_dialog.rs:275
+#: crates/obscure-app/src/preferences_dialog.rs:224 crates/obscure-app/src/preferences_dialog.rs:275
 msgid "Direct"
 msgstr "Otse"
 
-#: crates/obscure-app/src/preferences_dialog.rs:225
-#: crates/obscure-app/src/preferences_dialog.rs:276
+#: crates/obscure-app/src/preferences_dialog.rs:225 crates/obscure-app/src/preferences_dialog.rs:276
 msgid "Block"
 msgstr "Blokeeri"
 
@@ -882,12 +820,8 @@ msgid "Discard the custom configuration and let Obscure generate it again"
 msgstr "Loobu kohandatud seadistusest ja lase Obscure'il see uuesti luua"
 
 #: crates/obscure-app/src/ui/json-dialog.blp:47
-msgid ""
-"Only change this if you know the Xray configuration format. A broken "
-"configuration stops connections."
-msgstr ""
-"Muuda seda ainult siis, kui tunned Xray seadistusvormingut. Katkine "
-"seadistus peatab ühendused."
+msgid "Only change this if you know the Xray configuration format. A broken configuration stops connections."
+msgstr "Muuda seda ainult siis, kui tunned Xray seadistusvormingut. Katkine seadistus peatab ühendused."
 
 #: crates/obscure-app/src/json_dialog.rs:71
 msgid "Back to the automatic configuration."
@@ -910,12 +844,8 @@ msgid "Configuration accepted by the engine."
 msgstr "Mootor võttis seadistuse vastu."
 
 #: crates/obscure-app/src/json_dialog.rs:172
-msgid ""
-"The engine accepted the configuration but cannot open the tunnel without "
-"permission. Connect once in Tunnel mode to grant it."
-msgstr ""
-"Mootor võttis seadistuse vastu, aga ei saa ilma loata tunnelit avada. Ühendu "
-"üks kord tunnelirežiimis, et luba anda."
+msgid "The engine accepted the configuration but cannot open the tunnel without permission. Connect once in Tunnel mode to grant it."
+msgstr "Mootor võttis seadistuse vastu, aga ei saa ilma loata tunnelit avada. Ühendu üks kord tunnelirežiimis, et luba anda."
 
 #: crates/obscure-app/src/json_dialog.rs:175
 msgid "The engine rejected it: %s"
@@ -924,9 +854,3 @@ msgstr "Mootor lükkas selle tagasi: %s"
 #: crates/obscure-app/src/shortcuts.rs:19
 msgid "Connect or disconnect Obscure"
 msgstr "Ühenda või katkesta Obscure"
-
-#~ msgid "Try pre-release versions of the engine"
-#~ msgstr "Proovi mootori eelväljalaskeid"
-
-#~ msgid "Newer features, but less tested. Off is the safe choice."
-#~ msgstr "Uuemad võimalused, aga vähem testitud. Väljas on turvaline valik."

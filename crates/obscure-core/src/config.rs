@@ -129,9 +129,13 @@ fn dns(opts: &ConfigOptions) -> Value {
     // The DoH server itself must be resolved and reached; `https+local` makes
     // Xray talk to it directly, without looping through the proxy.
     let local = opts.dns.replacen("https://", "https+local://", 1);
+    // IPv4 only: with `UseIP` an empty AAAA answer makes Xray's outbound
+    // dial wait for its 16 s timeout before the first connection goes
+    // through (measured: 21 s vs 1.9 s to first traffic in tunnel mode).
+    // Proxy servers rarely have IPv6 egress anyway.
     json!({
         "servers": [ local, "localhost" ],
-        "queryStrategy": "UseIP"
+        "queryStrategy": "UseIPv4"
     })
 }
 
@@ -400,6 +404,7 @@ mod tests {
         assert_eq!(cfg["outbounds"][1]["tag"], "direct");
         assert_eq!(cfg["outbounds"][2]["tag"], "block");
         assert_eq!(cfg["dns"]["servers"][0], "https+local://1.1.1.1/dns-query");
+        assert_eq!(cfg["dns"]["queryStrategy"], "UseIPv4");
         assert_eq!(cfg["api"]["listen"], "127.0.0.1:10085");
         let rules = cfg["routing"]["rules"].as_array().unwrap();
         assert_eq!(rules[0]["domain"][0], "full:h.example");

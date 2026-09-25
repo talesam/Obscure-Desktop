@@ -299,6 +299,17 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 
 ## 8. Registro de progresso e pendências
 
+### Correções 2026-09-25 (túnel: lentidão e crash)
+- **Primeiro tráfego demorava ~20 s** em modo túnel: com `dns.queryStrategy: UseIP` a discagem do
+  Xray ao servidor esperava A e AAAA; a resposta AAAA vazia travava até o timeout de 16 s.
+  `UseIPv4` resolve (medido: 21 s → 1,9 s). Aplicado a todos os modos.
+- "Conectado" em modo túnel agora só aparece após a rota padrão via `obscure0` existir e uma sonda
+  TCP passar pelo túnel (`tun::wait_until_routed`); antes o estado vinha do inbound local.
+- Crash ao ligar "Automático": callback do template com tipo errado (`AdwSwitchRow` vs `GtkSwitch`).
+- Observado: Tailscale (STUN e encaminhador de DNS) gera uma rajada de conexões pelo túnel ao subir;
+  o DNS capturado (porta 53 → `dns-out`) responde e o Tailscale se acalma em ~20 s. Sem impacto após
+  o ajuste do DNS.
+
 ### Correções 2026-09-25 (bug do túnel + revisão de código)
 - **Túnel sem tráfego**: o Xray 26.3.27 criava `obscure0` mas não atribuía endereço nem rotas
   (função só existe desde 26.7.11). Agora o core é sempre o mais novo (`ensure_latest`, checagem
