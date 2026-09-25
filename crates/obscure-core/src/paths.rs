@@ -1,7 +1,7 @@
 //! XDG paths used by Obscure. Works natively and inside Flatpak (where the
 //! XDG variables point into the sandbox).
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 const APP_DIR: &str = "obscure";
 
@@ -53,4 +53,27 @@ pub fn runtime_config_file() -> PathBuf {
 
 pub fn log_dir() -> PathBuf {
     cache_dir().join("logs")
+}
+
+/// Writes `bytes` to `path` atomically (temp file + rename) with mode 0600,
+/// creating parent directories. Used for anything holding credentials.
+pub fn write_private(path: &Path, bytes: &[u8]) -> crate::Result<()> {
+    use crate::Error;
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
+    }
+    let tmp = path.with_extension("tmp");
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(&tmp)
+        .map_err(|e| Error::io(&tmp, e))?;
+    f.write_all(bytes).map_err(|e| Error::io(&tmp, e))?;
+    f.sync_all().map_err(|e| Error::io(&tmp, e))?;
+    std::fs::rename(&tmp, path).map_err(|e| Error::io(path, e))?;
+    Ok(())
 }

@@ -227,6 +227,23 @@ pub fn write_config(path: &Path, config: &serde_json::Value) -> Result<()> {
 mod tests {
     use super::*;
 
+    /// Writes an executable script and waits until it can actually be
+    /// executed: a concurrent test may fork while our write fd is still
+    /// open, which makes exec fail with ETXTBSY for a moment.
+    fn make_script(path: &Path, body: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::write(path, body).unwrap();
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        for _ in 0..50 {
+            match std::process::Command::new(path).arg("--probe").output() {
+                Err(e) if e.raw_os_error() == Some(26) => {
+                    std::thread::sleep(Duration::from_millis(20))
+                }
+                _ => return,
+            }
+        }
+    }
+
     #[tokio::test]
     async fn missing_binary_is_reported() {
         let s = Supervisor::new(PathBuf::from("/nonexistent/xray"), PathBuf::from("/tmp"));
@@ -238,9 +255,7 @@ mod tests {
     async fn fake_core_rejecting_config() {
         let dir = tempfile::tempdir().unwrap();
         let fake = dir.path().join("xray");
-        std::fs::write(&fake, "#!/bin/sh\necho 'bad config' >&2\nexit 23\n").unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        make_script(&fake, "#!/bin/sh\necho 'bad config' >&2\nexit 23\n");
         let s = Supervisor::new(fake, dir.path().to_path_buf());
         let err = s.test_config(Path::new("/dev/null")).await.unwrap_err();
         assert!(matches!(err, Error::ConfigRejected(ref t) if t.contains("bad config")));
@@ -252,9 +267,10 @@ mod tests {
         // python, so we exercise readiness detection and SIGTERM handling.
         let dir = tempfile::tempdir().unwrap();
         let fake = dir.path().join("xray");
-        std::fs::write(
+        make_script(
             &fake,
             r#"#!/bin/sh
+if [ "$1" = "--probe" ]; then exit 0; fi
 if [ "$2" = "-test" ]; then exit 0; fi
 echo "fake xray started"
 exec python3 -c 'import socket,time,signal
@@ -262,13 +278,11 @@ signal.signal(signal.SIGTERM, lambda *a: exit(0))
 s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1); s.bind(("127.0.0.1", 28765)); s.listen(1)
 while True: time.sleep(1)'
 "#,
-        )
-        .unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        );
         let s = Supervisor::new(fake, dir.path().to_path_buf());
         let cfg = dir.path().join("c.json");
         write_config(&cfg, &serde_json::json!({})).unwrap();
+        use std::os::unix::fs::PermissionsExt;
         assert_eq!(
             std::fs::metadata(&cfg).unwrap().permissions().mode() & 0o777,
             0o600

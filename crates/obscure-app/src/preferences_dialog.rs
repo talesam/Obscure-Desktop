@@ -29,8 +29,6 @@ mod imp {
         #[template_child]
         pub dns_row: TemplateChild<adw::EntryRow>,
         #[template_child]
-        pub prerelease_row: TemplateChild<adw::SwitchRow>,
-        #[template_child]
         pub shortcut_row: TemplateChild<adw::SwitchRow>,
         #[template_child]
         pub rules_group: TemplateChild<adw::PreferencesGroup>,
@@ -149,16 +147,10 @@ impl PreferencesDialog {
         let profiles = manager.profiles();
         imp.port_row.set_value(f64::from(profiles.local_port));
         imp.dns_row.set_text(&profiles.dns);
-        imp.prerelease_row.set_active(profiles.prerelease);
 
-        // Port and pre-release apply immediately; DNS applies on ✓ or when
-        // the dialog closes (EntryRow apply button).
+        // Port applies immediately; DNS applies on ✓ or when the dialog
+        // closes (EntryRow apply button).
         imp.port_row.connect_value_notify(clone!(
-            #[weak]
-            dialog,
-            move |_| dialog.push_settings()
-        ));
-        imp.prerelease_row.connect_active_notify(clone!(
             #[weak]
             dialog,
             move |_| dialog.push_settings()
@@ -273,7 +265,7 @@ impl PreferencesDialog {
         let imp = self.imp();
         let Some(m) = imp.manager.get() else { return };
         let port = imp.port_row.value().clamp(1025.0, 65535.0) as u16;
-        m.update_settings(port, &imp.dns_row.text(), imp.prerelease_row.is_active());
+        m.update_settings(port, &imp.dns_row.text());
     }
 }
 

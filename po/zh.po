@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 23:55-0300\n"
+"POT-Creation-Date: 2026-09-25 13:10-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: 中文\n"
@@ -16,7 +16,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: data/io.github.talesam.Obscure.desktop.in.in:2 data/io.github.talesam.Obscure.metainfo.xml.in.in:7 crates/obscure-app/src/ui/window.blp:5
+#: data/io.github.talesam.Obscure.desktop.in.in:2
+#: data/io.github.talesam.Obscure.metainfo.xml.in.in:7
+#: crates/obscure-app/src/ui/window.blp:5
 msgid "Obscure"
 msgstr "Obscure"
 
@@ -26,22 +28,29 @@ msgid "Proxy Client"
 msgstr "代理客户端"
 
 #. Translators: the slogan of the app
-#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:435
+#: data/io.github.talesam.Obscure.desktop.in.in:6
+#: crates/obscure-app/src/ui/window.blp:38
+#: crates/obscure-app/src/application.rs:460
 msgid "Connect. That's it."
 msgstr "连接。就这么简单。"
 
 #. Translators: search terms, keep the trailing semicolon and add local words
 #: data/io.github.talesam.Obscure.desktop.in.in:16
 msgid "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;wireguard;privacy;censorship;"
-msgstr "proxy;vpn;xray;vless;vmess;trojan;shadowsocks;wireguard;隐私;审查;连接;翻墙;"
+msgstr ""
+"proxy;vpn;xray;vless;vmess;trojan;shadowsocks;wireguard;隐私;审查;连接;翻墙;"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:8
 msgid "Connect to your proxy with one button"
 msgstr "一键连接到您的代理"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:10
-msgid "Obscure is a simple client for the Xray-core engine. Paste a link or a subscription, tap Connect and you are done."
-msgstr "Obscure 是一个面向 Xray-core 引擎的简洁客户端。粘贴链接或订阅，点击“连接”即可。"
+msgid ""
+"Obscure is a simple client for the Xray-core engine. Paste a link or a "
+"subscription, tap Connect and you are done."
+msgstr ""
+"Obscure 是一个面向 Xray-core 引擎的简洁客户端。粘贴链接或订阅，点击“连接”即"
+"可。"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:14
 msgid "Features:"
@@ -52,7 +61,8 @@ msgid "One Connect button, no technical terms on the main screen"
 msgstr "只有一个“连接”按钮，主界面没有技术术语"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:17
-msgid "Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
+msgid ""
+"Imports vless, vmess, trojan and shadowsocks links, as well as subscriptions"
 msgstr "导入 vless、vmess、trojan 和 shadowsocks 链接以及订阅"
 
 #: data/io.github.talesam.Obscure.metainfo.xml.in.in:18
@@ -95,7 +105,9 @@ msgstr "通过 GlobalShortcuts 门户注册全局快捷键"
 msgid "Connect automatically when the app starts"
 msgstr "应用启动时自动连接"
 
-#: crates/obscure-app/src/ui/window.blp:17 crates/obscure-app/src/ui/window.blp:51 crates/obscure-app/src/ui/import-dialog.blp:5
+#: crates/obscure-app/src/ui/window.blp:17
+#: crates/obscure-app/src/ui/window.blp:51
+#: crates/obscure-app/src/ui/import-dialog.blp:5
 msgid "Add Server"
 msgstr "添加服务器"
 
@@ -107,7 +119,8 @@ msgstr "主菜单"
 msgid "Paste a link or a subscription to get started."
 msgstr "粘贴链接或订阅即可开始。"
 
-#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152
+#: crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "连接"
 
@@ -120,7 +133,8 @@ msgid "System proxy"
 msgstr "系统代理"
 
 #: crates/obscure-app/src/ui/window.blp:173
-msgid "Browsers and most apps use the connection. No administrator password needed."
+msgid ""
+"Browsers and most apps use the connection. No administrator password needed."
 msgstr "浏览器和大多数应用将使用此连接。无需管理员密码。"
 
 #: crates/obscure-app/src/ui/window.blp:178
@@ -128,7 +142,8 @@ msgid "Local proxy only"
 msgstr "仅本地代理"
 
 #: crates/obscure-app/src/ui/window.blp:179
-msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
+msgid ""
+"Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
 msgstr "系统不会有任何改动。将需要的程序指向 127.0.0.1:2080 即可。"
 
 #: crates/obscure-app/src/ui/window.blp:184
@@ -156,7 +171,8 @@ msgid "Everything"
 msgstr "全部"
 
 #: crates/obscure-app/src/ui/window.blp:206
-msgid "All traffic goes through the connection, except local network addresses."
+msgid ""
+"All traffic goes through the connection, except local network addresses."
 msgstr "除本地网络地址外，所有流量都经由连接。"
 
 #: crates/obscure-app/src/ui/window.blp:212
@@ -215,11 +231,13 @@ msgstr "键盘快捷键(_K)"
 msgid "_About Obscure"
 msgstr "关于 Obscure(_A)"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6 crates/obscure-app/src/ui/preferences-dialog.blp:10
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:6
+#: crates/obscure-app/src/ui/preferences-dialog.blp:10
 msgid "General"
 msgstr "常规"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9 crates/obscure-app/src/ui/preferences-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:9
+#: crates/obscure-app/src/ui/preferences-dialog.blp:5
 msgid "Preferences"
 msgstr "首选项"
 
@@ -227,7 +245,8 @@ msgstr "首选项"
 msgid "Keyboard Shortcuts"
 msgstr "键盘快捷键"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19 crates/obscure-app/src/ui/connections-dialog.blp:5
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:19
+#: crates/obscure-app/src/ui/connections-dialog.blp:5
 msgid "Live Connections"
 msgstr "实时连接"
 
@@ -235,7 +254,8 @@ msgstr "实时连接"
 msgid "Close Window"
 msgstr "关闭窗口"
 
-#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29 crates/obscure-app/src/tray.rs:101
+#: crates/obscure-app/src/ui/shortcuts-dialog.blp:29
+#: crates/obscure-app/src/tray.rs:101
 msgid "Quit"
 msgstr "退出"
 
@@ -268,7 +288,9 @@ msgid "Connection"
 msgstr "连接"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:33
-msgid "Changes apply the next time you connect. If you are connected now, Obscure reconnects."
+msgid ""
+"Changes apply the next time you connect. If you are connected now, Obscure "
+"reconnects."
 msgstr "更改在下次连接时生效。如果当前已连接，Obscure 会重新连接。"
 
 #: crates/obscure-app/src/ui/preferences-dialog.blp:36
@@ -283,59 +305,59 @@ msgstr "本机程序访问此连接所用的端口。"
 msgid "DNS server (DNS over HTTPS)"
 msgstr "DNS 服务器（DNS over HTTPS）"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:54
-msgid "Try pre-release versions of the engine"
-msgstr "尝试引擎的预发布版本"
-
-#: crates/obscure-app/src/ui/preferences-dialog.blp:55
-msgid "Newer features, but less tested. Off is the safe choice."
-msgstr "功能更新，但测试较少。关闭是更安全的选择。"
-
-#: crates/obscure-app/src/ui/preferences-dialog.blp:61
+#: crates/obscure-app/src/ui/preferences-dialog.blp:56
 msgid "Advanced"
 msgstr "高级"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:65
+#: crates/obscure-app/src/ui/preferences-dialog.blp:60
 msgid "Shortcut"
 msgstr "快捷键"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:68
+#: crates/obscure-app/src/ui/preferences-dialog.blp:63
 msgid "System-wide shortcut to connect or disconnect"
 msgstr "用于连接或断开的全局快捷键"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:69
+#: crates/obscure-app/src/ui/preferences-dialog.blp:64
 msgid "Works even when Obscure is hidden. The system lets you choose the keys."
 msgstr "即使 Obscure 隐藏也能使用。按键由系统选择。"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:74
+#: crates/obscure-app/src/ui/preferences-dialog.blp:69
 msgid "Route rules"
 msgstr "路由规则"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:75
-msgid "Your rules win over the preset. Use a domain (example.com), an address (10.0.0.0/8) or a category (geosite:netflix)."
-msgstr "您的规则优先于预设。可使用域名 (example.com)、地址 (10.0.0.0/8) 或分类 (geosite:netflix)。"
+#: crates/obscure-app/src/ui/preferences-dialog.blp:70
+msgid ""
+"Your rules win over the preset. Use a domain (example.com), an address "
+"(10.0.0.0/8) or a category (geosite:netflix)."
+msgstr ""
+"您的规则优先于预设。可使用域名 (example.com)、地址 (10.0.0.0/8) 或分类 "
+"(geosite:netflix)。"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:80
+#: crates/obscure-app/src/ui/preferences-dialog.blp:75
 msgid "Add rule"
 msgstr "添加规则"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:99
+#: crates/obscure-app/src/ui/preferences-dialog.blp:94
 msgid "Engine configuration"
 msgstr "引擎配置"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:102
+#: crates/obscure-app/src/ui/preferences-dialog.blp:97
 msgid "Edit the engine configuration"
 msgstr "编辑引擎配置"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:103
+#: crates/obscure-app/src/ui/preferences-dialog.blp:98
 msgid "See or replace the JSON that Obscure sends to Xray."
 msgstr "查看或替换 Obscure 发送给 Xray 的 JSON。"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579 crates/obscure-app/src/window.rs:691 crates/obscure-app/src/preferences_dialog.rs:242
+#: crates/obscure-app/src/ui/import-dialog.blp:17
+#: crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579
+#: crates/obscure-app/src/window.rs:691
+#: crates/obscure-app/src/preferences_dialog.rs:234
 msgid "Cancel"
 msgstr "取消"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:242
+#: crates/obscure-app/src/ui/import-dialog.blp:23
+#: crates/obscure-app/src/preferences_dialog.rs:234
 msgid "Add"
 msgstr "添加"
 
@@ -363,20 +385,20 @@ msgstr "截取屏幕并读取其中的二维码"
 msgid "QR from Screen"
 msgstr "从屏幕读取二维码"
 
-#: crates/obscure-app/src/application.rs:98
+#: crates/obscure-app/src/application.rs:111
 msgid "The system proxy settings from a previous session were restored."
 msgstr "已恢复上一次会话的系统代理设置。"
 
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:432
+#: crates/obscure-app/src/application.rs:457
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:436
+#: crates/obscure-app/src/application.rs:461
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure 使用 Xray-core，首次运行时会单独下载。"
 
-#: crates/obscure-app/src/application.rs:442
+#: crates/obscure-app/src/application.rs:467
 msgid "Project plan"
 msgstr "项目计划"
 
@@ -416,7 +438,8 @@ msgstr "要移除“%s”及其所有服务器吗？"
 msgid "You can add the subscription again later by pasting its address."
 msgstr "以后可以通过粘贴地址再次添加订阅。"
 
-#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692 crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692
+#: crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "移除"
 
@@ -454,63 +477,66 @@ msgid "Subscription updated: %n server."
 msgid_plural "Subscription updated: %n servers."
 msgstr[0] "订阅已更新：%n 个服务器。"
 
-#: crates/obscure-app/src/connection.rs:206 crates/obscure-app/src/connection.rs:994
+#: crates/obscure-app/src/connection.rs:212
+#: crates/obscure-app/src/connection.rs:833
+#: crates/obscure-app/src/connection.rs:1007
 msgid "Disconnected"
 msgstr "未连接"
 
-#: crates/obscure-app/src/connection.rs:820
+#: crates/obscure-app/src/connection.rs:826
 msgid "Finding the fastest server…"
 msgstr "正在寻找最快的服务器…"
 
-#: crates/obscure-app/src/connection.rs:846
+#: crates/obscure-app/src/connection.rs:856
 msgid "Choose a server to connect"
 msgstr "选择要连接的服务器"
 
-#: crates/obscure-app/src/connection.rs:874 crates/obscure-app/src/connection.rs:966
+#: crates/obscure-app/src/connection.rs:874
+#: crates/obscure-app/src/connection.rs:979
 msgid "Connecting…"
 msgstr "正在连接…"
 
-#: crates/obscure-app/src/connection.rs:910
+#: crates/obscure-app/src/connection.rs:923
 msgid "Disconnecting…"
 msgstr "正在断开…"
 
-#: crates/obscure-app/src/connection.rs:933
+#: crates/obscure-app/src/connection.rs:946
 msgid "Preparing the connection engine…"
 msgstr "正在准备连接引擎…"
 
-#: crates/obscure-app/src/connection.rs:944
+#: crates/obscure-app/src/connection.rs:957
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "正在下载连接引擎：%a / %b MB"
 
-#: crates/obscure-app/src/connection.rs:947
+#: crates/obscure-app/src/connection.rs:960
 msgid "Downloading the connection engine: %a MB"
 msgstr "正在下载连接引擎：%a MB"
 
-#: crates/obscure-app/src/connection.rs:952
+#: crates/obscure-app/src/connection.rs:965
 msgid "Verifying the download…"
 msgstr "正在校验下载…"
 
-#: crates/obscure-app/src/connection.rs:954
+#: crates/obscure-app/src/connection.rs:967
 msgid "Installing the connection engine…"
 msgstr "正在安装连接引擎…"
 
-#: crates/obscure-app/src/connection.rs:983
+#: crates/obscure-app/src/connection.rs:996
 msgid "Connected · system proxy active"
 msgstr "已连接 · 系统代理已启用"
 
-#: crates/obscure-app/src/connection.rs:984
+#: crates/obscure-app/src/connection.rs:997
 msgid "Connected · local proxy only"
 msgstr "已连接 · 仅本地代理"
 
-#: crates/obscure-app/src/connection.rs:985
+#: crates/obscure-app/src/connection.rs:998
 msgid "Connected · all traffic through the tunnel"
 msgstr "已连接 · 全部流量经隧道"
 
-#: crates/obscure-app/src/connection.rs:989
+#: crates/obscure-app/src/connection.rs:1002
 msgid "Connected"
 msgstr "已连接"
 
-#: crates/obscure-app/src/connection.rs:1006
+#: crates/obscure-app/src/connection.rs:1019
 msgid "Connection failed"
 msgstr "连接失败"
 
@@ -535,7 +561,9 @@ msgid "Could not download the connection engine. Try again later."
 msgstr "无法下载连接引擎。请稍后重试。"
 
 #: crates/obscure-app/src/humanize.rs:20
-msgid "The downloaded file is corrupted. It will be downloaded again on the next attempt."
+msgid ""
+"The downloaded file is corrupted. It will be downloaded again on the next "
+"attempt."
 msgstr "下载的文件已损坏。下次尝试时将重新下载。"
 
 #: crates/obscure-app/src/humanize.rs:22
@@ -563,7 +591,9 @@ msgid "This server has a configuration the engine did not accept."
 msgstr "此服务器的配置未被引擎接受。"
 
 #: crates/obscure-app/src/humanize.rs:41
-msgid "The local port is already in use by another program. Change it in Preferences."
+msgid ""
+"The local port is already in use by another program. Change it in "
+"Preferences."
 msgstr "本地端口已被其他程序占用。请在首选项中更改。"
 
 #: crates/obscure-app/src/humanize.rs:44
@@ -575,7 +605,8 @@ msgid "The connection engine did not respond in time."
 msgstr "连接引擎未及时响应。"
 
 #: crates/obscure-app/src/humanize.rs:49
-msgid "Could not change the system proxy. The local connection is still available."
+msgid ""
+"Could not change the system proxy. The local connection is still available."
 msgstr "无法更改系统代理。本地连接仍然可用。"
 
 #: crates/obscure-app/src/humanize.rs:51
@@ -599,11 +630,14 @@ msgid "The subscription could not be read. Check the address."
 msgstr "无法读取订阅。请检查地址。"
 
 #: crates/obscure-app/src/humanize.rs:57
-msgid "This subscription is in Clash format, which Obscure does not support yet."
+msgid ""
+"This subscription is in Clash format, which Obscure does not support yet."
 msgstr "此订阅为 Clash 格式，Obscure 尚不支持。"
 
 #: crates/obscure-app/src/humanize.rs:60
-msgid "Tunnel mode is not possible here: the engine is stored on a filesystem that ignores permissions (nosuid)."
+msgid ""
+"Tunnel mode is not possible here: the engine is stored on a filesystem that "
+"ignores permissions (nosuid)."
 msgstr "此处无法使用隧道模式：引擎所在的文件系统忽略权限 (nosuid)。"
 
 #: crates/obscure-app/src/humanize.rs:62
@@ -618,7 +652,8 @@ msgstr "隧道模式需要您的授权才能路由全部流量。"
 msgid "The custom configuration is not valid JSON."
 msgstr "自定义配置不是有效的 JSON。"
 
-#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:253
+#: crates/obscure-app/src/import_dialog.rs:60
+#: crates/obscure-app/src/import_dialog.rs:253
 msgid "No valid link found."
 msgstr "未找到有效链接。"
 
@@ -630,16 +665,20 @@ msgstr "图片"
 msgid "Choose an image with a QR code"
 msgstr "选择包含二维码的图片"
 
-#: crates/obscure-app/src/import_dialog.rs:97 crates/obscure-app/src/import_dialog.rs:149
+#: crates/obscure-app/src/import_dialog.rs:97
+#: crates/obscure-app/src/import_dialog.rs:149
 msgid "No QR code was found in that image."
 msgstr "在该图片中未找到二维码。"
 
 #: crates/obscure-app/src/import_dialog.rs:119
-msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
+msgid ""
+"No QR code was found on the screen. Make sure it is fully visible and try "
+"again."
 msgstr "在屏幕上未找到二维码。请确保它完全可见后重试。"
 
 #: crates/obscure-app/src/import_dialog.rs:246
-msgid "Subscription address: the servers will be downloaded and kept up to date."
+msgid ""
+"Subscription address: the servers will be downloaded and kept up to date."
 msgstr "订阅地址：将下载服务器并保持更新。"
 
 #: crates/obscure-app/src/import_dialog.rs:256
@@ -692,43 +731,46 @@ msgstr "尚无日志。连接后即可查看引擎的报告。"
 msgid "Link copied."
 msgstr "链接已复制。"
 
-#: crates/obscure-app/src/preferences_dialog.rs:128
+#: crates/obscure-app/src/preferences_dialog.rs:126
 msgid "The system did not allow Obscure to start automatically."
 msgstr "系统不允许 Obscure 自动启动。"
 
-#: crates/obscure-app/src/preferences_dialog.rs:139
+#: crates/obscure-app/src/preferences_dialog.rs:137
 msgid "Automatic start is not available on this system."
 msgstr "此系统不支持自动启动。"
 
-#: crates/obscure-app/src/preferences_dialog.rs:197
+#: crates/obscure-app/src/preferences_dialog.rs:189
 msgid "Remove rule"
 msgstr "移除规则"
 
-#: crates/obscure-app/src/preferences_dialog.rs:223
+#: crates/obscure-app/src/preferences_dialog.rs:215
 msgid "New rule"
 msgstr "新规则"
 
-#: crates/obscure-app/src/preferences_dialog.rs:224
+#: crates/obscure-app/src/preferences_dialog.rs:216
 msgid "What should match, and where it goes."
 msgstr "匹配什么，发往哪里。"
 
-#: crates/obscure-app/src/preferences_dialog.rs:228
+#: crates/obscure-app/src/preferences_dialog.rs:220
 msgid "Domain, address or category"
 msgstr "域名、地址或分类"
 
-#: crates/obscure-app/src/preferences_dialog.rs:231 crates/obscure-app/src/preferences_dialog.rs:282
+#: crates/obscure-app/src/preferences_dialog.rs:223
+#: crates/obscure-app/src/preferences_dialog.rs:274
 msgid "Through the server"
 msgstr "经服务器"
 
-#: crates/obscure-app/src/preferences_dialog.rs:232 crates/obscure-app/src/preferences_dialog.rs:283
+#: crates/obscure-app/src/preferences_dialog.rs:224
+#: crates/obscure-app/src/preferences_dialog.rs:275
 msgid "Direct"
 msgstr "直连"
 
-#: crates/obscure-app/src/preferences_dialog.rs:233 crates/obscure-app/src/preferences_dialog.rs:284
+#: crates/obscure-app/src/preferences_dialog.rs:225
+#: crates/obscure-app/src/preferences_dialog.rs:276
 msgid "Block"
 msgstr "拦截"
 
-#: crates/obscure-app/src/preferences_dialog.rs:236
+#: crates/obscure-app/src/preferences_dialog.rs:228
 msgid "Send to"
 msgstr "发送到"
 
@@ -819,7 +861,9 @@ msgid "Discard the custom configuration and let Obscure generate it again"
 msgstr "放弃自定义配置，让 Obscure 重新生成"
 
 #: crates/obscure-app/src/ui/json-dialog.blp:47
-msgid "Only change this if you know the Xray configuration format. A broken configuration stops connections."
+msgid ""
+"Only change this if you know the Xray configuration format. A broken "
+"configuration stops connections."
 msgstr "只有在了解 Xray 配置格式时才修改。损坏的配置会导致无法连接。"
 
 #: crates/obscure-app/src/json_dialog.rs:71
@@ -843,8 +887,11 @@ msgid "Configuration accepted by the engine."
 msgstr "配置已被引擎接受。"
 
 #: crates/obscure-app/src/json_dialog.rs:172
-msgid "The engine accepted the configuration but cannot open the tunnel without permission. Connect once in Tunnel mode to grant it."
-msgstr "引擎接受了配置，但没有权限无法打开隧道。请以隧道模式连接一次以授予权限。"
+msgid ""
+"The engine accepted the configuration but cannot open the tunnel without "
+"permission. Connect once in Tunnel mode to grant it."
+msgstr ""
+"引擎接受了配置，但没有权限无法打开隧道。请以隧道模式连接一次以授予权限。"
 
 #: crates/obscure-app/src/json_dialog.rs:175
 msgid "The engine rejected it: %s"
@@ -853,3 +900,9 @@ msgstr "引擎拒绝了它：%s"
 #: crates/obscure-app/src/shortcuts.rs:19
 msgid "Connect or disconnect Obscure"
 msgstr "连接或断开 Obscure"
+
+#~ msgid "Try pre-release versions of the engine"
+#~ msgstr "尝试引擎的预发布版本"
+
+#~ msgid "Newer features, but less tested. Off is the safe choice."
+#~ msgstr "功能更新，但测试较少。关闭是更安全的选择。"

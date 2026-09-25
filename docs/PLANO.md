@@ -148,7 +148,7 @@ Obscure-Desktop/
 - Segredos (senhas de assinatura com auth) → `oo7`.
 
 ### 3.3 Gerenciamento do Xray-core
-- Versionamento por data (`v26.3.27` estável "latest"; pré-releases 26.9.x). Padrão: **estável**; toggle "canal pré-release" em Avançado.
+- Versionamento por data. **Decisão (2026-09-25): usar sempre a release mais nova, pré-releases incluídas.** O Xray publica seu fluxo normal como pré-release e raramente promove uma estável (a "latest" v26.3.27 tinha 6 meses e não fazia rotas do `tun` no Linux). Checagem de atualização 1×/dia ao conectar (`ensure_latest`), offline mantém o instalado. Sem toggle de canal.
 - Download de `https://api.github.com/repos/XTLS/Xray-core/releases/latest` → asset `Xray-linux-64.zip` (x86_64) / `Xray-linux-arm64-v8a.zip` (aarch64) + `.dgst`. Verificar SHA-256 antes de extrair.
 - Geo: `Loyalsoldier/v2ray-rules-dat` (`geoip.dat`, `geosite.dat`, releases diárias) via `releases/latest/download/…` + `.sha256sum`. Checagem 1×/dia.
 - Execução: `xray run -c <config>` com `XRAY_LOCATION_ASSET` apontando para o dir de dados. Validação prévia com `xray run -test`. Stdout/stderr lidos em stream para o painel de log.
@@ -179,7 +179,7 @@ Suporte de protocolos (fase 1): **VLESS** (raw/ws/grpc/xhttp/httpupgrade; tls/re
 - Referência: `sysproxy-rs` (Clash Verge Rev).
 
 ### 3.7 Modo TUN (Avançado, fase 4)
-- Usar o **inbound `tun` nativo do Xray** (desde v26.1.23): `gateway`, `autoSystemRoutingTable: ["0.0.0.0/0","::/0"]`, `autoOutboundsInterface: "auto"`. Dispensa sing-box e tun2socks.
+- Usar o **inbound `tun` nativo do Xray**: `gateway`, `autoSystemRoutingTable: ["0.0.0.0/0","::/0"]`, `autoOutboundsInterface: "auto"`. Dispensa sing-box e tun2socks. **Atenção: endereço e rotas automáticos no Linux só existem a partir do v26.7.11** (`ensure_tun_capable` garante isso; versões antigas só criam a interface). Gateway em 198.18.0.1/30 (faixa de benchmark, RFC 2544) para não colidir com as bridges 172.x do Docker.
 - Privilégio, em dois níveis:
   1. **Simples (primeiro):** botão "Conceder permissão" → `pkexec setcap cap_net_admin,cap_net_raw,cap_net_bind_service+ep <xray>` com arquivo `.policy` próprio. Reaplicado automaticamente após atualizar o core. Funciona em instalação nativa (Arch/AUR).
   2. **Robusto (depois):** `obscure-helper` como serviço D-Bus de sistema ativado por polkit, que abre `/dev/net/tun`, configura rotas e passa o fd via `XRAY_TUN_FD`. É o único caminho viável para Flatpak (via `flatpak-spawn --host` ou serviço pré-instalado) e AppImage (`nosuid`).
@@ -298,6 +298,20 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ---
 
 ## 8. Registro de progresso e pendências
+
+### Correções 2026-09-25 (bug do túnel + revisão de código)
+- **Túnel sem tráfego**: o Xray 26.3.27 criava `obscure0` mas não atribuía endereço nem rotas
+  (função só existe desde 26.7.11). Agora o core é sempre o mais novo (`ensure_latest`, checagem
+  diária) e o modo túnel exige `>= 26.7.11` (`ensure_tun_capable`). Gateway movido para
+  198.18.0.1/30 (172.19.x colidia com Docker). Verificado: atualização automática para v26.9.9 e
+  conexão por proxy OK; o túnel real ainda depende do teste manual (senha) porque o binário novo
+  perde as capabilities.
+- Revisão (agente): `profiles.json`/`state.json` agora gravados com 0600 (`paths::write_private`);
+  eventos de uma sessão antiga do ator são ignorados por um token de sessão (reconexão lenta não
+  zera mais o canal da sessão nova); Desconectar durante "servidor mais rápido" cancela o teste;
+  falhas de `gsettings set` viram aviso no log. Teste do supervisor endurecido contra ETXTBSY.
+- Sugestões da revisão ainda não aplicadas: atualizar a `ListStore` de servidores de forma
+  incremental (hoje `sync_from_profiles` reconstrói tudo; só importa com centenas de servidores).
 
 ### Correção 2026-09-22
 - `--start-minimized` abria a janela porque a bandeja registra de forma assíncrona e a primeira

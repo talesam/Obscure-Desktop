@@ -87,7 +87,9 @@ fn inbounds(opts: &ConfigOptions) -> Value {
             "settings": {
                 "name": TUN_NAME,
                 "mtu": 1500,
-                "gateway": ["172.19.0.1/30", "fdfe:dcba:9876::1/126"],
+                // 198.18.0.0/15 is reserved for benchmarking (RFC 2544) and
+                // never routed on the internet; 172.19.x collides with Docker.
+                "gateway": ["198.18.0.1/30", "fdfe:dcba:9876::1/126"],
                 "autoSystemRoutingTable": ["0.0.0.0/0", "::/0"],
                 "autoOutboundsInterface": "auto"
             },

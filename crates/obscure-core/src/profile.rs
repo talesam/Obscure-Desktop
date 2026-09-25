@@ -2,7 +2,7 @@
 //! Stored as JSON in `~/.config/obscure/profiles.json` with a `version`
 //! field for future migrations.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
@@ -202,16 +202,9 @@ impl Profiles {
         }
     }
 
-    /// Atomically writes to `path` (write temp + rename).
+    /// Atomically writes to `path` with mode 0600 (it holds credentials).
     pub fn save(&self, path: &Path) -> Result<()> {
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
-        }
-        let tmp: PathBuf = path.with_extension("json.tmp");
-        let json = serde_json::to_vec_pretty(self)?;
-        std::fs::write(&tmp, json).map_err(|e| Error::io(&tmp, e))?;
-        std::fs::rename(&tmp, path).map_err(|e| Error::io(path, e))?;
-        Ok(())
+        crate::paths::write_private(path, &serde_json::to_vec_pretty(self)?)
     }
 
     fn migrate(&mut self) {
@@ -509,7 +502,12 @@ mod tests {
 
         let again = Profiles::load(&path).unwrap();
         assert_eq!(again, p);
-        assert!(!path.with_extension("json.tmp").exists());
+        assert!(!path.with_extension("tmp").exists());
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
     }
 
     #[test]

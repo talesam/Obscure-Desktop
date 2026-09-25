@@ -15,6 +15,9 @@ const RELEASES_API: &str = "https://api.github.com/repos/XTLS/Xray-core/releases
 const GEO_BASE: &str = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download";
 const GEO_FILES: [&str; 2] = ["geoip.dat", "geosite.dat"];
 const GEO_STAMP: &str = "geo-updated";
+const CORE_STAMP: &str = "core-checked";
+/// The core release list is consulted at most once per this interval.
+pub const CORE_UPDATE_INTERVAL: Duration = Duration::from_secs(24 * 3600);
 /// Geo files are refreshed at most once per this interval.
 pub const GEO_UPDATE_INTERVAL: Duration = Duration::from_secs(24 * 3600);
 
@@ -53,6 +56,26 @@ struct ApiRelease {
 struct ApiAsset {
     name: String,
     browser_download_url: String,
+}
+
+/// First Xray release whose `tun` inbound assigns addresses and installs
+/// system routes on Linux by itself (`gateway`, `autoSystemRoutingTable`).
+/// Older cores only create the interface, so tunnel mode silently carries
+/// no traffic with them.
+pub const MIN_TUN_ROUTING_VERSION: (u32, u32, u32) = (26, 7, 11);
+
+/// Parses a tag such as `v26.7.11` into `(26, 7, 11)`.
+pub fn parse_version(tag: &str) -> Option<(u32, u32, u32)> {
+    let mut it = tag.trim().trim_start_matches('v').split('.');
+    let a = it.next()?.parse().ok()?;
+    let b = it.next()?.parse().ok()?;
+    let c = it.next()?.parse().ok()?;
+    Some((a, b, c))
+}
+
+/// `true` when this core version can set up tunnel routing on its own.
+pub fn supports_tun_routing(tag: &str) -> bool {
+    parse_version(tag).is_some_and(|v| v >= MIN_TUN_ROUTING_VERSION)
 }
 
 /// Name of the Xray asset for the running machine.
@@ -210,6 +233,79 @@ impl CoreManager {
         Ok(())
     }
 
+    /// `true` if the release list was not consulted in the last day.
+    pub fn core_needs_check(&self) -> bool {
+        stamp_older_than(&self.dir.join(CORE_STAMP), CORE_UPDATE_INTERVAL)
+    }
+
+    fn touch_core_stamp(&self) {
+        let stamp = self.dir.join(CORE_STAMP);
+        let _ = std::fs::write(&stamp, b"");
+    }
+
+    /// Installs the core if missing and otherwise, at most once a day,
+    /// upgrades it to the newest release. Xray publishes its regular
+    /// releases as pre-releases and only rarely promotes a stable tag, so
+    /// "newest" includes pre-releases. Returns the version in use.
+    pub async fn ensure_latest(&self, progress: impl FnMut(Progress)) -> Result<String> {
+        let mut progress = progress;
+        let installed = if self.is_installed() {
+            self.installed_version()
+        } else {
+            None
+        };
+        if let Some(v) = &installed
+            && !self.core_needs_check()
+        {
+            return Ok(v.clone());
+        }
+        progress(Progress::Resolving);
+        let release = match self.latest_release(true).await {
+            Ok(r) => r,
+            // Offline with a working core: keep using it.
+            Err(e) if installed.is_some() => {
+                tracing::warn!(
+                    "core update check failed, keeping {}: {e}",
+                    installed.as_deref().unwrap_or("?")
+                );
+                return Ok(installed.unwrap());
+            }
+            Err(e) => return Err(e),
+        };
+        if installed.as_deref() != Some(release.version.as_str()) {
+            self.install(&release, progress).await?;
+        }
+        self.touch_core_stamp();
+        Ok(release.version)
+    }
+
+    /// Makes sure the installed core can do tunnel routing, installing the
+    /// newest release (pre-releases included, since the feature is not in a
+    /// stable release yet) when the installed one is too old. Returns the
+    /// version in use and whether the binary was replaced.
+    pub async fn ensure_tun_capable(
+        &self,
+        progress: impl FnMut(Progress),
+    ) -> Result<(String, bool)> {
+        if self.is_installed()
+            && let Some(v) = self.installed_version()
+            && supports_tun_routing(&v)
+        {
+            return Ok((v, false));
+        }
+        let mut progress = progress;
+        progress(Progress::Resolving);
+        let release = self.latest_release(true).await?;
+        if !supports_tun_routing(&release.version) {
+            return Err(Error::Tun(format!(
+                "newest core {} does not support tunnel routing yet",
+                release.version
+            )));
+        }
+        self.install(&release, progress).await?;
+        Ok((release.version, true))
+    }
+
     /// Convenience: resolve + install the latest release if nothing is
     /// installed yet. Returns the installed version.
     pub async fn ensure_installed(
@@ -234,14 +330,7 @@ impl CoreManager {
     /// `true` if the geo files were never refreshed or are older than
     /// [`GEO_UPDATE_INTERVAL`].
     pub fn geo_needs_update(&self) -> bool {
-        let stamp = self.dir.join(GEO_STAMP);
-        match std::fs::metadata(&stamp).and_then(|m| m.modified()) {
-            Ok(modified) => SystemTime::now()
-                .duration_since(modified)
-                .map(|age| age >= GEO_UPDATE_INTERVAL)
-                .unwrap_or(true),
-            Err(_) => true,
-        }
+        stamp_older_than(&self.dir.join(GEO_STAMP), GEO_UPDATE_INTERVAL)
     }
 
     /// Downloads `geoip.dat` and `geosite.dat` from Loyalsoldier's daily
@@ -284,6 +373,16 @@ impl CoreManager {
         let stamp = self.dir.join(GEO_STAMP);
         std::fs::write(&stamp, b"").map_err(|e| Error::io(&stamp, e))?;
         Ok(())
+    }
+}
+
+fn stamp_older_than(stamp: &Path, interval: Duration) -> bool {
+    match std::fs::metadata(stamp).and_then(|m| m.modified()) {
+        Ok(modified) => SystemTime::now()
+            .duration_since(modified)
+            .map(|age| age >= interval)
+            .unwrap_or(true),
+        Err(_) => true,
     }
 }
 
@@ -363,12 +462,33 @@ mod tests {
     }
 
     #[test]
+    fn core_stamp_controls_check() {
+        let dir = tempfile::tempdir().unwrap();
+        let mgr = CoreManager::new(dir.path().to_path_buf(), "test");
+        assert!(mgr.core_needs_check());
+        mgr.touch_core_stamp();
+        assert!(!mgr.core_needs_check());
+    }
+
+    #[test]
     fn geo_stamp_controls_update() {
         let dir = tempfile::tempdir().unwrap();
         let mgr = CoreManager::new(dir.path().to_path_buf(), "test");
         assert!(mgr.geo_needs_update());
         std::fs::write(dir.path().join(GEO_STAMP), b"").unwrap();
         assert!(!mgr.geo_needs_update());
+    }
+
+    #[test]
+    fn version_parsing_and_tun_support() {
+        assert_eq!(parse_version("v26.7.11"), Some((26, 7, 11)));
+        assert_eq!(parse_version("26.3.27\n"), Some((26, 3, 27)));
+        assert_eq!(parse_version("garbage"), None);
+        assert!(!supports_tun_routing("v26.3.27"));
+        assert!(!supports_tun_routing("v26.6.27"));
+        assert!(supports_tun_routing("v26.7.11"));
+        assert!(supports_tun_routing("v26.9.9"));
+        assert!(!supports_tun_routing(""));
     }
 
     #[test]

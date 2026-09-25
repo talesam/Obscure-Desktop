@@ -56,7 +56,6 @@ struct SessionParams {
     listed_domains: Vec<String>,
     apply_mode: ApplyMode,
     dns: String,
-    prerelease: bool,
     custom_rules: Vec<RouteRule>,
     config_override: Option<String>,
 }
@@ -122,6 +121,11 @@ mod imp {
         pub access: RefCell<VecDeque<AccessEvent>>,
         pub cmd_tx: RefCell<Option<tokio::sync::mpsc::Sender<Cmd>>>,
         pub last_error: RefCell<Option<String>>,
+        /// Incremented per connection attempt; events from an older session
+        /// are ignored so a slow shutdown cannot clobber the new one.
+        pub session: Cell<u64>,
+        /// Set by `disconnect()` while the fastest-server test runs.
+        pub cancel_auto: Cell<bool>,
     }
 
     impl Default for ConnectionManager {
@@ -149,6 +153,8 @@ mod imp {
                 access: RefCell::new(VecDeque::new()),
                 cmd_tx: RefCell::new(None),
                 last_error: RefCell::new(None),
+                session: Cell::new(0),
+                cancel_auto: Cell::new(false),
             }
         }
     }
@@ -370,7 +376,7 @@ impl ConnectionManager {
     }
 
     /// Updates connection settings from Preferences. Reconnects if needed.
-    pub fn update_settings(&self, local_port: u16, dns: &str, prerelease: bool) {
+    pub fn update_settings(&self, local_port: u16, dns: &str) {
         let dns = if dns.trim().is_empty() {
             obscure_core::profile::DEFAULT_DNS.to_owned()
         } else {
@@ -378,10 +384,9 @@ impl ConnectionManager {
         };
         let changed = {
             let mut p = self.imp().profiles.borrow_mut();
-            let changed = p.local_port != local_port || p.dns != dns || p.prerelease != prerelease;
+            let changed = p.local_port != local_port || p.dns != dns;
             p.local_port = local_port;
             p.dns = dns;
-            p.prerelease = prerelease;
             changed
         };
         if changed {
@@ -799,7 +804,7 @@ impl ConnectionManager {
             self,
             async move {
                 let mut tries = 0;
-                while (this.busy() || this.connected()) && tries < 50 {
+                while (this.busy() || this.connected()) && tries < 300 {
                     glib::timeout_future(Duration::from_millis(100)).await;
                     tries += 1;
                 }
@@ -817,12 +822,17 @@ impl ConnectionManager {
         {
             // Pick the fastest server first, then connect to it.
             self.set_busy(true);
+            self.imp().cancel_auto.set(false);
             self.set_status_text(gettext("Finding the fastest server…"));
             self.test_all_latency(clone!(
                 #[weak(rename_to = this)]
                 self,
                 move |best| {
                     this.set_busy(false);
+                    if this.imp().cancel_auto.replace(false) {
+                        this.set_status_text(gettext("Disconnected"));
+                        return;
+                    }
                     if let Some(id) = best {
                         let mut p = this.imp().profiles.borrow_mut();
                         p.selected = Some(id);
@@ -846,16 +856,7 @@ impl ConnectionManager {
             self.set_status_text(gettext("Choose a server to connect"));
             return;
         };
-        let (
-            local_port,
-            preset,
-            listed,
-            apply_mode,
-            dns,
-            prerelease,
-            custom_rules,
-            config_override,
-        ) = {
+        let (local_port, preset, listed, apply_mode, dns, custom_rules, config_override) = {
             let p = self.imp().profiles.borrow();
             (
                 p.local_port,
@@ -863,7 +864,6 @@ impl ConnectionManager {
                 p.listed_domains.clone(),
                 p.apply_mode,
                 p.dns.clone(),
-                p.prerelease,
                 p.custom_rules.clone(),
                 p.config_override.clone(),
             )
@@ -880,7 +880,6 @@ impl ConnectionManager {
             listed_domains: listed,
             apply_mode,
             dns,
-            prerelease,
             custom_rules,
             config_override,
         };
@@ -888,6 +887,8 @@ impl ConnectionManager {
         let (ui_tx, ui_rx) = async_channel::unbounded::<UiEvent>();
         let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel::<Cmd>(4);
         *self.imp().cmd_tx.borrow_mut() = Some(cmd_tx);
+        let session = self.imp().session.get() + 1;
+        self.imp().session.set(session);
 
         let user_agent = obscure_core::user_agent(obscure_core::APP_VERSION);
         runtime().spawn(actor(params, user_agent, ui_tx, cmd_rx));
@@ -897,6 +898,13 @@ impl ConnectionManager {
             self,
             async move {
                 while let Ok(ev) = ui_rx.recv().await {
+                    if this.imp().session.get() != session {
+                        // A newer session took over; only keep its log lines.
+                        if let UiEvent::Log(line) = ev {
+                            this.push_log(format!("[previous session] {line}"));
+                        }
+                        continue;
+                    }
                     this.handle_event(ev);
                 }
             }
@@ -905,6 +913,11 @@ impl ConnectionManager {
 
     pub fn disconnect(&self) {
         let tx = self.imp().cmd_tx.borrow().clone();
+        if tx.is_none() && self.busy() {
+            // Still choosing the fastest server: abort that instead.
+            self.imp().cancel_auto.set(true);
+            return;
+        }
         if let Some(tx) = tx {
             self.set_busy(true);
             self.set_status_text(gettext("Disconnecting…"));
@@ -1071,7 +1084,7 @@ async fn actor(
 
     let manager = CoreManager::new(paths::core_dir(), &user_agent);
     let ui_progress = ui.clone();
-    let ensure = manager.ensure_installed(params.prerelease, move |p| {
+    let ensure = manager.ensure_latest(move |p| {
         let _ = ui_progress.send_blocking(UiEvent::Progress(p));
     });
     // Allow cancelling during a long download.
@@ -1132,6 +1145,27 @@ async fn actor(
     // polkit; a core update replaces the binary, so this is re-checked on
     // every connection.
     if tunnel {
+        // Stable cores older than 26.7.11 create the interface but never set
+        // routes: the tunnel would "connect" and carry nothing. Upgrade first.
+        let ui_progress = ui.clone();
+        match manager
+            .ensure_tun_capable(move |p| {
+                let _ = ui_progress.send_blocking(UiEvent::Progress(p));
+            })
+            .await
+        {
+            Ok((version, replaced)) => {
+                if replaced {
+                    send(UiEvent::Log(format!(
+                        "tunnel: core updated to {version} for routing support"
+                    )));
+                }
+            }
+            Err(e) => {
+                send(UiEvent::Failed(e));
+                return;
+            }
+        }
         let xray = manager.xray_path();
         let status = capabilities(&xray);
         if status != CapStatus::Granted {

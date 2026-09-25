@@ -4,6 +4,7 @@
 
 use std::path::Path;
 
+use gio::glib;
 use gio::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -57,13 +58,7 @@ impl State {
     }
 
     pub fn save(&self, path: &Path) -> Result<()> {
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
-        }
-        let tmp = path.with_extension("json.tmp");
-        std::fs::write(&tmp, serde_json::to_vec_pretty(self)?).map_err(|e| Error::io(&tmp, e))?;
-        std::fs::rename(&tmp, path).map_err(|e| Error::io(path, e))?;
-        Ok(())
+        crate::paths::write_private(path, &serde_json::to_vec_pretty(self)?)
     }
 }
 
@@ -187,16 +182,27 @@ fn gnome_read(g: &GnomeSettings) -> GnomeBackup {
     }
 }
 
+/// Logs a failed GSettings write instead of hiding it; a read-only key
+/// (locked-down schema) would otherwise look like success.
+fn check(result: std::result::Result<(), glib::BoolError>, key: &str) {
+    if let Err(e) = result {
+        tracing::warn!("gsettings: cannot set {key}: {e}");
+    }
+}
+
 fn gnome_write(g: &GnomeSettings, port: u16) {
     let port = i32::from(port);
     for s in [&g.http, &g.https, &g.socks] {
-        let _ = s.set_string("host", "127.0.0.1");
-        let _ = s.set_int("port", port);
+        check(s.set_string("host", "127.0.0.1"), "host");
+        check(s.set_int("port", port), "port");
     }
-    let _ = g.http.set_boolean("enabled", true);
-    let _ = g.root.set_boolean("use-same-proxy", true);
-    let _ = g.root.set_strv("ignore-hosts", IGNORE_HOSTS);
-    let _ = g.root.set_string("mode", "manual");
+    check(g.http.set_boolean("enabled", true), "http.enabled");
+    check(g.root.set_boolean("use-same-proxy", true), "use-same-proxy");
+    check(
+        g.root.set_strv("ignore-hosts", IGNORE_HOSTS),
+        "ignore-hosts",
+    );
+    check(g.root.set_string("mode", "manual"), "mode");
     gio::Settings::sync();
 }
 
