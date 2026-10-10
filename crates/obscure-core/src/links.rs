@@ -21,7 +21,7 @@ const ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'.')
     .remove(b'~');
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
     Vless,
@@ -48,7 +48,7 @@ impl Protocol {
 }
 
 /// Protocol-specific credentials.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Auth {
     Vless {
@@ -98,7 +98,7 @@ fn default_vmess_security() -> String {
 }
 
 /// Stream transport.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Transport {
     Tcp {
@@ -166,7 +166,7 @@ impl Transport {
 }
 
 /// Transport-layer security.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Security {
     None,
@@ -204,7 +204,7 @@ impl Security {
 }
 
 /// A single server as described by a share link.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Server {
     pub name: String,
     pub protocol: Protocol,
@@ -220,9 +220,21 @@ impl Server {
     pub fn default_name(address: &str, port: u16) -> String {
         format!("{address}:{port}")
     }
+
+    /// The address as written in URLs and `host:port` pairs: IPv6
+    /// literals are wrapped in brackets.
+    pub fn url_host(&self) -> String {
+        if self.address.contains(':') {
+            format!("[{}]", self.address)
+        } else {
+            self.address.clone()
+        }
+    }
 }
 
-/// Returns `true` if the text looks like a share link we can import.
+/// Returns `true` if the text looks like a share link. This includes
+/// proxy schemes Obscure cannot use yet (Hysteria 2, TUIC, ShadowsocksR), so
+/// that an import reports them as unsupported instead of ignoring them.
 pub fn looks_like_link(text: &str) -> bool {
     let t = text.trim();
     [
@@ -234,6 +246,10 @@ pub fn looks_like_link(text: &str) -> bool {
         "wg://",
         "socks://",
         "socks5://",
+        "hysteria2://",
+        "hy2://",
+        "tuic://",
+        "ssr://",
     ]
     .iter()
     .any(|p| t.len() > p.len() && t.get(..p.len()).is_some_and(|h| h.eq_ignore_ascii_case(p)))
@@ -302,10 +318,7 @@ fn parse_url_like(link: &str) -> Result<Parsed> {
         Some(pw) => format!("{}:{}", decode(url.username()), decode(pw)),
         None => decode(url.username()),
     };
-    let query = url
-        .query_pairs()
-        .map(|(k, v)| (k.into_owned(), v.into_owned()))
-        .collect();
+    let query = parse_query(url.query().unwrap_or_default());
     let name = url
         .fragment()
         .map(decode)
@@ -318,6 +331,29 @@ fn parse_url_like(link: &str) -> Result<Parsed> {
         query,
         name,
     })
+}
+
+/// Splits a query string into decoded pairs. Unlike form decoding
+/// (`Url::query_pairs`), `+` stays a literal plus: share links carry base64
+/// keys (`publickey=ab+cd/ef=`) and paths where it is significant.
+fn parse_query(query: &str) -> HashMap<String, String> {
+    query
+        .split('&')
+        .filter(|pair| !pair.is_empty())
+        .map(|pair| {
+            let (k, v) = pair.split_once('=').unwrap_or((pair, ""));
+            (decode(k), decode(v))
+        })
+        .collect()
+}
+
+/// Splits a comma-separated list (`alpn=h2,http/1.1`), dropping empty items.
+fn split_list(s: &str) -> Vec<String> {
+    s.split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .collect()
 }
 
 fn decode(s: &str) -> String {
@@ -335,10 +371,14 @@ fn opt(q: &HashMap<String, String>, key: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
-fn transport_from_query(q: &HashMap<String, String>) -> Transport {
+fn unsupported_transport(kind: &str) -> Error {
+    Error::MalformedLink(format!("unsupported transport `{kind}`"))
+}
+
+fn transport_from_query(q: &HashMap<String, String>) -> Result<Transport> {
     let kind = opt(q, "type").unwrap_or_else(|| "tcp".into());
     let header_type = opt(q, "headerType").filter(|h| h != "none");
-    match kind.to_ascii_lowercase().as_str() {
+    Ok(match kind.to_ascii_lowercase().as_str() {
         "ws" => Transport::Ws {
             path: opt(q, "path"),
             host: opt(q, "host"),
@@ -360,8 +400,9 @@ fn transport_from_query(q: &HashMap<String, String>) -> Transport {
             seed: opt(q, "seed"),
             header_type,
         },
-        _ => Transport::Tcp { header_type },
-    }
+        "tcp" | "raw" => Transport::Tcp { header_type },
+        other => return Err(unsupported_transport(other)),
+    })
 }
 
 fn security_from_query(q: &HashMap<String, String>, default_tls: bool) -> Result<Security> {
@@ -376,9 +417,7 @@ fn security_from_query(q: &HashMap<String, String>, default_tls: bool) -> Result
         "none" | "" => Security::None,
         "tls" | "xtls" => Security::Tls {
             sni: opt(q, "sni"),
-            alpn: opt(q, "alpn")
-                .map(|a| a.split(',').map(|s| s.trim().to_owned()).collect())
-                .unwrap_or_default(),
+            alpn: opt(q, "alpn").map(|a| split_list(&a)).unwrap_or_default(),
             fingerprint: opt(q, "fp"),
             allow_insecure: matches!(
                 opt(q, "allowInsecure")
@@ -471,11 +510,7 @@ fn build_url_like(
     server: &Server,
     params: Vec<(String, String)>,
 ) -> String {
-    let host = if server.address.contains(':') {
-        format!("[{}]", server.address)
-    } else {
-        server.address.clone()
-    };
+    let host = server.url_host();
     let query: Vec<String> = params
         .iter()
         .map(|(k, v)| format!("{k}={}", encode(v)))
@@ -517,7 +552,7 @@ fn parse_vless(link: &str) -> Result<Server> {
             uuid: p.userinfo.clone(),
             flow: opt(&p.query, "flow"),
         },
-        transport: transport_from_query(&p.query),
+        transport: transport_from_query(&p.query)?,
         security: security_from_query(&p.query, false)?,
     })
 }
@@ -599,7 +634,7 @@ fn parse_vmess(link: &str) -> Result<Server> {
                     alter_id: 0,
                     security: opt(&p.query, "encryption").unwrap_or_else(default_vmess_security),
                 },
-                transport: transport_from_query(&p.query),
+                transport: transport_from_query(&p.query)?,
                 security: security_from_query(&p.query, false)?,
             });
         }
@@ -642,18 +677,17 @@ fn parse_vmess(link: &str) -> Result<Server> {
             path: non_empty(&j.path),
             host: non_empty(&j.host),
         },
-        "kcp" => Transport::Kcp {
+        "kcp" | "mkcp" => Transport::Kcp {
             seed: non_empty(&j.path),
             header_type,
         },
-        _ => Transport::Tcp { header_type },
+        "" | "tcp" | "raw" => Transport::Tcp { header_type },
+        other => return Err(unsupported_transport(other)),
     };
     let security = if j.tls.eq_ignore_ascii_case("tls") {
         Security::Tls {
             sni: non_empty(&j.sni),
-            alpn: non_empty(&j.alpn)
-                .map(|a| a.split(',').map(|s| s.trim().to_owned()).collect())
-                .unwrap_or_default(),
+            alpn: split_list(&j.alpn),
             fingerprint: non_empty(&j.fp),
             allow_insecure: false,
         }
@@ -695,7 +729,7 @@ fn parse_trojan(link: &str) -> Result<Server> {
         auth: Auth::Trojan {
             password: p.userinfo.clone(),
         },
-        transport: transport_from_query(&p.query),
+        transport: transport_from_query(&p.query)?,
         security: security_from_query(&p.query, true)?,
     })
 }
@@ -861,11 +895,7 @@ pub fn to_link(server: &Server) -> String {
             } else {
                 URL_SAFE_NO_PAD.encode(format!("{method}:{password}"))
             };
-            let host = if server.address.contains(':') {
-                format!("[{}]", server.address)
-            } else {
-                server.address.clone()
-            };
+            let host = server.url_host();
             let userinfo = if method.starts_with("2022-") {
                 encode(&userinfo)
             } else {
@@ -979,11 +1009,7 @@ pub fn to_link(server: &Server) -> String {
             if server.security != Security::None {
                 push_security_params(&server.security, &mut params);
             }
-            let host = if server.address.contains(':') {
-                format!("[{}]", server.address)
-            } else {
-                server.address.clone()
-            };
+            let host = server.url_host();
             let mut out = format!("{scheme}://");
             if !userinfo.is_empty() {
                 out.push_str(&encode(&userinfo));
@@ -1251,6 +1277,92 @@ mod tests {
         let (ok, failed) = parse_many(&text);
         assert_eq!(ok.len(), 1);
         assert_eq!(failed.len(), 2);
+    }
+
+    #[test]
+    fn plus_in_query_values_is_literal() {
+        let s = parse_link(
+            "wireguard://cHJpdg%3D%3D@wg.example:51820?publickey=ab+cd/ef=&presharedkey=x+y%2Bz=#W",
+        )
+        .unwrap();
+        match &s.auth {
+            Auth::Wireguard {
+                public_key,
+                preshared_key,
+                ..
+            } => {
+                assert_eq!(public_key, "ab+cd/ef=");
+                assert_eq!(preshared_key.as_deref(), Some("x+y+z="));
+            }
+            other => panic!("wrong auth {other:?}"),
+        }
+        let r = parse_link(&format!(
+            "vless://{UUID}@h.example:443?security=reality&pbk=k+1&spx=/a+b&type=ws&path=/p+q%20r"
+        ))
+        .unwrap();
+        assert!(
+            matches!(&r.security, Security::Reality { public_key, spider_x, .. }
+                if public_key == "k+1" && spider_x.as_deref() == Some("/a+b"))
+        );
+        assert!(
+            matches!(&r.transport, Transport::Ws { path, .. } if path.as_deref() == Some("/p+q r"))
+        );
+        assert_eq!(parse_link(&to_link(&r)).unwrap(), r);
+    }
+
+    #[test]
+    fn unknown_transports_are_rejected() {
+        for t in ["h2", "http", "quic", "bogus"] {
+            let err = parse_link(&format!("vless://{UUID}@h.example:443?type={t}")).unwrap_err();
+            assert!(
+                matches!(&err, Error::MalformedLink(m) if m.contains(t)),
+                "{t}: {err:?}"
+            );
+        }
+        for t in ["tcp", "raw", "TCP"] {
+            let s = parse_link(&format!("vless://{UUID}@h.example:443?type={t}")).unwrap();
+            assert_eq!(s.transport, Transport::Tcp { header_type: None });
+        }
+        for net in ["h2", "quic"] {
+            let json = format!(r#"{{"add":"h.example","port":443,"id":"{UUID}","net":"{net}"}}"#);
+            let err = parse_link(&format!("vmess://{}", STANDARD.encode(json))).unwrap_err();
+            assert!(matches!(err, Error::MalformedLink(_)), "{net}");
+        }
+        let json = format!(r#"{{"add":"h.example","port":443,"id":"{UUID}"}}"#);
+        let s = parse_link(&format!("vmess://{}", STANDARD.encode(json))).unwrap();
+        assert_eq!(s.transport, Transport::Tcp { header_type: None });
+    }
+
+    #[test]
+    fn empty_alpn_items_are_dropped() {
+        let s = parse_link(&format!(
+            "vless://{UUID}@h.example:443?security=tls&alpn=h2,,http/1.1,"
+        ))
+        .unwrap();
+        assert!(
+            matches!(&s.security, Security::Tls { alpn, .. } if alpn == &vec!["h2".to_owned(), "http/1.1".to_owned()])
+        );
+        let json =
+            format!(r#"{{"add":"h.example","port":443,"id":"{UUID}","tls":"tls","alpn":"h2,"}}"#);
+        let v = parse_link(&format!("vmess://{}", STANDARD.encode(json))).unwrap();
+        assert!(
+            matches!(&v.security, Security::Tls { alpn, .. } if alpn == &vec!["h2".to_owned()])
+        );
+    }
+
+    #[test]
+    fn unsupported_proxy_schemes_are_reported_not_dropped() {
+        let text = format!(
+            "vless://{UUID}@a.example:443?security=none#A\nhysteria2://pw@h:443\nhy2://pw@h:443\ntuic://u:p@h:443\nssr://abc\n"
+        );
+        let (ok, failed) = parse_many(&text);
+        assert_eq!(ok.len(), 1);
+        assert_eq!(failed.len(), 4);
+        assert!(
+            failed
+                .iter()
+                .all(|(_, e)| matches!(e, Error::UnsupportedScheme(_)))
+        );
     }
 
     #[test]

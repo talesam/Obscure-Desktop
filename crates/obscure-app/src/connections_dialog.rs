@@ -6,7 +6,6 @@ use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gettextrs::gettext;
 use gtk::glib;
-use gtk::glib::clone;
 use obscure_core::access::{AccessEvent, Verdict};
 
 use crate::connection::{AccessEventBox, ConnectionManager};
@@ -59,6 +58,9 @@ mod imp {
 
         #[template_callback]
         fn on_clear_clicked(&self, _b: &gtk::Button) {
+            if let Some(m) = self.manager.get() {
+                m.clear_access_events();
+            }
             self.text_view.buffer().set_text("");
             self.count.set(0);
             self.obj().update_counter();
@@ -146,12 +148,6 @@ impl ConnectionsDialog {
 
     fn append(&self, ev: &AccessEvent) {
         let imp = self.imp();
-        let buffer = imp.text_view.buffer();
-        let mut end = buffer.end_iter();
-        if buffer.char_count() > 0 {
-            buffer.insert(&mut end, "\n");
-        }
-        buffer.insert_with_tags_by_name(&mut end, &format!("{}  ", ev.time), &["time"]);
 
         let (arrow, tag, route) = match (ev.verdict, ev.outbound.as_str()) {
             (Verdict::Rejected, _) => ("✕", "rejected", gettext("rejected")),
@@ -173,18 +169,11 @@ impl ConnectionsDialog {
         } else {
             format!("{net:<3} {method}{}  {arrow} {route}", ev.destination)
         };
-        buffer.insert_with_tags_by_name(&mut end, &line, &[tag]);
-
+        crate::textlog::append_line(&imp.text_view, &imp.scrolled, |buffer, end| {
+            buffer.insert_with_tags_by_name(end, &format!("{}  ", ev.time), &["time"]);
+            buffer.insert_with_tags_by_name(end, &line, &[tag]);
+        });
         imp.count.set(imp.count.get() + 1);
-        let scrolled = imp.scrolled.clone();
-        glib::idle_add_local_once(clone!(
-            #[weak]
-            scrolled,
-            move || {
-                let adj = scrolled.vadjustment();
-                adj.set_value(adj.upper() - adj.page_size());
-            }
-        ));
     }
 
     fn update_counter(&self) {

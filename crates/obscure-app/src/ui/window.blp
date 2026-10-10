@@ -173,10 +173,9 @@ template $ObscureWindow: Adw.ApplicationWindow {
                       tooltip: _("Browsers and most apps use the connection. No administrator password needed.");
                     }
 
-                    Adw.Toggle {
+                    Adw.Toggle local_only_toggle {
                       name: "local_only";
                       label: _("Local proxy only");
-                      tooltip: _("Nothing changes on the system. Point the programs you want at 127.0.0.1:2080.");
                     }
 
                     Adw.Toggle {

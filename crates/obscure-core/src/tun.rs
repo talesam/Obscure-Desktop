@@ -157,6 +157,8 @@ pub async fn grant(helper: &Path, xray: &Path) -> Result<CapStatus> {
         )));
     }
     let mut cmd = tokio::process::Command::from(grant_command(helper, xray));
+    // Cancelling the connection drops this future: close the prompt too.
+    cmd.kill_on_drop(true);
     let out = cmd.output().await.map_err(|e| Error::io(helper, e))?;
     if !out.status.success() {
         let stderr = String::from_utf8_lossy(&out.stderr).trim().to_owned();

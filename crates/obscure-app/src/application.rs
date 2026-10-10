@@ -12,6 +12,15 @@ use crate::tray::{ObscureTray, TrayCmd};
 use crate::window::ObscureWindow;
 use obscure_core::APP_VERSION;
 
+/// What the tray shows; sent as a whole so it is always consistent.
+#[derive(Clone)]
+struct TrayState {
+    connected: bool,
+    busy: bool,
+    server: String,
+    status: String,
+}
+
 mod imp {
     use super::*;
 
@@ -412,34 +421,45 @@ impl ObscureApplication {
         });
     }
 
-    /// Pushes connection state changes to the tray icon and menu.
+    /// Pushes connection state changes to the tray icon and menu. A single
+    /// task applies the latest snapshot, so updates can neither arrive out
+    /// of order nor pile up (one transition notifies four properties).
     fn mirror_state_to_tray(&self) {
+        let Some(handle) = self.imp().tray.borrow().clone() else {
+            return;
+        };
         let m = self.manager();
-        let update = {
-            let app = self.clone();
-            move |m: &ConnectionManager| {
-                let Some(handle) = app.imp().tray.borrow().clone() else {
-                    return;
-                };
-                let (connected, busy, server, status) =
-                    (m.connected(), m.busy(), m.selected_name(), m.status_text());
-                crate::runtime::runtime().spawn(async move {
-                    handle
-                        .update(|t| {
-                            t.connected = connected;
-                            t.busy = busy;
-                            t.server_name = server;
-                            t.status_text = status;
-                        })
-                        .await;
-                });
+        let snapshot = |m: &ConnectionManager| TrayState {
+            connected: m.connected(),
+            busy: m.busy(),
+            server: m.selected_name(),
+            status: m.status_text(),
+        };
+        let (tx, mut rx) = tokio::sync::watch::channel(snapshot(m));
+        crate::runtime::runtime().spawn(async move {
+            loop {
+                let state = rx.borrow_and_update().clone();
+                handle
+                    .update(move |t| {
+                        t.connected = state.connected;
+                        t.busy = state.busy;
+                        t.server_name = state.server;
+                        t.status_text = state.status;
+                    })
+                    .await;
+                if rx.changed().await.is_err() {
+                    break;
+                }
             }
+        });
+        let tx = std::rc::Rc::new(tx);
+        let update = move |m: &ConnectionManager| {
+            let _ = tx.send(snapshot(m));
         };
         m.connect_connected_notify(update.clone());
         m.connect_busy_notify(update.clone());
         m.connect_selected_name_notify(update.clone());
-        m.connect_status_text_notify(update.clone());
-        update(m);
+        m.connect_status_text_notify(update);
     }
 
     fn show_shortcuts(&self) {

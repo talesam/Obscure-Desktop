@@ -323,12 +323,34 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
   (uma tecla → N `toggle()`). Agora a sessão é fechada ao desligar (e em erro no `bind`) e só uma
   é criada. Verificado com um portal GlobalShortcuts falso em `dbus-run-session`.
 - **Pendente de teste manual:** concessão real via pkexec (senha) e proxy num KDE de verdade.
-- Sugestões de prioridade média/baixa da revisão ainda não aplicadas: nome de arquivo temporário
-  fixo em `paths::write_private`, IDs duplicados em `replace_group_servers`, redirect temporário
-  trocando a URL da assinatura, corpo de assinatura sem limite, `+` virando espaço em
-  `query_pairs`, endpoint WireGuard IPv6 sem colchetes, transportes/esquemas não suportados
-  ignorados em silêncio, Xray órfão após kill -9, "Cancelar" ignorado nas etapas do túnel e
-  `reconnect` refazendo o teste automático.
+- Itens de prioridade média aplicados em seguida (ver bloco abaixo).
+
+### Revisão geral 2026-10-10 (itens de prioridade média)
+- Core/parsing: `write_private` com temporário único (`create_new`, 0600, fsync do diretório);
+  também usado por `write_config`. IDs únicos e dedup em `replace_group_servers`/`add_subscription`
+  (O(n) com `Hash`). Assinatura: só redirect 301/308 troca a URL, https→http recusado, ≤ 5 saltos,
+  corpo ≤ 8 MiB. Query dos links sem `+`→espaço. Endpoint WireGuard IPv6 com colchetes.
+  Transportes desconhecidos e esquemas hy2/tuic/ssr viram erro visível. `listed_domains` respeita
+  prefixos; regras vazias/CIDR inválido descartadas. `Error::Http` sem URL (token). Aritmética
+  saturante e `profile-title` UTF-8.
+- Runtime: pidfile `xray.pid` (`<core> <app>`): um Xray órfão (app morto com `kill -9`) é
+  encerrado na abertura e antes de cada start, só se o app dono não existir mais e o
+  `/proc/<pid>/cmdline` for o nosso binário. Porta ocupada por outro processo não dá mais falso
+  "pronto". `latency::url_test` sempre apaga a config. `freedom.domainStrategy` (obsoleto) →
+  `sockopt.domainStrategy`.
+- App: preparação da sessão cancelável (Cancelar no túnel/pkexec/espera da rota funciona e mata o
+  pkexec); proxy restaurado em qualquer saída; pânico do ator não deixa a UI presa; stats com
+  timeout. `reconnect` não refaz o teste automático (mantém o servidor escolhido) e mudanças de
+  ajuste durante "conectando" reconectam. Bandeja via canal `watch`. Linhas de acesso fora do log
+  bruto; diálogos limitados a 1000 linhas e só seguem o fim se o usuário estiver nele; "Limpar"
+  limpa o histórico. Porta configurada no "Copiar variáveis" e no tooltip (`%s`).
+- Testado na UI (AT-SPI + app isolado em HOME temporário): tooltip/clipboard com a porta 3456,
+  reconexão mantendo Alpha com Automático ligado, órfão encerrado após `kill -9`, Cancelar durante
+  o pkexec simulado, log bruto sem linhas de acesso, "Limpar" persistente, 1100 conexões → 1000
+  linhas.
+- Ainda não aplicado (baixa prioridade): QR na thread da UI, busca linear no geoip, hardening do
+  `obscure-helper.service`, `unreachable!` com dados do `profiles.json`, fallback de `HOME` para
+  `/tmp`, debounce da porta nas Preferências, notificação "Conectado" a cada restart do core.
 
 ### Correções 2026-09-25 (túnel: lentidão e crash)
 - **Primeiro tráfego demorava ~20 s** em modo túnel: com `dns.queryStrategy: UseIP` a discagem do

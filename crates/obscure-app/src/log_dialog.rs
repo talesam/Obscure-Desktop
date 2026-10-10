@@ -5,7 +5,6 @@ use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gettextrs::gettext;
 use gtk::glib;
-use gtk::glib::clone;
 
 use crate::connection::ConnectionManager;
 
@@ -87,7 +86,8 @@ impl LogDialog {
             lines.join("\n")
         };
         imp.text_view.buffer().set_text(&text);
-        dialog.scroll_to_end();
+        crate::textlog::trim(&imp.text_view.buffer(), crate::textlog::MAX_VIEW_LINES);
+        crate::textlog::scroll_to_end(&imp.scrolled);
 
         let id = manager.connect_closure(
             "log-line",
@@ -96,29 +96,14 @@ impl LogDialog {
                 #[weak]
                 dialog,
                 move |_m: ConnectionManager, line: String| {
-                    let buffer = dialog.imp().text_view.buffer();
-                    let mut end = buffer.end_iter();
-                    if buffer.char_count() > 0 {
-                        buffer.insert(&mut end, "\n");
-                    }
-                    buffer.insert(&mut end, &line);
-                    dialog.scroll_to_end();
+                    let imp = dialog.imp();
+                    crate::textlog::append_line(&imp.text_view, &imp.scrolled, |b, end| {
+                        b.insert(end, &line)
+                    });
                 }
             ),
         );
         *imp.handler.borrow_mut() = Some(id);
         dialog
-    }
-
-    fn scroll_to_end(&self) {
-        let scrolled = self.imp().scrolled.clone();
-        glib::idle_add_local_once(clone!(
-            #[weak]
-            scrolled,
-            move || {
-                let adj = scrolled.vadjustment();
-                adj.set_value(adj.upper() - adj.page_size());
-            }
-        ));
     }
 }

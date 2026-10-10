@@ -53,7 +53,8 @@ pub fn build(opts: &ConfigOptions) -> Value {
         "inbounds": inbounds(opts),
         "outbounds": [
             outbound(opts.server),
-            { "tag": "direct", "protocol": "freedom", "settings": { "domainStrategy": "UseIP" } },
+            // `freedom.settings.domainStrategy` is deprecated since Xray 26.x.
+            { "tag": "direct", "protocol": "freedom", "settings": {}, "streamSettings": { "sockopt": { "domainStrategy": "UseIP" } } },
             { "tag": "block", "protocol": "blackhole", "settings": {} },
             // Answers DNS queries captured from the tunnel with Xray's own DNS.
             { "tag": "dns-out", "protocol": "dns", "settings": {} }
@@ -99,30 +100,67 @@ fn inbounds(opts: &ConfigOptions) -> Value {
     Value::Array(list)
 }
 
-/// Converts a user pattern into an Xray routing rule fragment.
-fn custom_rule(rule: &RouteRule) -> Value {
+/// Domain matchers Xray understands; anything else is a plain domain.
+const DOMAIN_PREFIXES: [&str; 5] = ["geosite:", "domain:", "full:", "regexp:", "keyword:"];
+
+/// A user pattern normalised for Xray's routing.
+#[derive(Debug, PartialEq)]
+enum Pattern {
+    Ip(String),
+    Domain(String),
+}
+
+/// Classifies a user pattern. Returns `None` for patterns Xray would reject
+/// (empty, a bare prefix such as `domain:`, or a CIDR with an impossible
+/// prefix length): a single bad entry makes Xray refuse the whole config.
+fn classify(pattern: &str) -> Option<Pattern> {
+    let p = pattern.trim();
+    if p.is_empty() {
+        return None;
+    }
+    if let Some(rest) = p.strip_prefix("geoip:") {
+        return (!rest.trim().is_empty()).then(|| Pattern::Ip(p.to_owned()));
+    }
+    if p.parse::<std::net::IpAddr>().is_ok() {
+        return Some(Pattern::Ip(p.to_owned()));
+    }
+    if let Some((ip, len)) = p.split_once('/')
+        && let Ok(addr) = ip.parse::<std::net::IpAddr>()
+    {
+        let max = if addr.is_ipv4() { 32 } else { 128 };
+        return len
+            .parse::<u8>()
+            .ok()
+            .filter(|l| *l <= max)
+            .map(|_| Pattern::Ip(p.to_owned()));
+    }
+    domain_pattern(p).map(Pattern::Domain)
+}
+
+/// Keeps a known matcher prefix (`geosite:`, `full:`…) or adds `domain:`.
+fn domain_pattern(pattern: &str) -> Option<String> {
+    let p = pattern.trim();
+    if p.is_empty() {
+        return None;
+    }
+    match DOMAIN_PREFIXES.iter().find(|prefix| p.starts_with(*prefix)) {
+        Some(prefix) => (!p[prefix.len()..].trim().is_empty()).then(|| p.to_owned()),
+        None => Some(format!("domain:{p}")),
+    }
+}
+
+/// Converts a user rule into an Xray routing rule, or `None` if its
+/// pattern is not usable.
+fn custom_rule(rule: &RouteRule) -> Option<Value> {
     let tag = match rule.target {
         RuleTarget::Proxy => "proxy",
         RuleTarget::Direct => "direct",
         RuleTarget::Block => "block",
     };
-    let p = rule.pattern.trim();
-    let is_ip = p.parse::<std::net::IpAddr>().is_ok()
-        || p.split_once('/').is_some_and(|(ip, len)| {
-            ip.parse::<std::net::IpAddr>().is_ok() && len.parse::<u8>().is_ok()
-        });
-    if is_ip || p.starts_with("geoip:") {
-        json!({ "type": "field", "ip": [p], "outboundTag": tag })
-    } else if p.starts_with("geosite:")
-        || p.starts_with("domain:")
-        || p.starts_with("full:")
-        || p.starts_with("regexp:")
-        || p.starts_with("keyword:")
-    {
-        json!({ "type": "field", "domain": [p], "outboundTag": tag })
-    } else {
-        json!({ "type": "field", "domain": [format!("domain:{p}")], "outboundTag": tag })
-    }
+    Some(match classify(&rule.pattern)? {
+        Pattern::Ip(ip) => json!({ "type": "field", "ip": [ip], "outboundTag": tag }),
+        Pattern::Domain(d) => json!({ "type": "field", "domain": [d], "outboundTag": tag }),
+    })
 }
 
 fn dns(opts: &ConfigOptions) -> Value {
@@ -148,7 +186,7 @@ fn routing(opts: &ConfigOptions) -> Value {
         // DNS from the system goes to Xray's resolver (DoH), not to the LAN resolver.
         rules.push(json!({ "type": "field", "inboundTag": ["tun-in"], "port": 53, "network": "udp,tcp", "outboundTag": "dns-out" }));
     }
-    rules.extend(opts.custom_rules.iter().map(custom_rule));
+    rules.extend(opts.custom_rules.iter().filter_map(custom_rule));
     match opts.route_preset {
         RoutePreset::All => {
             rules
@@ -163,12 +201,12 @@ fn routing(opts: &ConfigOptions) -> Value {
             rules.push(json!({ "type": "field", "domain": ["geosite:category-ads-all"], "outboundTag": "block" }));
         }
         RoutePreset::OnlyListed => {
-            if !opts.listed_domains.is_empty() {
-                let domains: Vec<String> = opts
-                    .listed_domains
-                    .iter()
-                    .map(|d| format!("domain:{d}"))
-                    .collect();
+            let domains: Vec<String> = opts
+                .listed_domains
+                .iter()
+                .filter_map(|d| domain_pattern(d))
+                .collect();
+            if !domains.is_empty() {
                 rules.push(json!({ "type": "field", "domain": domains, "outboundTag": "proxy" }));
             }
             rules.push(json!({ "type": "field", "network": "tcp,udp", "outboundTag": "direct" }));
@@ -226,7 +264,7 @@ pub fn outbound(server: &Server) -> Value {
             },
         ) => {
             out["protocol"] = json!("wireguard");
-            let mut peer = json!({ "endpoint": format!("{}:{}", server.address, server.port), "publicKey": public_key });
+            let mut peer = json!({ "endpoint": format!("{}:{}", server.url_host(), server.port), "publicKey": public_key });
             if let Some(psk) = preshared_key {
                 peer["preSharedKey"] = json!(psk);
             }
@@ -501,6 +539,93 @@ mod tests {
         assert_eq!(rules[1]["domain"][0], "domain:example.com");
         assert_eq!(rules[1]["outboundTag"], "proxy");
         assert_eq!(rules.last().unwrap()["outboundTag"], "direct");
+    }
+
+    #[test]
+    fn listed_domains_keep_prefixes_and_skip_blanks() {
+        let s = parse_link("trojan://pw@h.example:443#T").unwrap();
+        let domains: Vec<String> = [
+            " example.com ",
+            "",
+            "   ",
+            "domain:",
+            "geosite:netflix",
+            "full:a.example",
+            "regexp:^x\\.",
+            "keyword:tube",
+            "domain:b.example",
+        ]
+        .iter()
+        .map(|d| (*d).to_owned())
+        .collect();
+        let mut opts = ConfigOptions::new(&s);
+        opts.route_preset = RoutePreset::OnlyListed;
+        opts.listed_domains = &domains;
+        let cfg = build(&opts);
+        let rules = cfg["routing"]["rules"].as_array().unwrap();
+        assert_eq!(
+            rules[1]["domain"],
+            json!([
+                "domain:example.com",
+                "geosite:netflix",
+                "full:a.example",
+                "regexp:^x\\.",
+                "keyword:tube",
+                "domain:b.example"
+            ])
+        );
+        // Only blanks: no proxy rule at all (an empty list is rejected by Xray).
+        let blanks = vec![" ".to_owned(), "domain:".to_owned()];
+        opts.listed_domains = &blanks;
+        let cfg = build(&opts);
+        let rules = cfg["routing"]["rules"].as_array().unwrap();
+        assert!(!rules.iter().any(|r| r["outboundTag"] == "proxy"));
+    }
+
+    #[test]
+    fn invalid_custom_rules_are_skipped() {
+        let s = parse_link(&format!("vless://{UUID}@h.example:443?security=none#T")).unwrap();
+        let rule = |p: &str| RouteRule {
+            pattern: p.into(),
+            target: RuleTarget::Direct,
+        };
+        let rules = vec![
+            rule(""),
+            rule("  "),
+            rule("domain:"),
+            rule("geoip:"),
+            rule("10.0.0.0/33"),
+            rule("fd00::/129"),
+            rule("10.0.0.0/x"),
+            rule("10.0.0.0/32"),
+            rule("fd00::/128"),
+        ];
+        let mut opts = ConfigOptions::new(&s);
+        opts.custom_rules = &rules;
+        let cfg = build(&opts);
+        let r = cfg["routing"]["rules"].as_array().unwrap();
+        let direct: Vec<&Value> = r[1..]
+            .iter()
+            .filter(|x| x["outboundTag"] == "direct")
+            .collect();
+        assert_eq!(direct[0]["ip"][0], "10.0.0.0/32");
+        assert_eq!(direct[1]["ip"][0], "fd00::/128");
+        assert!(
+            r.iter()
+                .all(|x| x["domain"] != json!(["domain:"]) && x["ip"] != json!(["geoip:"]))
+        );
+        assert!(!r.iter().any(|x| {
+            x["domain"][0]
+                .as_str()
+                .is_some_and(|d| d.contains('/') || d.trim() == "domain:")
+        }));
+    }
+
+    #[test]
+    fn wireguard_ipv6_endpoint_is_bracketed() {
+        let wg = parse_link("wireguard://priv@[2001:db8::1]:51820?publickey=pub#W").unwrap();
+        let o = outbound(&wg);
+        assert_eq!(o["settings"]["peers"][0]["endpoint"], "[2001:db8::1]:51820");
     }
 
     #[test]

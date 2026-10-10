@@ -47,6 +47,8 @@ mod imp {
         #[template_child]
         pub mode_group: TemplateChild<adw::ToggleGroup>,
         #[template_child]
+        pub local_only_toggle: TemplateChild<adw::Toggle>,
+        #[template_child]
         pub route_group: TemplateChild<adw::ToggleGroup>,
         #[template_child]
         pub servers_list: TemplateChild<gtk::ListBox>,
@@ -355,7 +357,7 @@ impl ObscureWindow {
 
     fn copy_env(&self) {
         self.clipboard()
-            .set_text(&env_snippet(obscure_core::DEFAULT_LOCAL_PORT));
+            .set_text(&env_snippet(self.manager().profiles().local_port));
         self.toast(&gettext(
             "Environment variables copied. Paste them in a terminal.",
         ));
@@ -401,6 +403,10 @@ impl ObscureWindow {
             .sync_create()
             .build();
         m.bind_property("apply_mode", &*imp.mode_group, "active-name")
+            .sync_create()
+            .build();
+        m.bind_property("local_port", &*imp.local_only_toggle, "tooltip")
+            .transform_to(|_, port: u32| Some(local_only_tooltip(port)))
             .sync_create()
             .build();
         m.bind_property("route_preset", &*imp.route_group, "active-name")
@@ -711,6 +717,11 @@ impl ObscureWindow {
 }
 
 /// Toast text after an import. Kept out of macros so xgettext sees it.
+fn local_only_tooltip(port: u32) -> String {
+    gettext("Nothing changes on the system. Point the programs you want at 127.0.0.1:%s.")
+        .replace("%s", &port.to_string())
+}
+
 fn added_message(added: usize) -> String {
     if added == 0 {
         gettext("These servers were already added.")

@@ -2,6 +2,7 @@
 //! Stored as JSON in `~/.config/obscure/profiles.json` with a `version`
 //! field for future migrations.
 
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -232,18 +233,29 @@ impl Profiles {
         }
     }
 
-    /// Atomically writes to `path` with mode 0600 (it holds credentials).
+    /// Atomically writes to `path` (unique temp file + rename, mode 0600:
+    /// the file holds credentials and subscription tokens).
     pub fn save(&self, path: &Path) -> Result<()> {
-        crate::paths::write_private(path, &serde_json::to_vec_pretty(self)?)
+        let json = serde_json::to_vec_pretty(self)?;
+        crate::paths::write_private(path, &json)
     }
 
     fn migrate(&mut self) {
         // Future versions bump CURRENT_VERSION and transform fields here.
-        self.version = CURRENT_VERSION;
+        if self.version > CURRENT_VERSION {
+            // Written by a newer Obscure: keep the number so the file is not
+            // passed off as old data when saved again.
+            tracing::warn!(
+                "profiles file has version {}, newer than {CURRENT_VERSION}; unknown fields are ignored",
+                self.version
+            );
+        } else {
+            self.version = CURRENT_VERSION;
+        }
         // Drop servers whose subscription no longer exists.
-        let ids: Vec<String> = self.subscriptions.iter().map(|s| s.id.clone()).collect();
+        let ids: HashSet<&str> = self.subscriptions.iter().map(|s| s.id.as_str()).collect();
         self.servers
-            .retain(|e| e.group.as_ref().is_none_or(|g| ids.contains(g)));
+            .retain(|e| e.group.as_deref().is_none_or(|g| ids.contains(g)));
         if let Some(sel) = &self.selected
             && !self.servers.iter().any(|s| &s.id == sel)
         {
@@ -255,10 +267,12 @@ impl Profiles {
     /// The first added server becomes selected if nothing was.
     pub fn add_servers(&mut self, servers: impl IntoIterator<Item = Server>) -> usize {
         let mut added = 0;
+        let mut known: HashSet<Server> = self.servers.iter().map(|e| e.server.clone()).collect();
         for server in servers {
-            if self.servers.iter().any(|e| e.server == server) {
+            if known.contains(&server) {
                 continue;
             }
+            known.insert(server.clone());
             let entry = ServerEntry::new(server);
             if self.selected.is_none() {
                 self.selected = Some(entry.id.clone());
@@ -318,26 +332,30 @@ impl Profiles {
         true
     }
 
+    /// Replaces the servers of `group` with `servers`. Exact duplicates in
+    /// the list are dropped, and each previous entry lends its id (and
+    /// country) to at most one new server, so ids stay unique.
     fn replace_group_servers(&mut self, group: &str, servers: &[Server]) {
         let selected_server = self.selected_entry().map(|e| e.server.clone());
-        let old: Vec<ServerEntry> = self
-            .servers
-            .iter()
-            .filter(|e| e.group.as_deref() == Some(group))
-            .cloned()
-            .collect();
-        self.servers.retain(|e| e.group.as_deref() != Some(group));
+        let mut old: HashMap<Server, (String, Option<String>)> = HashMap::new();
+        let mut kept = Vec::with_capacity(self.servers.len());
+        for e in std::mem::take(&mut self.servers) {
+            if e.group.as_deref() == Some(group) {
+                old.entry(e.server).or_insert((e.id, e.country));
+            } else {
+                kept.push(e);
+            }
+        }
+        self.servers = kept;
+        let mut seen: HashSet<&Server> = HashSet::with_capacity(servers.len());
         for server in servers {
+            if !seen.insert(server) {
+                continue;
+            }
             // Keep ids stable for unchanged servers so the UI selection holds.
-            let id = old
-                .iter()
-                .find(|e| e.server == *server)
-                .map(|e| e.id.clone())
-                .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
-            let country = old
-                .iter()
-                .find(|e| e.server == *server)
-                .and_then(|e| e.country.clone());
+            let (id, country) = old
+                .remove(server)
+                .unwrap_or_else(|| (uuid::Uuid::new_v4().to_string(), None));
             self.servers.push(ServerEntry {
                 id,
                 group: Some(group.to_owned()),
@@ -346,6 +364,9 @@ impl Profiles {
             });
         }
         // Restore or fix the selection.
+        if self.selected_entry().is_some() {
+            return;
+        }
         let still_there = selected_server
             .as_ref()
             .and_then(|s| self.servers.iter().find(|e| e.server == *s))
@@ -587,6 +608,46 @@ mod tests {
         assert_eq!(p.local_port, 2080);
         assert_eq!(p.dns, DEFAULT_DNS);
         assert!(!p.prerelease);
+    }
+
+    #[test]
+    fn identical_subscription_servers_get_unique_ids() {
+        let mut p = Profiles::default();
+        // The panel lists the same server twice.
+        let id = p.add_subscription("https://x.example/sub", &fetched(&[1, 1, 2]));
+        assert_eq!(p.servers_in_group(&id), 2, "duplicates are dropped");
+        // Old data may already hold duplicates; an update must not hand the
+        // same id to several entries.
+        let dup = p.servers[0].clone();
+        p.servers.push(dup);
+        assert!(p.update_subscription(&id, &fetched(&[1, 2, 2, 3])));
+        let ids: HashSet<&str> = p.servers.iter().map(|e| e.id.as_str()).collect();
+        assert_eq!(ids.len(), p.servers.len(), "ids must be unique");
+        assert_eq!(p.servers_in_group(&id), 3);
+    }
+
+    #[test]
+    fn newer_file_version_is_not_downgraded() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("profiles.json");
+        std::fs::write(&path, r#"{"version":7,"servers":[],"future_field":1}"#).unwrap();
+        let p = Profiles::load(&path).unwrap();
+        assert_eq!(p.version, 7);
+        p.save(&path).unwrap();
+        assert_eq!(Profiles::load(&path).unwrap().version, 7);
+        // Older files are brought up to date.
+        std::fs::write(&path, r#"{"version":0}"#).unwrap();
+        assert_eq!(Profiles::load(&path).unwrap().version, CURRENT_VERSION);
+    }
+
+    #[test]
+    fn saved_profiles_are_private() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("profiles.json");
+        Profiles::default().save(&path).unwrap();
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
     }
 
     #[test]
