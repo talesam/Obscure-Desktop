@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-25 13:23-0300\n"
+"POT-Creation-Date: 2026-10-10 19:56-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Slovenčina\n"
@@ -107,7 +107,7 @@ msgstr "Hlavná ponuka"
 msgid "Paste a link or a subscription to get started."
 msgstr "Začnite vložením odkazu alebo predplatného."
 
-#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:591 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Pripojiť"
 
@@ -323,7 +323,7 @@ msgstr "Upraviť konfiguráciu jadra"
 msgid "See or replace the JSON that Obscure sends to Xray."
 msgstr "Zobraziť alebo nahradiť JSON, ktorý Obscure posiela Xray."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579 crates/obscure-app/src/window.rs:691 crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:554 crates/obscure-app/src/window.rs:583 crates/obscure-app/src/window.rs:695 crates/obscure-app/src/preferences_dialog.rs:234
 msgid "Cancel"
 msgstr "Zrušiť"
 
@@ -392,123 +392,127 @@ msgstr "Tento súbor sa nedá prečítať."
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Premenné prostredia skopírované. Vložte ich do terminálu."
 
-#: crates/obscure-app/src/window.rs:497
+#: crates/obscure-app/src/window.rs:501
 msgid "Update now"
 msgstr "Aktualizovať teraz"
 
-#: crates/obscure-app/src/window.rs:527
+#: crates/obscure-app/src/window.rs:531
 msgid "Remove subscription"
 msgstr "Odstrániť predplatné"
 
-#: crates/obscure-app/src/window.rs:544
+#: crates/obscure-app/src/window.rs:548
 msgid "Remove “%s” and all its servers?"
 msgstr "Odstrániť „%s“ a všetky jeho servery?"
 
-#: crates/obscure-app/src/window.rs:546
+#: crates/obscure-app/src/window.rs:550
 msgid "You can add the subscription again later by pasting its address."
 msgstr "Predplatné môžete neskôr znova pridať vložením jeho adresy."
 
-#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692 crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:555 crates/obscure-app/src/window.rs:696 crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Odstrániť"
 
-#: crates/obscure-app/src/window.rs:571 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:575 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Odpojiť"
 
-#: crates/obscure-app/src/window.rs:670
+#: crates/obscure-app/src/window.rs:674
 msgid "Server details"
 msgstr "Podrobnosti servera"
 
-#: crates/obscure-app/src/window.rs:687
+#: crates/obscure-app/src/window.rs:691
 msgid "Remove “%s”?"
 msgstr "Odstrániť „%s“?"
 
-#: crates/obscure-app/src/window.rs:688
+#: crates/obscure-app/src/window.rs:692
 msgid "You can add it again later by pasting its link."
 msgstr "Neskôr ho môžete znova pridať vložením odkazu."
 
-#: crates/obscure-app/src/window.rs:712
+#: crates/obscure-app/src/window.rs:716
 msgid "These servers were already added."
 msgstr "Tieto servery už boli pridané."
 
-#: crates/obscure-app/src/window.rs:714
+#: crates/obscure-app/src/window.rs:718
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "Pridaný %n server."
 msgstr[1] "Pridané %n servery."
 msgstr[2] "Pridaných %n serverov."
 
-#: crates/obscure-app/src/window.rs:720
+#: crates/obscure-app/src/window.rs:724
 msgid "Downloading the subscription…"
 msgstr "Sťahuje sa predplatné…"
 
-#: crates/obscure-app/src/window.rs:725
+#: crates/obscure-app/src/window.rs:729
 msgid "Subscription updated: %n server."
 msgid_plural "Subscription updated: %n servers."
 msgstr[0] "Predplatné aktualizované: %n server."
 msgstr[1] "Predplatné aktualizované: %n servery."
 msgstr[2] "Predplatné aktualizované: %n serverov."
 
-#: crates/obscure-app/src/connection.rs:212 crates/obscure-app/src/connection.rs:833 crates/obscure-app/src/connection.rs:1007
+#: crates/obscure-app/src/connection.rs:222 crates/obscure-app/src/connection.rs:947 crates/obscure-app/src/connection.rs:1036
 msgid "Disconnected"
 msgstr "Odpojené"
 
-#: crates/obscure-app/src/connection.rs:826
+#: crates/obscure-app/src/connection.rs:851
 msgid "Finding the fastest server…"
 msgstr "Hľadá sa najrýchlejší server…"
 
-#: crates/obscure-app/src/connection.rs:856
+#: crates/obscure-app/src/connection.rs:881
 msgid "Choose a server to connect"
 msgstr "Vyberte server na pripojenie"
 
-#: crates/obscure-app/src/connection.rs:874 crates/obscure-app/src/connection.rs:979
+#: crates/obscure-app/src/connection.rs:899 crates/obscure-app/src/connection.rs:1008
 msgid "Connecting…"
 msgstr "Pripája sa…"
 
-#: crates/obscure-app/src/connection.rs:923
+#: crates/obscure-app/src/connection.rs:952
 msgid "Disconnecting…"
 msgstr "Odpája sa…"
 
-#: crates/obscure-app/src/connection.rs:946
+#: crates/obscure-app/src/connection.rs:975
 msgid "Preparing the connection engine…"
 msgstr "Pripravuje sa jadro pripojenia…"
 
-#: crates/obscure-app/src/connection.rs:957
+#: crates/obscure-app/src/connection.rs:986
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "Sťahuje sa jadro pripojenia: %a z %b MB"
 
-#: crates/obscure-app/src/connection.rs:960
+#: crates/obscure-app/src/connection.rs:989
 msgid "Downloading the connection engine: %a MB"
 msgstr "Sťahuje sa jadro pripojenia: %a MB"
 
-#: crates/obscure-app/src/connection.rs:965
+#: crates/obscure-app/src/connection.rs:994
 msgid "Verifying the download…"
 msgstr "Overuje sa stiahnutý súbor…"
 
-#: crates/obscure-app/src/connection.rs:967
+#: crates/obscure-app/src/connection.rs:996
 msgid "Installing the connection engine…"
 msgstr "Inštaluje sa jadro pripojenia…"
 
-#: crates/obscure-app/src/connection.rs:996
+#: crates/obscure-app/src/connection.rs:1025
 msgid "Connected · system proxy active"
 msgstr "Pripojené · systémová proxy aktívna"
 
-#: crates/obscure-app/src/connection.rs:997
+#: crates/obscure-app/src/connection.rs:1026
 msgid "Connected · local proxy only"
 msgstr "Pripojené · iba miestna proxy"
 
-#: crates/obscure-app/src/connection.rs:998
+#: crates/obscure-app/src/connection.rs:1027
 msgid "Connected · all traffic through the tunnel"
 msgstr "Pripojené · všetka prevádzka tunelom"
 
-#: crates/obscure-app/src/connection.rs:1002
+#: crates/obscure-app/src/connection.rs:1031
 msgid "Connected"
 msgstr "Pripojené"
 
-#: crates/obscure-app/src/connection.rs:1019
+#: crates/obscure-app/src/connection.rs:1048
 msgid "Connection failed"
 msgstr "Pripojenie zlyhalo"
+
+#: crates/obscure-app/src/connection.rs:1389
+msgid "Your saved servers could not be read. A copy was kept next to the settings file and the list starts empty."
+msgstr "Uložené servery sa nepodarilo načítať. Kópia zostala vedľa súboru nastavení a zoznam začína prázdny."
 
 #: crates/obscure-app/src/humanize.rs:9
 msgid "This kind of link is not supported yet: %s"

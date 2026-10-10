@@ -299,6 +299,37 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 
 ## 8. Registro de progresso e pendências
 
+### Revisão geral 2026-10-10 (itens de prioridade alta corrigidos)
+- `links::looks_like_link` entrava em pânico com texto não ASCII (fatiava `&str` no meio de um
+  caractere). Assinaturas com linhas em chinês/russo derrubavam o app.
+- `profiles.json` ilegível era sobrescrito no próximo save (perda total). Agora é movido para
+  `profiles.json.corrupt-<ts>` (`Profiles::load_or_recover`) e a janela mostra um aviso.
+- Proxy do sistema: o backup é gravado em `state.json` **antes** de qualquer escrita. Falha do KDE
+  com GNOME presente vira aviso; só KDE presente → desfaz e devolve erro. Testes em
+  `tests/sysproxy_*.rs` (GSettings em memória + `kwriteconfig6` falso).
+- `CoreManager`: timeouts (conexão 10 s, leitura 30 s, API 20 s). Falha ao atualizar com core
+  instalado não bloqueia mais a conexão (adia 1 dia) e nunca faz downgrade (`is_upgrade`).
+- Modo Automático: "Conectar" com "Testar todos" em andamento deixava a UI presa em "Procurando o
+  servidor mais rápido…". Agora quem chega entra na fila do teste em andamento; "Cancelar" volta na
+  hora para "Desconectado" e o resultado antigo é ignorado (`auto_attempt`).
+- Helper privilegiado: o binário é aberto com `O_NOFOLLOW`, o caminho tem de ser canônico (nenhum
+  symlink), o fd é conferido por `/proc/self/fd`, dono = `PKEXEC_UID` (ou o uid do chamador no
+  D-Bus) e `nlink == 1`. A capability é gravada pelo fd (`fsetxattr security.capability`, v2),
+  sem `setcap`/`getcap` no PATH. Policy: `auth_admin` (não mais `_keep`) e a mensagem mostra
+  `$(command_line)`. O app canonicaliza o caminho antes do pkexec (`/home -> /var/home`).
+  Verificado em user namespace (`unshare -r`): bytes idênticos aos do `setcap`; symlink no
+  diretório e hard link recusados.
+- Atalho global: desligar e religar a opção abria outra sessão do portal sem fechar a anterior
+  (uma tecla → N `toggle()`). Agora a sessão é fechada ao desligar (e em erro no `bind`) e só uma
+  é criada. Verificado com um portal GlobalShortcuts falso em `dbus-run-session`.
+- **Pendente de teste manual:** concessão real via pkexec (senha) e proxy num KDE de verdade.
+- Sugestões de prioridade média/baixa da revisão ainda não aplicadas: nome de arquivo temporário
+  fixo em `paths::write_private`, IDs duplicados em `replace_group_servers`, redirect temporário
+  trocando a URL da assinatura, corpo de assinatura sem limite, `+` virando espaço em
+  `query_pairs`, endpoint WireGuard IPv6 sem colchetes, transportes/esquemas não suportados
+  ignorados em silêncio, Xray órfão após kill -9, "Cancelar" ignorado nas etapas do túnel e
+  `reconnect` refazendo o teste automático.
+
 ### Correções 2026-09-25 (túnel: lentidão e crash)
 - **Primeiro tráfego demorava ~20 s** em modo túnel: com `dns.queryStrategy: UseIP` a discagem do
   Xray ao servidor esperava A e AAAA; a resposta AAAA vazia travava até o timeout de 16 s.

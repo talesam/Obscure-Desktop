@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gettextrs::gettext;
@@ -189,34 +192,39 @@ impl ObscureApplication {
     /// re-evaluates when it changes. The portal session ends when the
     /// runtime task is dropped (app exit).
     fn setup_global_shortcut(&self) {
-        let app = self.clone();
-        let start = move |app: &Self| {
-            if !app.settings().boolean("global-shortcut") {
+        // Stop signal of the running portal session, if any.
+        let running: Rc<RefCell<Option<tokio::sync::oneshot::Sender<()>>>> = Rc::default();
+        let apply = move |app: &Self| {
+            let enabled = app.settings().boolean("global-shortcut");
+            if !enabled {
+                if let Some(stop) = running.borrow_mut().take() {
+                    let _ = stop.send(());
+                }
                 return;
             }
+            if running.borrow().is_some() {
+                return;
+            }
+            let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
+            running.replace(Some(stop_tx));
             let (tx, rx) = async_channel::unbounded::<()>();
             crate::runtime::runtime().spawn(async move {
-                if let Err(e) = crate::shortcuts::run(tx).await {
+                if let Err(e) = crate::shortcuts::run(tx, stop_rx).await {
                     tracing::warn!("global shortcut unavailable: {e}");
                 }
             });
             let app = app.clone();
+            // Ends when the session task drops `tx`.
             glib::spawn_future_local(async move {
                 while rx.recv().await.is_ok() {
-                    if app.settings().boolean("global-shortcut") {
-                        app.manager().toggle();
-                    }
+                    app.manager().toggle();
                 }
             });
         };
-        start(&app);
-        let start2 = start;
+        apply(self);
+        let app = self.clone();
         self.settings()
-            .connect_changed(Some("global-shortcut"), move |s, _| {
-                if s.boolean("global-shortcut") {
-                    start2(&app);
-                }
-            });
+            .connect_changed(Some("global-shortcut"), move |_, _| apply(&app));
     }
 
     /// Desktop notifications for connection events. Routine events are

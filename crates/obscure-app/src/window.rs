@@ -430,6 +430,10 @@ impl ObscureWindow {
             ),
         );
 
+        if let Some(msg) = m.take_startup_warning() {
+            self.toast(&msg);
+        }
+
         imp.servers_list.bind_model(
             Some(m.servers()),
             clone!(

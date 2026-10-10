@@ -136,10 +136,13 @@ pub async fn wait_until_routed(
 }
 
 /// Builds the privileged command that grants the capabilities through
-/// polkit: `pkexec <helper> grant-tun <xray>`.
+/// polkit: `pkexec <helper> grant-tun <xray>`. The helper only accepts a
+/// canonical path (no symlink anywhere), so `$HOME` behind a symlink such as
+/// `/home -> /var/home` is resolved here.
 pub fn grant_command(helper: &Path, xray: &Path) -> Command {
     // `OBSCURE_PKEXEC` lets tests replace pkexec with a stub.
     let pkexec = std::env::var("OBSCURE_PKEXEC").unwrap_or_else(|_| "pkexec".into());
+    let xray = std::fs::canonicalize(xray).unwrap_or_else(|_| xray.to_path_buf());
     let mut cmd = Command::new(pkexec);
     cmd.arg(helper).arg("grant-tun").arg(xray);
     cmd
@@ -253,6 +256,20 @@ wlp2s0\t0044A8C0\t00000000\t0001\t0\t0\t600\t00FFFFFF\t0\t0\t0
             args,
             ["/usr/lib/obscure/obscure-helper", "grant-tun", "/x/xray"]
         );
+    }
+
+    #[test]
+    fn grant_command_resolves_symlinked_home() {
+        let dir = tempfile::tempdir().unwrap();
+        let real = std::fs::canonicalize(dir.path()).unwrap().join("var-home");
+        let core = real.join("obscure/core");
+        std::fs::create_dir_all(&core).unwrap();
+        std::fs::write(core.join("xray"), b"x").unwrap();
+        let home = dir.path().join("home");
+        std::os::unix::fs::symlink(&real, &home).unwrap();
+        let cmd = grant_command(Path::new("/h"), &home.join("obscure/core/xray"));
+        let last = cmd.get_args().last().unwrap().to_owned();
+        assert_eq!(Path::new(&last), core.join("xray"));
     }
 
     #[test]

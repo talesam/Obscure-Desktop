@@ -236,7 +236,7 @@ pub fn looks_like_link(text: &str) -> bool {
         "socks5://",
     ]
     .iter()
-    .any(|p| t.len() > p.len() && t[..p.len()].eq_ignore_ascii_case(p))
+    .any(|p| t.len() > p.len() && t.get(..p.len()).is_some_and(|h| h.eq_ignore_ascii_case(p)))
 }
 
 /// Parses every share link found in `text` (one per line). Lines that are
@@ -1261,5 +1261,15 @@ mod tests {
         ));
         assert!(!looks_like_link("https://example.com"));
         assert!(looks_like_link("  VLESS://x"));
+    }
+
+    #[test]
+    fn non_ascii_text_is_not_a_link() {
+        assert!(!looks_like_link("日本語日本語日本語"));
+        assert!(!looks_like_link("Привет, это подписка"));
+        assert!(!looks_like_link("🚀🚀🚀🚀 servers"));
+        let (servers, failed) = parse_many("节点列表 日本語日本語\nvless://u@h:1#n");
+        assert_eq!(servers.len(), 1);
+        assert!(failed.is_empty());
     }
 }

@@ -29,6 +29,9 @@ use crate::subscription_object::SubscriptionObject;
 const MAX_LOG_LINES: usize = 500;
 const MAX_ACCESS_EVENTS: usize = 1000;
 
+/// Callback receiving the id of the fastest server, if any.
+type LatencyDone = Box<dyn FnOnce(Option<String>)>;
+
 /// Boxed access event so it can travel through a GLib signal.
 #[derive(Clone, Debug, glib::Boxed)]
 #[boxed_type(name = "ObscureAccessEventBox")]
@@ -124,8 +127,13 @@ mod imp {
         /// Incremented per connection attempt; events from an older session
         /// are ignored so a slow shutdown cannot clobber the new one.
         pub session: Cell<u64>,
-        /// Set by `disconnect()` while the fastest-server test runs.
-        pub cancel_auto: Cell<bool>,
+        /// Identifies the current "connect to the fastest server" attempt;
+        /// `disconnect()` bumps it so a pending result is ignored.
+        pub auto_attempt: Cell<u64>,
+        /// Callers waiting for the latency test that is already running.
+        pub latency_waiters: RefCell<Vec<super::LatencyDone>>,
+        /// Shown once by the first window (e.g. unreadable profiles file).
+        pub startup_warning: RefCell<Option<String>>,
     }
 
     impl Default for ConnectionManager {
@@ -154,7 +162,9 @@ mod imp {
                 cmd_tx: RefCell::new(None),
                 last_error: RefCell::new(None),
                 session: Cell::new(0),
-                cancel_auto: Cell::new(false),
+                auto_attempt: Cell::new(0),
+                latency_waiters: RefCell::new(Vec::new()),
+                startup_warning: RefCell::new(None),
             }
         }
     }
@@ -216,16 +226,20 @@ impl ConnectionManager {
     // -- profiles -----------------------------------------------------------
 
     fn load_profiles(&self) {
-        let profiles = match Profiles::load(&paths::profiles_file()) {
-            Ok(p) => p,
-            Err(e) => {
-                tracing::error!("cannot load profiles: {e}");
-                Profiles::default()
-            }
-        };
+        let (profiles, backup) = Profiles::load_or_recover(&paths::profiles_file());
+        if backup.is_some() {
+            self.imp()
+                .startup_warning
+                .replace(Some(profiles_recovered_message()));
+        }
         *self.imp().profiles.borrow_mut() = profiles;
         self.sync_from_profiles();
         self.resolve_countries();
+    }
+
+    /// A message for the user that arose before any window existed.
+    pub fn take_startup_warning(&self) -> Option<String> {
+        self.imp().startup_warning.take()
     }
 
     fn save_profiles(&self) {
@@ -537,6 +551,8 @@ impl ConnectionManager {
     /// the id of the fastest server, if any.
     pub fn test_all_latency(&self, done: impl FnOnce(Option<String>) + 'static) {
         if self.testing() {
+            // Join the running test instead of dropping `done`.
+            self.imp().latency_waiters.borrow_mut().push(Box::new(done));
             return;
         }
         let entries: Vec<(String, Server)> = self
@@ -564,21 +580,29 @@ impl ConnectionManager {
             self,
             async move {
                 let results = task.await.unwrap_or_default();
+                let mut results = results.into_iter();
                 let mut best: Option<(u32, String)> = None;
-                for ((id, _), r) in entries.iter().zip(results) {
-                    let ms = match r {
-                        Ok(ms) => {
+                for (id, _) in &entries {
+                    // A missing result (the task failed) counts as a failure,
+                    // so no row is left showing "testing".
+                    let ms = match results.next() {
+                        Some(Ok(ms)) => {
                             if best.as_ref().is_none_or(|(b, _)| ms < *b) {
                                 best = Some((ms, id.clone()));
                             }
                             ms as i32
                         }
-                        Err(_) => LATENCY_FAILED,
+                        _ => LATENCY_FAILED,
                     };
                     this.set_latency(id, ms);
                 }
                 this.set_testing(false);
-                done(best.map(|(_, id)| id));
+                let best = best.map(|(_, id)| id);
+                let waiters = this.imp().latency_waiters.take();
+                done(best.clone());
+                for w in waiters {
+                    w(best.clone());
+                }
             }
         ));
     }
@@ -822,17 +846,18 @@ impl ConnectionManager {
         {
             // Pick the fastest server first, then connect to it.
             self.set_busy(true);
-            self.imp().cancel_auto.set(false);
+            let attempt = self.imp().auto_attempt.get() + 1;
+            self.imp().auto_attempt.set(attempt);
             self.set_status_text(gettext("Finding the fastest server…"));
             self.test_all_latency(clone!(
                 #[weak(rename_to = this)]
                 self,
                 move |best| {
-                    this.set_busy(false);
-                    if this.imp().cancel_auto.replace(false) {
-                        this.set_status_text(gettext("Disconnected"));
+                    if this.imp().auto_attempt.get() != attempt {
+                        // Cancelled (or superseded) while testing.
                         return;
                     }
+                    this.set_busy(false);
                     if let Some(id) = best {
                         let mut p = this.imp().profiles.borrow_mut();
                         p.selected = Some(id);
@@ -914,8 +939,12 @@ impl ConnectionManager {
     pub fn disconnect(&self) {
         let tx = self.imp().cmd_tx.borrow().clone();
         if tx.is_none() && self.busy() {
-            // Still choosing the fastest server: abort that instead.
-            self.imp().cancel_auto.set(true);
+            // Still choosing the fastest server: abort that instead. The
+            // test may keep running; its result is ignored.
+            let imp = self.imp();
+            imp.auto_attempt.set(imp.auto_attempt.get() + 1);
+            self.set_busy(false);
+            self.set_status_text(gettext("Disconnected"));
             return;
         }
         if let Some(tx) = tx {
@@ -1353,4 +1382,10 @@ fn helper_path() -> std::path::PathBuf {
         return build.to_path_buf();
     }
     installed
+}
+
+fn profiles_recovered_message() -> String {
+    gettext(
+        "Your saved servers could not be read. A copy was kept next to the settings file and the list starts empty.",
+    )
 }

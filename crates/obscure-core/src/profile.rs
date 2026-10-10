@@ -202,6 +202,36 @@ impl Profiles {
         }
     }
 
+    /// Like [`Profiles::load`], but never loses the user's data: a file that
+    /// cannot be parsed is moved aside to `<name>.corrupt-<unix time>` before
+    /// falling back to the default, so the next save does not overwrite it.
+    /// Returns the backup path when that happened.
+    pub fn load_or_recover(path: &Path) -> (Self, Option<std::path::PathBuf>) {
+        match Self::load(path) {
+            Ok(p) => (p, None),
+            Err(Error::Json(e)) => {
+                let secs = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| d.as_secs());
+                let mut name = path.file_name().unwrap_or_default().to_os_string();
+                name.push(format!(".corrupt-{secs}"));
+                let backup = path.with_file_name(name);
+                tracing::error!("cannot parse {}: {e}", path.display());
+                match std::fs::rename(path, &backup) {
+                    Ok(()) => (Self::default(), Some(backup)),
+                    Err(err) => {
+                        tracing::error!("cannot move {} aside: {err}", path.display());
+                        (Self::default(), None)
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::error!("cannot load profiles: {e}");
+                (Self::default(), None)
+            }
+        }
+    }
+
     /// Atomically writes to `path` with mode 0600 (it holds credentials).
     pub fn save(&self, path: &Path) -> Result<()> {
         crate::paths::write_private(path, &serde_json::to_vec_pretty(self)?)
@@ -398,6 +428,32 @@ fn host_of(url: &str) -> Option<String> {
 mod tests {
     use super::*;
     use crate::links::parse_link;
+
+    #[test]
+    fn corrupt_file_is_moved_aside_not_overwritten() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("profiles.json");
+        std::fs::write(&path, b"{\"servers\": [{\"kind\": \"from-the-future\"").unwrap();
+        let (p, backup) = Profiles::load_or_recover(&path);
+        assert!(p.servers.is_empty());
+        let backup = backup.expect("backup path");
+        assert!(!path.exists());
+        assert_eq!(
+            std::fs::read(&backup).unwrap(),
+            b"{\"servers\": [{\"kind\": \"from-the-future\""
+        );
+        assert!(
+            backup
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .starts_with("profiles.json.corrupt-")
+        );
+        // Missing file: plain default, nothing to report.
+        let (_, none) = Profiles::load_or_recover(&path);
+        assert!(none.is_none());
+    }
 
     fn fetched(names: &[u16]) -> Fetched {
         Fetched {

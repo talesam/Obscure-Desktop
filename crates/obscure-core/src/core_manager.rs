@@ -19,6 +19,15 @@ const CORE_STAMP: &str = "core-checked";
 /// The core release list is consulted at most once per this interval.
 pub const CORE_UPDATE_INTERVAL: Duration = Duration::from_secs(24 * 3600);
 /// Geo files are refreshed at most once per this interval.
+/// Connection setup limit for every request: networks that silently drop
+/// GitHub traffic must not leave "Connecting…" hanging forever.
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+/// Maximum silence between two reads of a response body (large downloads
+/// have no total limit, only this one).
+const READ_TIMEOUT: Duration = Duration::from_secs(30);
+/// Total limit for small requests (release list, checksums).
+const API_TIMEOUT: Duration = Duration::from_secs(20);
+
 pub const GEO_UPDATE_INTERVAL: Duration = Duration::from_secs(24 * 3600);
 
 /// Progress of a download/installation, for the UI.
@@ -73,6 +82,16 @@ pub fn parse_version(tag: &str) -> Option<(u32, u32, u32)> {
     Some((a, b, c))
 }
 
+/// `true` if `release` should replace `installed`: never downgrade, and
+/// replace anything whose version cannot be read.
+fn is_upgrade(release: &str, installed: Option<&str>) -> bool {
+    match (parse_version(release), installed.and_then(parse_version)) {
+        (Some(new), Some(old)) => new > old,
+        (_, None) => true,
+        (None, Some(_)) => false,
+    }
+}
+
 /// `true` when this core version can set up tunnel routing on its own.
 pub fn supports_tun_routing(tag: &str) -> bool {
     parse_version(tag).is_some_and(|v| v >= MIN_TUN_ROUTING_VERSION)
@@ -92,6 +111,8 @@ pub fn asset_name() -> Result<&'static str> {
 pub struct CoreManager {
     dir: PathBuf,
     client: reqwest::Client,
+    releases_api: String,
+    api_timeout: Duration,
 }
 
 impl CoreManager {
@@ -99,9 +120,24 @@ impl CoreManager {
         crate::init_crypto();
         let client = reqwest::Client::builder()
             .user_agent(user_agent)
+            .connect_timeout(CONNECT_TIMEOUT)
+            .read_timeout(READ_TIMEOUT)
             .build()
             .expect("reqwest client");
-        Self { dir, client }
+        Self {
+            dir,
+            client,
+            releases_api: RELEASES_API.to_owned(),
+            api_timeout: API_TIMEOUT,
+        }
+    }
+
+    /// Points release lookups at another API (tests use a local server).
+    #[doc(hidden)]
+    pub fn with_releases_api(mut self, url: &str, timeout: Duration) -> Self {
+        self.releases_api = url.trim_end_matches('/').to_owned();
+        self.api_timeout = timeout;
+        self
     }
 
     pub fn dir(&self) -> &Path {
@@ -131,11 +167,17 @@ impl CoreManager {
     pub async fn latest_release(&self, prerelease: bool) -> Result<Release> {
         let asset = asset_name()?;
         let url = if prerelease {
-            format!("{RELEASES_API}?per_page=10")
+            format!("{}?per_page=10", self.releases_api)
         } else {
-            format!("{RELEASES_API}/latest")
+            format!("{}/latest", self.releases_api)
         };
-        let resp = self.client.get(&url).send().await?.error_for_status()?;
+        let resp = self
+            .client
+            .get(&url)
+            .timeout(self.api_timeout)
+            .send()
+            .await?
+            .error_for_status()?;
         let releases: Vec<ApiRelease> = if prerelease {
             resp.json().await?
         } else {
@@ -173,6 +215,7 @@ impl CoreManager {
         let dgst = self
             .client
             .get(&release.dgst_url)
+            .timeout(self.api_timeout)
             .send()
             .await?
             .error_for_status()?
@@ -272,11 +315,28 @@ impl CoreManager {
             }
             Err(e) => return Err(e),
         };
-        if installed.as_deref() != Some(release.version.as_str()) {
-            self.install(&release, progress).await?;
+        if !is_upgrade(&release.version, installed.as_deref()) {
+            self.touch_core_stamp();
+            return Ok(installed.unwrap_or(release.version));
         }
-        self.touch_core_stamp();
-        Ok(release.version)
+        match self.install(&release, progress).await {
+            Ok(()) => {
+                self.touch_core_stamp();
+                Ok(release.version)
+            }
+            // A failed upgrade must not block connecting with a working core;
+            // the stamp postpones the next attempt by a day.
+            Err(e) if installed.is_some() => {
+                tracing::warn!(
+                    "core upgrade to {} failed, keeping {}: {e}",
+                    release.version,
+                    installed.as_deref().unwrap_or("?")
+                );
+                self.touch_core_stamp();
+                Ok(installed.unwrap())
+            }
+            Err(e) => Err(e),
+        }
     }
 
     /// Makes sure the installed core can do tunnel routing, installing the
@@ -342,6 +402,7 @@ impl CoreManager {
             let sum = self
                 .client
                 .get(format!("{GEO_BASE}/{name}.sha256sum"))
+                .timeout(self.api_timeout)
                 .send()
                 .await?
                 .error_for_status()?
@@ -489,6 +550,98 @@ mod tests {
         assert!(supports_tun_routing("v26.7.11"));
         assert!(supports_tun_routing("v26.9.9"));
         assert!(!supports_tun_routing(""));
+    }
+
+    #[test]
+    fn never_downgrades() {
+        assert!(is_upgrade("v26.9.9", Some("v26.7.11")));
+        assert!(!is_upgrade("v26.7.11", Some("v26.9.9")));
+        assert!(!is_upgrade("v26.9.9", Some("v26.9.9")));
+        assert!(is_upgrade("v26.9.9", None));
+        assert!(is_upgrade("v26.9.9", Some("garbage")));
+        assert!(!is_upgrade("garbage", Some("v26.9.9")));
+    }
+
+    /// Minimal HTTP server: `/releases` lists one release whose assets point
+    /// back here; every other path answers 500. With `hang`, it accepts
+    /// connections and never answers.
+    async fn fake_github(hang: bool) -> String {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let asset = asset_name().unwrap();
+        let body = format!(
+            r#"[{{"tag_name":"v99.1.1","prerelease":true,"assets":[{{"name":"{asset}","browser_download_url":"{base}/zip"}},{{"name":"{asset}.dgst","browser_download_url":"{base}/dgst"}}]}}]"#
+        );
+        tokio::spawn(async move {
+            let mut held = Vec::new();
+            loop {
+                let Ok((mut sock, _)) = listener.accept().await else {
+                    return;
+                };
+                if hang {
+                    held.push(sock);
+                    continue;
+                }
+                let mut buf = [0u8; 4096];
+                let n = sock.read(&mut buf).await.unwrap_or(0);
+                let req = String::from_utf8_lossy(&buf[..n]);
+                let resp = if req.starts_with("GET /releases") {
+                    format!(
+                        "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                        body.len()
+                    )
+                } else {
+                    "HTTP/1.1 500 Oops\r\ncontent-length: 0\r\nconnection: close\r\n\r\n".into()
+                };
+                let _ = sock.write_all(resp.as_bytes()).await;
+            }
+        });
+        format!("{base}/releases")
+    }
+
+    fn fake_installed_core(dir: &Path, version: &str) {
+        for f in ["xray", "geoip.dat", "geosite.dat"] {
+            std::fs::write(dir.join(f), b"x").unwrap();
+        }
+        std::fs::write(dir.join("VERSION"), version).unwrap();
+    }
+
+    #[tokio::test]
+    async fn failed_upgrade_keeps_working_core() {
+        let dir = tempfile::tempdir().unwrap();
+        fake_installed_core(dir.path(), "v26.9.9");
+        let api = fake_github(false).await;
+        let mgr = CoreManager::new(dir.path().to_path_buf(), "test")
+            .with_releases_api(&api, Duration::from_secs(5));
+        let v = mgr
+            .ensure_latest(|_| {})
+            .await
+            .expect("keeps installed core");
+        assert_eq!(v, "v26.9.9");
+        assert!(!mgr.core_needs_check(), "retry postponed");
+
+        // Nothing installed: the failure is reported.
+        let empty = tempfile::tempdir().unwrap();
+        let mgr = CoreManager::new(empty.path().to_path_buf(), "test")
+            .with_releases_api(&api, Duration::from_secs(5));
+        assert!(mgr.ensure_latest(|_| {}).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn unresponsive_api_times_out() {
+        let dir = tempfile::tempdir().unwrap();
+        fake_installed_core(dir.path(), "v26.9.9");
+        let api = fake_github(true).await;
+        let mgr = CoreManager::new(dir.path().to_path_buf(), "test")
+            .with_releases_api(&api, Duration::from_millis(500));
+        let started = std::time::Instant::now();
+        let v = tokio::time::timeout(Duration::from_secs(10), mgr.ensure_latest(|_| {}))
+            .await
+            .expect("must not hang")
+            .expect("falls back to installed core");
+        assert_eq!(v, "v26.9.9");
+        assert!(started.elapsed() < Duration::from_secs(5));
     }
 
     #[test]

@@ -95,31 +95,45 @@ impl SysProxy {
     pub async fn apply(&self, port: u16) -> Result<()> {
         let mut state = State::load(&self.state_file)?;
         let mut backup = state.proxy_backup.take().unwrap_or_default();
-        let mut touched = false;
-
-        if let Some(gnome) = gnome_settings() {
-            if backup.gnome.is_none() {
-                backup.gnome = Some(gnome_read(&gnome));
+        let kde = kde_available();
+        // `gio::Settings` is not `Send`: keep it out of the `.await`s below.
+        let has_gnome = {
+            let gnome = gnome_settings();
+            if let Some(g) = &gnome
+                && backup.gnome.is_none()
+            {
+                backup.gnome = Some(gnome_read(g));
             }
-            gnome_write(&gnome, port);
-            touched = true;
-        }
-
-        if kde_available() {
-            if backup.kde.is_none() {
-                backup.kde = Some(kde_read(&self.kioslaverc));
-            }
-            kde_write(port).await?;
-            touched = true;
-        }
-
-        if !touched {
+            gnome.is_some()
+        };
+        if !has_gnome && !kde {
             return Err(Error::SysProxy(
                 "no supported desktop found (GNOME GSettings or KDE kioslaverc)".into(),
             ));
         }
+        if kde && backup.kde.is_none() {
+            backup.kde = Some(kde_read(&self.kioslaverc));
+        }
+        // Persist the backup before touching anything: if a write below
+        // fails, or the app dies halfway, `restore` still has what it needs.
         state.proxy_backup = Some(backup);
-        state.save(&self.state_file)
+        state.save(&self.state_file)?;
+
+        if let Some(g) = gnome_settings() {
+            gnome_write(&g, port);
+        }
+        if kde && let Err(e) = kde_write(port).await {
+            if has_gnome {
+                // GNOME-family settings are applied; KDE apps just miss out.
+                tracing::warn!("KDE proxy settings not applied: {e}");
+            } else {
+                if let Err(re) = self.restore().await {
+                    tracing::warn!("cannot roll back the system proxy: {re}");
+                }
+                return Err(e);
+            }
+        }
+        Ok(())
     }
 
     /// Restores whatever `apply` changed and marks the state clean.

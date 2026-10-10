@@ -12,19 +12,19 @@
 //!   by a polkit `CheckAuthorization`. This is the path Flatpak will need,
 //!   since `pkexec` cannot be used from inside the sandbox.
 
+mod caps;
 mod dbus;
 mod validate;
 
 use std::path::Path;
-use std::process::{Command, ExitCode};
-
-/// File capabilities Xray needs for the `tun` inbound.
-pub const REQUIRED_CAPS: &str = "cap_net_admin,cap_net_raw,cap_net_bind_service+ep";
+use std::process::ExitCode;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.as_slice() {
-        [cmd, path] if cmd == "grant-tun" => run(grant_tun(Path::new(path))),
+        [cmd, path] if cmd == "grant-tun" => {
+            run(validate::pkexec_uid().and_then(|uid| grant_tun(Path::new(path), uid)))
+        }
         [cmd, path] if cmd == "check-tun" => run(check_tun(Path::new(path))),
         [flag] if flag == "--dbus" => run(dbus::serve()),
         _ => {
@@ -46,26 +46,25 @@ fn run(result: Result<(), String>) -> ExitCode {
     }
 }
 
-/// Grants the capabilities after validating the target.
-pub fn grant_tun(path: &Path) -> Result<(), String> {
-    let path = validate::xray_binary(path)?;
-    let status = Command::new("setcap")
-        .arg(REQUIRED_CAPS)
-        .arg(&path)
-        .status()
-        .map_err(|e| format!("cannot run setcap: {e}"))?;
-    if !status.success() {
-        return Err(format!("setcap failed with {status}"));
-    }
+/// Grants the capabilities to the Xray binary of user `owner` after
+/// validating it. Returns the resulting `getcap`-style line.
+pub fn grant_tun(path: &Path, owner: u32) -> Result<(), String> {
+    let file = validate::open_xray_binary(path, Some(owner))?;
+    caps::set(&file, caps::TUN_CAPS)
+}
+
+/// Prints `<path> <caps>` like `getcap`, or nothing when there are none.
+fn check_tun(path: &Path) -> Result<(), String> {
+    println!("{}", describe_caps(path)?);
     Ok(())
 }
 
-fn check_tun(path: &Path) -> Result<(), String> {
-    let path = validate::xray_binary(path)?;
-    let out = Command::new("getcap")
-        .arg(&path)
-        .output()
-        .map_err(|e| format!("cannot run getcap: {e}"))?;
-    print!("{}", String::from_utf8_lossy(&out.stdout));
-    Ok(())
+pub fn describe_caps(path: &Path) -> Result<String, String> {
+    let file = validate::open_xray_binary(path, None)?;
+    let caps = caps::describe(&caps::get(&file)?);
+    Ok(if caps.is_empty() {
+        String::new()
+    } else {
+        format!("{} {caps}", path.display())
+    })
 }

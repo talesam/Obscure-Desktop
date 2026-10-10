@@ -24,14 +24,22 @@ impl Helper {
         let sender = header
             .sender()
             .ok_or_else(|| zbus::fdo::Error::Failed("no sender".into()))?
-            .to_string();
-        check_authorization(connection, &sender).await?;
-        crate::grant_tun(std::path::Path::new(&path)).map_err(zbus::fdo::Error::Failed)?;
-        let out = std::process::Command::new("getcap")
-            .arg(&path)
-            .output()
-            .map_err(|e| zbus::fdo::Error::Failed(e.to_string()))?;
-        Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
+            .to_owned();
+        let failed = |e: String| zbus::fdo::Error::Failed(e);
+        // Only the caller's own Xray binary may receive capabilities.
+        let uid = zbus::fdo::DBusProxy::new(connection)
+            .await?
+            .get_connection_unix_user(sender.clone().into())
+            .await?;
+        check_authorization(connection, sender.as_str(), &path).await?;
+        tokio::task::spawn_blocking(move || {
+            let p = std::path::Path::new(&path);
+            crate::grant_tun(p, uid)?;
+            crate::describe_caps(p)
+        })
+        .await
+        .map_err(|e| failed(e.to_string()))?
+        .map_err(failed)
     }
 
     /// Protocol version, for clients to detect the helper.
@@ -43,7 +51,11 @@ impl Helper {
 
 /// Asks polkit whether `sender` may perform the action, allowing
 /// interactive authentication (the agent shows the password dialog).
-async fn check_authorization(connection: &zbus::Connection, sender: &str) -> zbus::fdo::Result<()> {
+async fn check_authorization(
+    connection: &zbus::Connection,
+    sender: &str,
+    path: &str,
+) -> zbus::fdo::Result<()> {
     let proxy = zbus::Proxy::new(
         connection,
         "org.freedesktop.PolicyKit1",
@@ -56,7 +68,10 @@ async fn check_authorization(connection: &zbus::Connection, sender: &str) -> zbu
     let mut details = std::collections::HashMap::new();
     details.insert("name", Value::from(sender));
     let subject = ("system-bus-name", details);
-    let action_details: std::collections::HashMap<&str, &str> = std::collections::HashMap::new();
+    // Same detail pkexec provides, so the dialog names the target file.
+    let command_line = format!("obscure-helper grant-tun {path}");
+    let action_details: std::collections::HashMap<&str, &str> =
+        [("command_line", command_line.as_str())].into();
     let flags: u32 = 1; // AllowUserInteraction
     let cancellation_id = "";
 
