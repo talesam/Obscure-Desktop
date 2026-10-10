@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-10 20:20-0300\n"
+"POT-Creation-Date: 2026-10-10 20:46-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: 한국어\n"
@@ -26,7 +26,7 @@ msgid "Proxy Client"
 msgstr "프록시 클라이언트"
 
 #. Translators: the slogan of the app
-#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:488
+#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:498
 msgid "Connect. That's it."
 msgstr "연결하세요. 그게 다입니다."
 
@@ -107,7 +107,7 @@ msgstr "메인 메뉴"
 msgid "Paste a link or a subscription to get started."
 msgstr "시작하려면 링크나 구독을 붙여 넣으세요."
 
-#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:597 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:625 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "연결"
 
@@ -319,11 +319,11 @@ msgstr "엔진 설정 편집"
 msgid "See or replace the JSON that Obscure sends to Xray."
 msgstr "Obscure가 Xray에 보내는 JSON을 보거나 바꿉니다."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:560 crates/obscure-app/src/window.rs:589 crates/obscure-app/src/window.rs:701 crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:588 crates/obscure-app/src/window.rs:617 crates/obscure-app/src/window.rs:729 crates/obscure-app/src/preferences_dialog.rs:236
 msgid "Cancel"
 msgstr "취소"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:236
 msgid "Add"
 msgstr "추가"
 
@@ -351,163 +351,170 @@ msgstr "스크린샷을 찍어 그 안의 QR 코드 읽기"
 msgid "QR from Screen"
 msgstr "화면에서 QR"
 
-#: crates/obscure-app/src/application.rs:123
+#: crates/obscure-app/src/application.rs:124
 msgid "The system proxy settings from a previous session were restored."
 msgstr "이전 세션의 시스템 프록시 설정을 복원했습니다."
 
+#: crates/obscure-app/src/application.rs:198
+msgid "Start hidden in the tray (used by autostart)"
+msgstr "트레이에 숨긴 채로 시작 (자동 시작에서 사용)"
+
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:485
+#: crates/obscure-app/src/application.rs:495
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:489
+#: crates/obscure-app/src/application.rs:499
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Obscure는 첫 실행 시 별도로 다운로드되는 Xray-core를 사용합니다."
 
-#: crates/obscure-app/src/application.rs:495
+#: crates/obscure-app/src/application.rs:505
 msgid "Project plan"
 msgstr "프로젝트 계획"
 
-#: crates/obscure-app/src/window.rs:225
+#: crates/obscure-app/src/window.rs:235
 msgid "The clipboard does not contain a server link."
 msgstr "클립보드에 서버 링크가 없습니다."
 
-#: crates/obscure-app/src/window.rs:247
+#: crates/obscure-app/src/window.rs:257
 msgid "Text files"
 msgstr "텍스트 파일"
 
-#: crates/obscure-app/src/window.rs:254
+#: crates/obscure-app/src/window.rs:264
 msgid "Import servers from a file"
 msgstr "파일에서 서버 가져오기"
 
-#: crates/obscure-app/src/window.rs:274
+#: crates/obscure-app/src/window.rs:299
 msgid "Could not read that file."
 msgstr "해당 파일을 읽을 수 없습니다."
 
-#: crates/obscure-app/src/window.rs:362
+#: crates/obscure-app/src/window.rs:387
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "환경 변수를 복사했습니다. 터미널에 붙여 넣으세요."
 
-#: crates/obscure-app/src/window.rs:507
+#: crates/obscure-app/src/window.rs:535
 msgid "Update now"
 msgstr "지금 업데이트"
 
-#: crates/obscure-app/src/window.rs:537
+#: crates/obscure-app/src/window.rs:565
 msgid "Remove subscription"
 msgstr "구독 제거"
 
-#: crates/obscure-app/src/window.rs:554
+#: crates/obscure-app/src/window.rs:582
 msgid "Remove “%s” and all its servers?"
 msgstr "“%s”과(와) 그 모든 서버를 제거할까요?"
 
-#: crates/obscure-app/src/window.rs:556
+#: crates/obscure-app/src/window.rs:584
 msgid "You can add the subscription again later by pasting its address."
 msgstr "나중에 주소를 붙여 넣어 구독을 다시 추가할 수 있습니다."
 
-#: crates/obscure-app/src/window.rs:561 crates/obscure-app/src/window.rs:702 crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:589 crates/obscure-app/src/window.rs:730 crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "제거"
 
-#: crates/obscure-app/src/window.rs:581 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:609 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "연결 끊기"
 
-#: crates/obscure-app/src/window.rs:680
+#: crates/obscure-app/src/window.rs:708
 msgid "Server details"
 msgstr "서버 정보"
 
-#: crates/obscure-app/src/window.rs:697
+#: crates/obscure-app/src/window.rs:725
 msgid "Remove “%s”?"
 msgstr "“%s”을(를) 제거할까요?"
 
-#: crates/obscure-app/src/window.rs:698
+#: crates/obscure-app/src/window.rs:726
 msgid "You can add it again later by pasting its link."
 msgstr "나중에 링크를 붙여 넣어 다시 추가할 수 있습니다."
 
-#. / Toast text after an import. Kept out of macros so xgettext sees it.
-#: crates/obscure-app/src/window.rs:721
+#: crates/obscure-app/src/window.rs:752
+msgid "That file is too large to be a list of servers."
+msgstr "이 파일은 서버 목록이라기에는 너무 큽니다."
+
+#: crates/obscure-app/src/window.rs:756
 msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:%s."
 msgstr "시스템은 아무것도 바뀌지 않습니다. 원하는 프로그램을 127.0.0.1:%s으로 설정하세요."
 
-#: crates/obscure-app/src/window.rs:727
+#: crates/obscure-app/src/window.rs:762
 msgid "These servers were already added."
 msgstr "이 서버들은 이미 추가되어 있습니다."
 
-#: crates/obscure-app/src/window.rs:729
+#: crates/obscure-app/src/window.rs:764
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "서버 %n개를 추가했습니다."
 
-#: crates/obscure-app/src/window.rs:735
+#: crates/obscure-app/src/window.rs:770
 msgid "Downloading the subscription…"
 msgstr "구독 다운로드 중…"
 
-#: crates/obscure-app/src/window.rs:740
+#: crates/obscure-app/src/window.rs:775
 msgid "Subscription updated: %n server."
 msgid_plural "Subscription updated: %n servers."
 msgstr[0] "구독을 업데이트했습니다: 서버 %n개."
 
-#: crates/obscure-app/src/connection.rs:226 crates/obscure-app/src/connection.rs:968 crates/obscure-app/src/connection.rs:985 crates/obscure-app/src/connection.rs:1074
+#: crates/obscure-app/src/connection.rs:228 crates/obscure-app/src/connection.rs:970 crates/obscure-app/src/connection.rs:987 crates/obscure-app/src/connection.rs:1078
 msgid "Disconnected"
 msgstr "연결 끊김"
 
-#: crates/obscure-app/src/connection.rs:879
+#: crates/obscure-app/src/connection.rs:881
 msgid "Finding the fastest server…"
 msgstr "가장 빠른 서버를 찾는 중…"
 
-#: crates/obscure-app/src/connection.rs:909
+#: crates/obscure-app/src/connection.rs:911
 msgid "Choose a server to connect"
 msgstr "연결할 서버를 선택하세요"
 
-#: crates/obscure-app/src/connection.rs:927 crates/obscure-app/src/connection.rs:1046
+#: crates/obscure-app/src/connection.rs:929 crates/obscure-app/src/connection.rs:1048
 msgid "Connecting…"
 msgstr "연결 중…"
 
-#: crates/obscure-app/src/connection.rs:990
+#: crates/obscure-app/src/connection.rs:992
 msgid "Disconnecting…"
 msgstr "연결 끊는 중…"
 
-#: crates/obscure-app/src/connection.rs:1013
+#: crates/obscure-app/src/connection.rs:1015
 msgid "Preparing the connection engine…"
 msgstr "연결 엔진 준비 중…"
 
-#: crates/obscure-app/src/connection.rs:1024
+#: crates/obscure-app/src/connection.rs:1026
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "연결 엔진 다운로드 중: %a / %b MB"
 
-#: crates/obscure-app/src/connection.rs:1027
+#: crates/obscure-app/src/connection.rs:1029
 msgid "Downloading the connection engine: %a MB"
 msgstr "연결 엔진 다운로드 중: %a MB"
 
-#: crates/obscure-app/src/connection.rs:1032
+#: crates/obscure-app/src/connection.rs:1034
 msgid "Verifying the download…"
 msgstr "다운로드 확인 중…"
 
-#: crates/obscure-app/src/connection.rs:1034
+#: crates/obscure-app/src/connection.rs:1036
 msgid "Installing the connection engine…"
 msgstr "연결 엔진 설치 중…"
 
-#: crates/obscure-app/src/connection.rs:1063
+#: crates/obscure-app/src/connection.rs:1065
 msgid "Connected · system proxy active"
 msgstr "연결됨 · 시스템 프록시 활성"
 
-#: crates/obscure-app/src/connection.rs:1064
+#: crates/obscure-app/src/connection.rs:1066
 msgid "Connected · local proxy only"
 msgstr "연결됨 · 로컬 프록시만"
 
-#: crates/obscure-app/src/connection.rs:1065
+#: crates/obscure-app/src/connection.rs:1067
 msgid "Connected · all traffic through the tunnel"
 msgstr "연결됨 · 모든 트래픽이 터널 경유"
 
-#: crates/obscure-app/src/connection.rs:1069
+#: crates/obscure-app/src/connection.rs:1072
 msgid "Connected"
 msgstr "연결됨"
 
-#: crates/obscure-app/src/connection.rs:1086
+#: crates/obscure-app/src/connection.rs:1090
 msgid "Connection failed"
 msgstr "연결 실패"
 
-#: crates/obscure-app/src/connection.rs:1441
+#: crates/obscure-app/src/connection.rs:1472
 msgid "Your saved servers could not be read. A copy was kept next to the settings file and the list starts empty."
 msgstr "저장된 서버를 읽을 수 없습니다. 설정 파일 옆에 사본을 남겼으며 목록은 비어 있는 상태로 시작합니다."
 
@@ -619,7 +626,7 @@ msgstr "터널 모드는 모든 트래픽을 라우팅하기 위해 사용자의
 msgid "The custom configuration is not valid JSON."
 msgstr "사용자 설정이 올바른 JSON이 아닙니다."
 
-#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:253
+#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:259
 msgid "No valid link found."
 msgstr "올바른 링크를 찾을 수 없습니다."
 
@@ -631,27 +638,27 @@ msgstr "이미지"
 msgid "Choose an image with a QR code"
 msgstr "QR 코드가 있는 이미지 선택"
 
-#: crates/obscure-app/src/import_dialog.rs:97 crates/obscure-app/src/import_dialog.rs:149
-msgid "No QR code was found in that image."
-msgstr "그 이미지에서 QR 코드를 찾을 수 없습니다."
-
-#: crates/obscure-app/src/import_dialog.rs:119
+#: crates/obscure-app/src/import_dialog.rs:125
 msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
 msgstr "화면에서 QR 코드를 찾을 수 없습니다. 완전히 보이는지 확인하고 다시 시도하세요."
 
-#: crates/obscure-app/src/import_dialog.rs:246
+#: crates/obscure-app/src/import_dialog.rs:252
 msgid "Subscription address: the servers will be downloaded and kept up to date."
 msgstr "구독 주소: 서버를 다운로드하고 최신 상태로 유지합니다."
 
-#: crates/obscure-app/src/import_dialog.rs:256
+#: crates/obscure-app/src/import_dialog.rs:262
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
 msgstr[0] "추가할 수 있는 서버 %n개."
 
-#: crates/obscure-app/src/import_dialog.rs:266
+#: crates/obscure-app/src/import_dialog.rs:272
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
 msgstr[0] "링크 %n개를 읽을 수 없습니다."
+
+#: crates/obscure-app/src/import_dialog.rs:295
+msgid "No QR code was found in that image."
+msgstr "그 이미지에서 QR 코드를 찾을 수 없습니다."
 
 #: crates/obscure-app/src/tray.rs:87
 msgid "Show Obscure"
@@ -693,43 +700,43 @@ msgstr "아직 기록이 없습니다. 연결하면 엔진의 보고 내용을 �
 msgid "Link copied."
 msgstr "링크를 복사했습니다."
 
-#: crates/obscure-app/src/preferences_dialog.rs:126
+#: crates/obscure-app/src/preferences_dialog.rs:128
 msgid "The system did not allow Obscure to start automatically."
 msgstr "시스템이 Obscure의 자동 시작을 허용하지 않았습니다."
 
-#: crates/obscure-app/src/preferences_dialog.rs:137
+#: crates/obscure-app/src/preferences_dialog.rs:139
 msgid "Automatic start is not available on this system."
 msgstr "이 시스템에서는 자동 시작을 사용할 수 없습니다."
 
-#: crates/obscure-app/src/preferences_dialog.rs:189
+#: crates/obscure-app/src/preferences_dialog.rs:191
 msgid "Remove rule"
 msgstr "규칙 제거"
 
-#: crates/obscure-app/src/preferences_dialog.rs:215
+#: crates/obscure-app/src/preferences_dialog.rs:217
 msgid "New rule"
 msgstr "새 규칙"
 
-#: crates/obscure-app/src/preferences_dialog.rs:216
+#: crates/obscure-app/src/preferences_dialog.rs:218
 msgid "What should match, and where it goes."
 msgstr "무엇과 일치해야 하고 어디로 보낼지."
 
-#: crates/obscure-app/src/preferences_dialog.rs:220
+#: crates/obscure-app/src/preferences_dialog.rs:222
 msgid "Domain, address or category"
 msgstr "도메인, 주소 또는 카테고리"
 
-#: crates/obscure-app/src/preferences_dialog.rs:223 crates/obscure-app/src/preferences_dialog.rs:274
+#: crates/obscure-app/src/preferences_dialog.rs:225 crates/obscure-app/src/preferences_dialog.rs:309
 msgid "Through the server"
 msgstr "서버 경유"
 
-#: crates/obscure-app/src/preferences_dialog.rs:224 crates/obscure-app/src/preferences_dialog.rs:275
+#: crates/obscure-app/src/preferences_dialog.rs:226 crates/obscure-app/src/preferences_dialog.rs:310
 msgid "Direct"
 msgstr "직접"
 
-#: crates/obscure-app/src/preferences_dialog.rs:225 crates/obscure-app/src/preferences_dialog.rs:276
+#: crates/obscure-app/src/preferences_dialog.rs:227 crates/obscure-app/src/preferences_dialog.rs:311
 msgid "Block"
 msgstr "차단"
 
-#: crates/obscure-app/src/preferences_dialog.rs:228
+#: crates/obscure-app/src/preferences_dialog.rs:230
 msgid "Send to"
 msgstr "보낼 곳"
 

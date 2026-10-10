@@ -74,6 +74,7 @@ mod imp {
                 .expect("settings set once");
             self.obj().handle_termination_signals();
             self.obj().setup_tray();
+            self.obj().follow_background_policy();
             self.obj().setup_notifications();
             self.obj().setup_global_shortcut();
             self.first_activation.set(true);
@@ -132,6 +133,9 @@ mod imp {
         /// `obscure vless://…` or clicking a share link in a browser.
         fn open(&self, files: &[gio::File], _hint: &str) {
             let app = self.obj();
+            // Opening a link is an explicit request: show the window even
+            // if this launch also asked to start minimized.
+            self.start_minimized.set(false);
             app.activate();
             let text: Vec<String> = files.iter().map(|f| f.uri().to_string()).collect();
             if let Some(win) = app.active_window().and_downcast::<ObscureWindow>() {
@@ -191,7 +195,7 @@ impl ObscureApplication {
             glib::Char::from(0),
             glib::OptionFlags::NONE,
             glib::OptionArg::None,
-            "Start hidden in the tray (used by autostart)",
+            &gettext("Start hidden in the tray (used by autostart)"),
             None,
         );
         app
@@ -360,16 +364,22 @@ impl ObscureApplication {
         self.imp().tray.borrow().is_some() && self.settings().boolean("run-in-background")
     }
 
-    /// Hides instead of destroying the window when running in background,
-    /// and follows the preference live.
+    /// Hides instead of destroying the window when running in background.
     fn apply_background_policy(&self, win: &ObscureWindow) {
         win.set_hide_on_close(self.runs_in_background());
-        let app = self.clone();
-        let win_weak = win.downgrade();
+    }
+
+    /// Follows the "run in background" preference live, for every window.
+    /// Registered once (it used to be once per window and per tray start).
+    fn follow_background_policy(&self) {
+        let app = self.downgrade();
         self.settings()
             .connect_changed(Some("run-in-background"), move |_, _| {
-                if let Some(win) = win_weak.upgrade() {
-                    win.set_hide_on_close(app.runs_in_background());
+                let Some(app) = app.upgrade() else { return };
+                for win in app.windows() {
+                    if let Ok(win) = win.downcast::<ObscureWindow>() {
+                        app.apply_background_policy(&win);
+                    }
                 }
             });
     }

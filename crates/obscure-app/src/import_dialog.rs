@@ -90,13 +90,19 @@ mod imp {
                     move |result| {
                         let Ok(file) = result else { return };
                         let Some(path) = file.path() else { return };
-                        match crate::qr::decode_image_file(&path) {
-                            Ok(text) => obj.set_text(&text),
-                            Err(e) => {
-                                tracing::warn!("QR decode failed: {e}");
-                                obj.show_hint(&gettext("No QR code was found in that image."));
+                        // Decoding a large photo takes a while: off the UI thread.
+                        let task = crate::runtime::runtime()
+                            .spawn_blocking(move || crate::qr::decode_image_file(&path));
+                        glib::spawn_future_local(async move {
+                            match task.await {
+                                Ok(Ok(text)) => obj.set_text(&text),
+                                Ok(Err(e)) => {
+                                    tracing::warn!("QR decode failed: {e}");
+                                    obj.show_hint(&no_qr_in_image_message());
+                                }
+                                Err(_) => {}
                             }
-                        }
+                        });
                     }
                 ),
             );
@@ -143,11 +149,11 @@ mod imp {
                         && let Some(texture) = texture
                     {
                         let png = texture.save_to_png_bytes();
-                        match crate::qr::decode_image_bytes(&png) {
-                            Ok(text) => obj.set_text(&text),
-                            Err(_) => {
-                                obj.show_hint(&gettext("No QR code was found in that image."))
-                            }
+                        let task = crate::runtime::runtime()
+                            .spawn_blocking(move || crate::qr::decode_image_bytes(&png));
+                        match task.await {
+                            Ok(Ok(text)) => obj.set_text(&text),
+                            _ => obj.show_hint(&no_qr_in_image_message()),
                         }
                     }
                 }
@@ -283,4 +289,8 @@ fn subscription_url_in(text: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+fn no_qr_in_image_message() -> String {
+    gettext("No QR code was found in that image.")
 }

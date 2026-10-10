@@ -42,7 +42,11 @@ pub struct AccessEventBox(pub AccessEvent);
 enum UiEvent {
     Progress(Progress),
     Log(String),
-    Connected,
+    /// Connected. `first` is false after an automatic core restart, which
+    /// must not notify the user again.
+    Connected {
+        first: bool,
+    },
     /// The core died and is being restarted (attempt number).
     Restarting(u32),
     Traffic(TrafficSample),
@@ -1054,7 +1058,7 @@ impl ConnectionManager {
                     format_bytes(sample.total.uplink + sample.total.downlink)
                 ));
             }
-            UiEvent::Connected => {
+            UiEvent::Connected { first } => {
                 self.set_progress_visible(false);
                 self.set_busy(false);
                 self.set_connected(true);
@@ -1064,10 +1068,12 @@ impl ConnectionManager {
                     ApplyMode::LocalOnly => gettext("Connected · local proxy only"),
                     ApplyMode::Tunnel => gettext("Connected · all traffic through the tunnel"),
                 });
-                self.emit_by_name::<()>(
-                    "notification",
-                    &[&gettext("Connected"), &self.selected_name(), &false],
-                );
+                if first {
+                    self.emit_by_name::<()>(
+                        "notification",
+                        &[&gettext("Connected"), &self.selected_name(), &false],
+                    );
+                }
             }
             UiEvent::Disconnected => {
                 self.finish_disconnected();
@@ -1180,7 +1186,7 @@ async fn actor(
             return;
         }
     };
-    send(UiEvent::Connected);
+    send(UiEvent::Connected { first: true });
 
     // Refresh geo data in the background at most once a day.
     if manager.geo_needs_update() {
@@ -1229,12 +1235,12 @@ async fn actor(
                         _ = tokio::time::sleep(delay) => {}
                         _ = cmds.recv() => break Ok(()),
                     }
-                    match supervisor.start(&cfg_path, params.local_port).await {
+                    match restart_core(&supervisor, &cfg_path, &params, &ui).await {
                         Ok(c) => {
                             core = c;
                             started_at = tokio::time::Instant::now();
                             meter = RateMeter::default();
-                            send(UiEvent::Connected);
+                            send(UiEvent::Connected { first: false });
                         }
                         Err(e) => break Err(e),
                     }
@@ -1385,6 +1391,33 @@ async fn setup_session(
         api_port,
         cfg_path,
     })
+}
+
+/// Starts the core again after a crash. In tunnel mode "connected" again
+/// means routed again, exactly like the first start.
+async fn restart_core(
+    supervisor: &Supervisor,
+    cfg_path: &std::path::Path,
+    params: &SessionParams,
+    ui: &async_channel::Sender<UiEvent>,
+) -> obscure_core::Result<RunningCore> {
+    let core = supervisor.start(cfg_path, params.local_port).await?;
+    if params.apply_mode == ApplyMode::Tunnel {
+        let _ = ui.send_blocking(UiEvent::Log(
+            "tunnel: waiting for the route after the restart".into(),
+        ));
+        if let Err(e) = obscure_core::tun::wait_until_routed(
+            obscure_core::config::TUN_NAME,
+            ("1.1.1.1", 443),
+            Duration::from_secs(20),
+        )
+        .await
+        {
+            core.stop().await;
+            return Err(e);
+        }
+    }
+    Ok(core)
 }
 
 /// Restores the system proxy if a backup exists (no-op otherwise).

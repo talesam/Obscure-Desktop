@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-10 20:20-0300\n"
+"POT-Creation-Date: 2026-10-10 20:46-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Magyar\n"
@@ -26,7 +26,7 @@ msgid "Proxy Client"
 msgstr "Proxykliens"
 
 #. Translators: the slogan of the app
-#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:488
+#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:498
 msgid "Connect. That's it."
 msgstr "Csatlakozzon. Ennyi."
 
@@ -107,7 +107,7 @@ msgstr "Főmenü"
 msgid "Paste a link or a subscription to get started."
 msgstr "A kezdéshez illesszen be egy hivatkozást vagy előfizetést."
 
-#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:597 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:625 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Csatlakozás"
 
@@ -319,11 +319,11 @@ msgstr "A motor konfigurációjának szerkesztése"
 msgid "See or replace the JSON that Obscure sends to Xray."
 msgstr "Az Obscure által az Xray-nek küldött JSON megtekintése vagy cseréje."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:560 crates/obscure-app/src/window.rs:589 crates/obscure-app/src/window.rs:701 crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:588 crates/obscure-app/src/window.rs:617 crates/obscure-app/src/window.rs:729 crates/obscure-app/src/preferences_dialog.rs:236
 msgid "Cancel"
 msgstr "Mégse"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:234
+#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:236
 msgid "Add"
 msgstr "Hozzáadás"
 
@@ -351,165 +351,172 @@ msgstr "Képernyőkép készítése és a rajta lévő QR-kód beolvasása"
 msgid "QR from Screen"
 msgstr "QR képernyőről"
 
-#: crates/obscure-app/src/application.rs:123
+#: crates/obscure-app/src/application.rs:124
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Az előző munkamenet rendszerproxy-beállításai visszaállítva."
 
+#: crates/obscure-app/src/application.rs:198
+msgid "Start hidden in the tray (used by autostart)"
+msgstr "Indítás rejtve a tálcán (az automatikus indítás használja)"
+
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:485
+#: crates/obscure-app/src/application.rs:495
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:489
+#: crates/obscure-app/src/application.rs:499
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Az Obscure az Xray-core-t használja, amely az első indításkor külön letöltődik."
 
-#: crates/obscure-app/src/application.rs:495
+#: crates/obscure-app/src/application.rs:505
 msgid "Project plan"
 msgstr "Projektterv"
 
-#: crates/obscure-app/src/window.rs:225
+#: crates/obscure-app/src/window.rs:235
 msgid "The clipboard does not contain a server link."
 msgstr "A vágólapon nincs kiszolgáló-hivatkozás."
 
-#: crates/obscure-app/src/window.rs:247
+#: crates/obscure-app/src/window.rs:257
 msgid "Text files"
 msgstr "Szövegfájlok"
 
-#: crates/obscure-app/src/window.rs:254
+#: crates/obscure-app/src/window.rs:264
 msgid "Import servers from a file"
 msgstr "Kiszolgálók importálása fájlból"
 
-#: crates/obscure-app/src/window.rs:274
+#: crates/obscure-app/src/window.rs:299
 msgid "Could not read that file."
 msgstr "Nem sikerült beolvasni azt a fájlt."
 
-#: crates/obscure-app/src/window.rs:362
+#: crates/obscure-app/src/window.rs:387
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Környezeti változók másolva. Illessze be egy terminálba."
 
-#: crates/obscure-app/src/window.rs:507
+#: crates/obscure-app/src/window.rs:535
 msgid "Update now"
 msgstr "Frissítés most"
 
-#: crates/obscure-app/src/window.rs:537
+#: crates/obscure-app/src/window.rs:565
 msgid "Remove subscription"
 msgstr "Előfizetés eltávolítása"
 
-#: crates/obscure-app/src/window.rs:554
+#: crates/obscure-app/src/window.rs:582
 msgid "Remove “%s” and all its servers?"
 msgstr "Eltávolítja: „%s” és minden kiszolgálóját?"
 
-#: crates/obscure-app/src/window.rs:556
+#: crates/obscure-app/src/window.rs:584
 msgid "You can add the subscription again later by pasting its address."
 msgstr "Az előfizetést később a cím beillesztésével újra hozzáadhatja."
 
-#: crates/obscure-app/src/window.rs:561 crates/obscure-app/src/window.rs:702 crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:589 crates/obscure-app/src/window.rs:730 crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Eltávolítás"
 
-#: crates/obscure-app/src/window.rs:581 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:609 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Bontás"
 
-#: crates/obscure-app/src/window.rs:680
+#: crates/obscure-app/src/window.rs:708
 msgid "Server details"
 msgstr "Kiszolgáló részletei"
 
-#: crates/obscure-app/src/window.rs:697
+#: crates/obscure-app/src/window.rs:725
 msgid "Remove “%s”?"
 msgstr "Eltávolítja: „%s”?"
 
-#: crates/obscure-app/src/window.rs:698
+#: crates/obscure-app/src/window.rs:726
 msgid "You can add it again later by pasting its link."
 msgstr "Később a hivatkozás beillesztésével újra hozzáadhatja."
 
-#. / Toast text after an import. Kept out of macros so xgettext sees it.
-#: crates/obscure-app/src/window.rs:721
+#: crates/obscure-app/src/window.rs:752
+msgid "That file is too large to be a list of servers."
+msgstr "Ez a fájl túl nagy ahhoz, hogy szerverlista legyen."
+
+#: crates/obscure-app/src/window.rs:756
 msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:%s."
 msgstr "A rendszerben semmi nem változik. Irányítsa a kívánt programokat a 127.0.0.1:%s címre."
 
-#: crates/obscure-app/src/window.rs:727
+#: crates/obscure-app/src/window.rs:762
 msgid "These servers were already added."
 msgstr "Ezek a kiszolgálók már hozzá voltak adva."
 
-#: crates/obscure-app/src/window.rs:729
+#: crates/obscure-app/src/window.rs:764
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "%n kiszolgáló hozzáadva."
 msgstr[1] "%n kiszolgáló hozzáadva."
 
-#: crates/obscure-app/src/window.rs:735
+#: crates/obscure-app/src/window.rs:770
 msgid "Downloading the subscription…"
 msgstr "Előfizetés letöltése…"
 
-#: crates/obscure-app/src/window.rs:740
+#: crates/obscure-app/src/window.rs:775
 msgid "Subscription updated: %n server."
 msgid_plural "Subscription updated: %n servers."
 msgstr[0] "Előfizetés frissítve: %n kiszolgáló."
 msgstr[1] "Előfizetés frissítve: %n kiszolgáló."
 
-#: crates/obscure-app/src/connection.rs:226 crates/obscure-app/src/connection.rs:968 crates/obscure-app/src/connection.rs:985 crates/obscure-app/src/connection.rs:1074
+#: crates/obscure-app/src/connection.rs:228 crates/obscure-app/src/connection.rs:970 crates/obscure-app/src/connection.rs:987 crates/obscure-app/src/connection.rs:1078
 msgid "Disconnected"
 msgstr "Nincs kapcsolat"
 
-#: crates/obscure-app/src/connection.rs:879
+#: crates/obscure-app/src/connection.rs:881
 msgid "Finding the fastest server…"
 msgstr "A leggyorsabb kiszolgáló keresése…"
 
-#: crates/obscure-app/src/connection.rs:909
+#: crates/obscure-app/src/connection.rs:911
 msgid "Choose a server to connect"
 msgstr "Válasszon kiszolgálót a csatlakozáshoz"
 
-#: crates/obscure-app/src/connection.rs:927 crates/obscure-app/src/connection.rs:1046
+#: crates/obscure-app/src/connection.rs:929 crates/obscure-app/src/connection.rs:1048
 msgid "Connecting…"
 msgstr "Csatlakozás…"
 
-#: crates/obscure-app/src/connection.rs:990
+#: crates/obscure-app/src/connection.rs:992
 msgid "Disconnecting…"
 msgstr "Bontás…"
 
-#: crates/obscure-app/src/connection.rs:1013
+#: crates/obscure-app/src/connection.rs:1015
 msgid "Preparing the connection engine…"
 msgstr "A kapcsolati motor előkészítése…"
 
-#: crates/obscure-app/src/connection.rs:1024
+#: crates/obscure-app/src/connection.rs:1026
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "A kapcsolati motor letöltése: %a / %b MB"
 
-#: crates/obscure-app/src/connection.rs:1027
+#: crates/obscure-app/src/connection.rs:1029
 msgid "Downloading the connection engine: %a MB"
 msgstr "A kapcsolati motor letöltése: %a MB"
 
-#: crates/obscure-app/src/connection.rs:1032
+#: crates/obscure-app/src/connection.rs:1034
 msgid "Verifying the download…"
 msgstr "A letöltés ellenőrzése…"
 
-#: crates/obscure-app/src/connection.rs:1034
+#: crates/obscure-app/src/connection.rs:1036
 msgid "Installing the connection engine…"
 msgstr "A kapcsolati motor telepítése…"
 
-#: crates/obscure-app/src/connection.rs:1063
+#: crates/obscure-app/src/connection.rs:1065
 msgid "Connected · system proxy active"
 msgstr "Csatlakozva · rendszerproxy aktív"
 
-#: crates/obscure-app/src/connection.rs:1064
+#: crates/obscure-app/src/connection.rs:1066
 msgid "Connected · local proxy only"
 msgstr "Csatlakozva · csak helyi proxy"
 
-#: crates/obscure-app/src/connection.rs:1065
+#: crates/obscure-app/src/connection.rs:1067
 msgid "Connected · all traffic through the tunnel"
 msgstr "Csatlakozva · minden forgalom az alagúton"
 
-#: crates/obscure-app/src/connection.rs:1069
+#: crates/obscure-app/src/connection.rs:1072
 msgid "Connected"
 msgstr "Csatlakozva"
 
-#: crates/obscure-app/src/connection.rs:1086
+#: crates/obscure-app/src/connection.rs:1090
 msgid "Connection failed"
 msgstr "A kapcsolódás nem sikerült"
 
-#: crates/obscure-app/src/connection.rs:1441
+#: crates/obscure-app/src/connection.rs:1472
 msgid "Your saved servers could not be read. A copy was kept next to the settings file and the list starts empty."
 msgstr "A mentett szervereket nem sikerült beolvasni. Egy másolat megmaradt a beállításfájl mellett, és a lista üresen indul."
 
@@ -621,7 +628,7 @@ msgstr "Az alagút módnak engedély kell a teljes forgalom irányításához."
 msgid "The custom configuration is not valid JSON."
 msgstr "Az egyéni konfiguráció nem érvényes JSON."
 
-#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:253
+#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:259
 msgid "No valid link found."
 msgstr "Nem található érvényes hivatkozás."
 
@@ -633,29 +640,29 @@ msgstr "Képek"
 msgid "Choose an image with a QR code"
 msgstr "Válasszon egy QR-kódot tartalmazó képet"
 
-#: crates/obscure-app/src/import_dialog.rs:97 crates/obscure-app/src/import_dialog.rs:149
-msgid "No QR code was found in that image."
-msgstr "Nem található QR-kód a képen."
-
-#: crates/obscure-app/src/import_dialog.rs:119
+#: crates/obscure-app/src/import_dialog.rs:125
 msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
 msgstr "Nem található QR-kód a képernyőn. Győződjön meg róla, hogy teljesen látható, és próbálja újra."
 
-#: crates/obscure-app/src/import_dialog.rs:246
+#: crates/obscure-app/src/import_dialog.rs:252
 msgid "Subscription address: the servers will be downloaded and kept up to date."
 msgstr "Előfizetés címe: a kiszolgálók letöltődnek és frissen maradnak."
 
-#: crates/obscure-app/src/import_dialog.rs:256
+#: crates/obscure-app/src/import_dialog.rs:262
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
 msgstr[0] "%n kiszolgáló hozzáadásra kész."
 msgstr[1] "%n kiszolgáló hozzáadásra kész."
 
-#: crates/obscure-app/src/import_dialog.rs:266
+#: crates/obscure-app/src/import_dialog.rs:272
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
 msgstr[0] "%n hivatkozás nem olvasható."
 msgstr[1] "%n hivatkozás nem olvasható."
+
+#: crates/obscure-app/src/import_dialog.rs:295
+msgid "No QR code was found in that image."
+msgstr "Nem található QR-kód a képen."
 
 #: crates/obscure-app/src/tray.rs:87
 msgid "Show Obscure"
@@ -697,43 +704,43 @@ msgstr "Még nincs naplóbejegyzés. Csatlakozzon, hogy lássa, mit jelent a mot
 msgid "Link copied."
 msgstr "Hivatkozás másolva."
 
-#: crates/obscure-app/src/preferences_dialog.rs:126
+#: crates/obscure-app/src/preferences_dialog.rs:128
 msgid "The system did not allow Obscure to start automatically."
 msgstr "A rendszer nem engedélyezte az Obscure automatikus indítását."
 
-#: crates/obscure-app/src/preferences_dialog.rs:137
+#: crates/obscure-app/src/preferences_dialog.rs:139
 msgid "Automatic start is not available on this system."
 msgstr "Az automatikus indítás nem érhető el ezen a rendszeren."
 
-#: crates/obscure-app/src/preferences_dialog.rs:189
+#: crates/obscure-app/src/preferences_dialog.rs:191
 msgid "Remove rule"
 msgstr "Szabály eltávolítása"
 
-#: crates/obscure-app/src/preferences_dialog.rs:215
+#: crates/obscure-app/src/preferences_dialog.rs:217
 msgid "New rule"
 msgstr "Új szabály"
 
-#: crates/obscure-app/src/preferences_dialog.rs:216
+#: crates/obscure-app/src/preferences_dialog.rs:218
 msgid "What should match, and where it goes."
 msgstr "Mire illeszkedjen, és hová menjen."
 
-#: crates/obscure-app/src/preferences_dialog.rs:220
+#: crates/obscure-app/src/preferences_dialog.rs:222
 msgid "Domain, address or category"
 msgstr "Domain, cím vagy kategória"
 
-#: crates/obscure-app/src/preferences_dialog.rs:223 crates/obscure-app/src/preferences_dialog.rs:274
+#: crates/obscure-app/src/preferences_dialog.rs:225 crates/obscure-app/src/preferences_dialog.rs:309
 msgid "Through the server"
 msgstr "A kiszolgálón át"
 
-#: crates/obscure-app/src/preferences_dialog.rs:224 crates/obscure-app/src/preferences_dialog.rs:275
+#: crates/obscure-app/src/preferences_dialog.rs:226 crates/obscure-app/src/preferences_dialog.rs:310
 msgid "Direct"
 msgstr "Közvetlen"
 
-#: crates/obscure-app/src/preferences_dialog.rs:225 crates/obscure-app/src/preferences_dialog.rs:276
+#: crates/obscure-app/src/preferences_dialog.rs:227 crates/obscure-app/src/preferences_dialog.rs:311
 msgid "Block"
 msgstr "Tiltás"
 
-#: crates/obscure-app/src/preferences_dialog.rs:228
+#: crates/obscure-app/src/preferences_dialog.rs:230
 msgid "Send to"
 msgstr "Küldés ide"
 

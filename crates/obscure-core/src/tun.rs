@@ -7,9 +7,6 @@ use std::process::Command;
 
 use crate::error::{Error, Result};
 
-/// File capabilities Xray needs for the `tun` inbound.
-pub const REQUIRED_CAPS: &str = "cap_net_admin,cap_net_raw,cap_net_bind_service+ep";
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CapStatus {
     /// All required capabilities are set.

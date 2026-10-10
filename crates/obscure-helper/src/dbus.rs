@@ -9,7 +9,13 @@ pub const BUS_NAME: &str = "io.github.talesam.Obscure.Helper";
 pub const OBJECT_PATH: &str = "/io/github/talesam/Obscure/Helper";
 const ACTION_ID: &str = "io.github.talesam.Obscure.grant-tun";
 
-struct Helper;
+/// The service is D-Bus activated, so it leaves after this long without a
+/// call instead of staying resident as root.
+const IDLE_EXIT: std::time::Duration = std::time::Duration::from_secs(60);
+
+struct Helper {
+    activity: std::sync::Arc<tokio::sync::Notify>,
+}
 
 #[interface(name = "io.github.talesam.Obscure.Helper")]
 impl Helper {
@@ -25,6 +31,7 @@ impl Helper {
             .sender()
             .ok_or_else(|| zbus::fdo::Error::Failed("no sender".into()))?
             .to_owned();
+        self.activity.notify_one();
         let failed = |e: String| zbus::fdo::Error::Failed(e);
         // Only the caller's own Xray binary may receive capabilities.
         let uid = zbus::fdo::DBusProxy::new(connection)
@@ -95,12 +102,18 @@ async fn check_authorization(
 /// Runs the service on the system bus until SIGTERM/SIGINT.
 pub fn serve() -> Result<(), String> {
     let rt = tokio::runtime::Runtime::new().map_err(|e| e.to_string())?;
+    let activity = std::sync::Arc::new(tokio::sync::Notify::new());
     rt.block_on(async {
         let _conn = zbus::connection::Builder::system()
             .map_err(|e| e.to_string())?
             .name(BUS_NAME)
             .map_err(|e| e.to_string())?
-            .serve_at(OBJECT_PATH, Helper)
+            .serve_at(
+                OBJECT_PATH,
+                Helper {
+                    activity: activity.clone(),
+                },
+            )
             .map_err(|e| e.to_string())?
             .build()
             .await
@@ -111,7 +124,38 @@ pub fn serve() -> Result<(), String> {
         tokio::select! {
             _ = term.recv() => {}
             _ = tokio::signal::ctrl_c() => {}
+            _ = wait_idle(&activity, IDLE_EXIT) => eprintln!("obscure-helper: idle, exiting"),
         }
         Ok(())
     })
+}
+
+/// Resolves once `idle` passes without a notification on `activity`.
+async fn wait_idle(activity: &tokio::sync::Notify, idle: std::time::Duration) {
+    while tokio::time::timeout(idle, activity.notified())
+        .await
+        .is_ok()
+    {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[tokio::test(start_paused = true)]
+    async fn idle_timer_restarts_on_activity() {
+        let activity = std::sync::Arc::new(tokio::sync::Notify::new());
+        let started = tokio::time::Instant::now();
+        let a = activity.clone();
+        tokio::spawn(async move {
+            for _ in 0..3 {
+                tokio::time::sleep(Duration::from_secs(40)).await;
+                a.notify_one();
+            }
+        });
+        wait_idle(&activity, Duration::from_secs(60)).await;
+        // Three calls 40 s apart, then 60 s of silence.
+        assert_eq!(started.elapsed().as_secs(), 180);
+    }
 }

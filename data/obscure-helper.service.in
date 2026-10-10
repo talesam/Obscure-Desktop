@@ -5,3 +5,33 @@ Description=Obscure privileged helper (tunnel permissions)
 Type=dbus
 BusName=io.github.talesam.Obscure.Helper
 ExecStart=@helper@ --dbus
+
+# The helper only opens the user's Xray binary and writes its
+# security.capability xattr. Everything else is locked down. /home must stay
+# writable for that xattr, so ProtectHome is not used; ProtectSystem=full
+# keeps /usr, /boot and /etc read-only, so even a validation bug could not
+# grant capabilities to a system binary.
+CapabilityBoundingSet=CAP_SETFCAP CAP_DAC_READ_SEARCH
+AmbientCapabilities=
+NoNewPrivileges=yes
+ProtectSystem=full
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+SystemCallFilter=fsetxattr
+UMask=0077

@@ -15,10 +15,9 @@ use crate::error::{Error, Result};
 /// Events emitted by a running core.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoreEvent {
-    /// A line from stdout/stderr.
+    /// A line from stdout/stderr. Exit is detected by polling
+    /// [`RunningCore::check_exit`].
     Log(String),
-    /// The process ended. `status` is a human string such as `exit code 1`.
-    Exited { status: String },
 }
 
 /// Handle to a running Xray process. Dropping it kills the process.
@@ -217,10 +216,8 @@ impl Supervisor {
                 .try_wait()
                 .map_err(|e| Error::io(&self.xray, e))?
             {
-                while let Ok(ev) = core.events.try_recv() {
-                    if let CoreEvent::Log(l) = ev {
-                        early_output.push(l);
-                    }
+                while let Ok(CoreEvent::Log(l)) = core.events.try_recv() {
+                    early_output.push(l);
                 }
                 return Err(Error::CoreExited {
                     status: describe_status(status),
