@@ -243,6 +243,86 @@ mod tests {
         assert_eq!(format_rate(2048.0), "2.0 kB/s");
     }
 
+    #[test]
+    fn odd_values_and_counter_resets() {
+        let stats = vec![
+            Stat {
+                name: "outbound>>>proxy>>>traffic>>>uplink".into(),
+                value: -5,
+            },
+            Stat {
+                name: "outbound>>>proxy>>>traffic>>>downlink".into(),
+                value: i64::MAX,
+            },
+            Stat {
+                name: "outbound>>>proxy>>>traffic>>>uplink\u{0}".into(),
+                value: 7,
+            },
+        ];
+        let t = traffic_from_stats(&stats);
+        assert_eq!(t.uplink, 0, "negative counters read as zero");
+        assert_eq!(t.downlink, i64::MAX as u64);
+        assert_eq!(traffic_from_stats(&[]), Traffic::default());
+
+        // Core restarted (counters dropped) and the clock did not advance.
+        let mut meter = RateMeter::default();
+        let t0 = Instant::now();
+        meter.update_at(t0, t);
+        let s = meter.update_at(t0, Traffic::default());
+        assert_eq!((s.up_rate, s.down_rate), (0.0, 0.0));
+        let s = meter.update_at(
+            t0,
+            Traffic {
+                uplink: u64::MAX,
+                downlink: 0,
+            },
+        );
+        assert!(s.up_rate.is_finite() && s.up_rate > 0.0);
+    }
+
+    #[test]
+    fn formats_extremes() {
+        assert_eq!(format_bytes(u64::MAX), "18446744 TB");
+        assert_eq!(format_bytes(999_999), "1000 kB");
+        assert_eq!(format_rate(f64::NAN), "0 B/s");
+        assert_eq!(format_rate(-1.0), "0 B/s");
+        assert!(format_rate(f64::INFINITY).ends_with("TB/s"));
+    }
+
+    #[test]
+    fn decoding_garbage_never_panics() {
+        let mut seed = 0x1234_5678_9ABC_DEF1u64;
+        let mut next = move || {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            seed
+        };
+        let valid = QueryStatsResponse {
+            stat: vec![Stat {
+                name: "outbound>>>proxy>>>traffic>>>downlink".into(),
+                value: 42,
+            }],
+        }
+        .encode_to_vec();
+        for i in 0..20_000 {
+            let bytes: Vec<u8> = if i % 2 == 0 {
+                (0..next() % 64).map(|_| next() as u8).collect()
+            } else {
+                let mut b = valid.clone();
+                for _ in 0..1 + next() % 4 {
+                    let pos = (next() as usize) % b.len();
+                    b[pos] = next() as u8;
+                }
+                b.truncate((next() as usize) % (b.len() + 1));
+                b
+            };
+            if let Ok(resp) = QueryStatsResponse::decode(bytes.as_slice()) {
+                let _ = traffic_from_stats(&resp.stat);
+            }
+        }
+    }
+
     #[tokio::test]
     async fn query_fails_cleanly_without_server() {
         let mut c = StatsClient::new(1).unwrap();

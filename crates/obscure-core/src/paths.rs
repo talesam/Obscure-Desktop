@@ -16,10 +16,87 @@ fn xdg(var: &str, fallback: &str) -> PathBuf {
         .unwrap_or_else(|| home().join(fallback))
 }
 
+/// The user's home directory. `$HOME` first; without it the password
+/// database (`std::env::home_dir` uses `getpwuid_r`); and only if that fails
+/// too, a private (0700, owned by us) fallback directory, never a shared
+/// one such as plain `/tmp`, since profiles hold credentials.
 fn home() -> PathBuf {
-    std::env::var_os("HOME")
+    if let Some(h) = std::env::var_os("HOME")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/tmp"))
+        .filter(|p| p.is_absolute())
+    {
+        return h;
+    }
+    if let Some(h) = std::env::home_dir().filter(|p| p.is_absolute()) {
+        return h;
+    }
+    static FALLBACK: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+    FALLBACK
+        .get_or_init(|| {
+            let runtime = std::env::var_os("XDG_RUNTIME_DIR")
+                .map(PathBuf::from)
+                .filter(|p| p.is_absolute());
+            let dir = private_fallback_home(runtime.as_deref(), Path::new("/tmp"));
+            tracing::warn!("no home directory found; using {}", dir.display());
+            dir
+        })
+        .clone()
+}
+
+/// UID of this process, read from `/proc/self` (no libc needed).
+fn current_uid() -> Option<u32> {
+    use std::os::unix::fs::MetadataExt;
+    std::fs::metadata("/proc/self").ok().map(|m| m.uid())
+}
+
+/// `true` if `dir` is a real directory (not a symlink) owned by `uid` and
+/// inaccessible to group and others.
+fn is_private_dir(dir: &Path, uid: Option<u32>) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    match std::fs::symlink_metadata(dir) {
+        Ok(m) => m.is_dir() && Some(m.uid()) == uid && m.mode() & 0o077 == 0,
+        Err(_) => false,
+    }
+}
+
+/// Creates (or reuses, after checking it is ours and 0700) a private home
+/// replacement: `$XDG_RUNTIME_DIR/obscure-home` if the runtime dir exists,
+/// else `<tmp>/obscure-<uid>`. If a squatter owns that name, a fresh
+/// uniquely named directory is created instead.
+fn private_fallback_home(runtime: Option<&Path>, tmp: &Path) -> PathBuf {
+    use std::os::unix::fs::DirBuilderExt;
+    let uid = current_uid();
+    let mut builder = std::fs::DirBuilder::new();
+    builder.mode(0o700);
+
+    if let Some(rt) = runtime.filter(|rt| is_private_dir(rt, uid)) {
+        let dir = rt.join("obscure-home");
+        let _ = builder.create(&dir);
+        if is_private_dir(&dir, uid) {
+            return dir;
+        }
+    }
+    let uid_str = uid.map_or_else(|| "unknown".to_owned(), |u| u.to_string());
+    let dir = tmp.join(format!("obscure-{uid_str}"));
+    let _ = builder.create(&dir);
+    if is_private_dir(&dir, uid) {
+        return dir;
+    }
+    // Someone else holds the name (or it has loose permissions). `create`
+    // fails if the path exists, so a directory it makes is always new, and
+    // the mode passed at creation is never widened by a pre-existing entry.
+    for n in 0u32.. {
+        let dir = tmp.join(format!("obscure-{uid_str}-{}-{n}", std::process::id()));
+        if builder.create(&dir).is_ok() && is_private_dir(&dir, uid) {
+            return dir;
+        }
+        if n > 1000 {
+            break;
+        }
+    }
+    // Nothing writable at all: there is nowhere safe to keep data, and any
+    // write below will fail with a clear I/O error rather than leak.
+    tmp.join(format!("obscure-{uid_str}"))
 }
 
 /// `~/.config/obscure`
@@ -167,6 +244,102 @@ mod tests {
         let got = std::fs::read(&path).unwrap();
         assert!(payloads.contains(&got), "file holds a mix of writers");
         assert!(leftovers(dir.path()).is_empty());
+    }
+
+    /// Runs in a child process (see `home_without_env_var_is_not_tmp`):
+    /// env mutation in-process would race with other tests.
+    #[test]
+    fn child_home_unset() {
+        if std::env::var_os("OBSCURE_PATHS_CHILD").is_none() {
+            return;
+        }
+        assert!(std::env::var_os("HOME").is_none());
+        let cfg = config_dir();
+        println!("CONFIG_DIR={}", cfg.display());
+        assert!(cfg.is_absolute());
+        assert!(!cfg.starts_with("/tmp/.config"), "{}", cfg.display());
+        if let Some(h) = std::env::home_dir() {
+            assert_eq!(cfg, h.join(".config/obscure"));
+        }
+    }
+
+    #[test]
+    fn home_without_env_var_is_not_tmp() {
+        let out = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "paths::tests::child_home_unset",
+                "--nocapture",
+                "--test-threads=1",
+            ])
+            .env("OBSCURE_PATHS_CHILD", "1")
+            .env_remove("HOME")
+            .env_remove("XDG_CONFIG_HOME")
+            .env_remove("XDG_DATA_HOME")
+            .env_remove("XDG_CACHE_HOME")
+            .output()
+            .unwrap();
+        let stdout = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            out.status.success(),
+            "child failed: {stdout}\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert!(
+            stdout.contains("CONFIG_DIR=/"),
+            "child did not run: {stdout}"
+        );
+    }
+
+    fn mode_of(p: &Path) -> u32 {
+        std::fs::symlink_metadata(p).unwrap().permissions().mode() & 0o777
+    }
+
+    #[test]
+    fn fallback_home_is_private_and_reused() {
+        let tmp = tempfile::tempdir().unwrap();
+        let a = private_fallback_home(None, tmp.path());
+        assert!(a.starts_with(tmp.path()));
+        assert!(a.is_dir());
+        assert_eq!(mode_of(&a), 0o700);
+        assert_eq!(private_fallback_home(None, tmp.path()), a, "reused");
+
+        // A runtime dir that is private wins over the tmp dir.
+        let rt = tmp.path().join("rt");
+        std::fs::create_dir(&rt).unwrap();
+        std::fs::set_permissions(&rt, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let b = private_fallback_home(Some(&rt), tmp.path());
+        assert_eq!(b, rt.join("obscure-home"));
+        assert_eq!(mode_of(&b), 0o700);
+
+        // A world-accessible runtime dir is not trusted.
+        std::fs::set_permissions(&rt, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(private_fallback_home(Some(&rt), tmp.path()), a);
+    }
+
+    #[test]
+    fn fallback_home_refuses_loose_or_symlinked_dirs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let uid = current_uid().unwrap();
+        let name = tmp.path().join(format!("obscure-{uid}"));
+
+        // Pre-created with loose permissions (could be someone else's trap).
+        std::fs::create_dir(&name).unwrap();
+        std::fs::set_permissions(&name, std::fs::Permissions::from_mode(0o777)).unwrap();
+        let got = private_fallback_home(None, tmp.path());
+        assert_ne!(got, name);
+        assert_eq!(mode_of(&got), 0o700);
+        assert_eq!(mode_of(&name), 0o777, "foreign dir left untouched");
+        std::fs::remove_dir(&name).unwrap();
+
+        // A symlink to a private dir is still refused.
+        let target = tmp.path().join("target");
+        std::fs::create_dir(&target).unwrap();
+        std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o700)).unwrap();
+        std::os::unix::fs::symlink(&target, &name).unwrap();
+        let got = private_fallback_home(None, tmp.path());
+        assert_ne!(got, name);
+        assert!(!std::fs::symlink_metadata(&got).unwrap().is_symlink());
     }
 
     #[test]

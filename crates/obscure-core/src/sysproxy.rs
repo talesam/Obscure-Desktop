@@ -57,6 +57,46 @@ impl State {
         }
     }
 
+    /// Like [`State::load`], but an unparsable file does not block the
+    /// system proxy forever: it is moved aside to
+    /// `state.json.corrupt-<unix time>` (kept for inspection) and an empty
+    /// state is returned. Read errors other than "not found" still fail.
+    pub fn load_or_quarantine(path: &Path) -> Result<Self> {
+        let bytes = match std::fs::read(path) {
+            Ok(b) => b,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Self::default()),
+            Err(e) => return Err(Error::io(path, e)),
+        };
+        match serde_json::from_slice(&bytes) {
+            Ok(s) => Ok(s),
+            Err(e) => {
+                let ts = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                let mut aside = path.as_os_str().to_owned();
+                aside.push(format!(".corrupt-{ts}"));
+                let aside = std::path::PathBuf::from(aside);
+                match std::fs::rename(path, &aside) {
+                    Ok(()) => tracing::warn!(
+                        "unreadable {} ({e}); moved to {} and starting clean",
+                        path.display(),
+                        aside.display()
+                    ),
+                    Err(re) => {
+                        tracing::warn!(
+                            "unreadable {} ({e}); cannot move it aside: {re}",
+                            path.display()
+                        );
+                        // Do not keep failing on it: replace it outright.
+                        Self::default().save(path)?;
+                    }
+                }
+                Ok(Self::default())
+            }
+        }
+    }
+
     pub fn save(&self, path: &Path) -> Result<()> {
         crate::paths::write_private(path, &serde_json::to_vec_pretty(self)?)
     }
@@ -82,10 +122,15 @@ impl SysProxy {
     }
 
     /// `true` if a previous session left the system proxy applied.
+    ///
+    /// A state file that exists but cannot be parsed counts as dirty
+    /// ("unknown"): `restore` then moves it aside instead of ignoring it.
     pub fn is_dirty(&self) -> bool {
-        State::load(&self.state_file)
-            .map(|s| s.proxy_backup.is_some())
-            .unwrap_or(false)
+        match State::load(&self.state_file) {
+            Ok(s) => s.proxy_backup.is_some(),
+            Err(Error::Io { .. }) => false,
+            Err(_) => true,
+        }
     }
 
     /// Points the desktop at `127.0.0.1:port` (HTTP, HTTPS and SOCKS).
@@ -93,19 +138,21 @@ impl SysProxy {
     /// backup already exists it is kept, so re-applying never overwrites the
     /// user's real settings with ours.
     pub async fn apply(&self, port: u16) -> Result<()> {
-        let mut state = State::load(&self.state_file)?;
+        let mut state = State::load_or_quarantine(&self.state_file)?;
         let mut backup = state.proxy_backup.take().unwrap_or_default();
         let kde = kde_available();
-        // `gio::Settings` is not `Send`: keep it out of the `.await`s below.
-        let has_gnome = {
-            let gnome = gnome_settings();
-            if let Some(g) = &gnome
-                && backup.gnome.is_none()
-            {
-                backup.gnome = Some(gnome_read(g));
-            }
-            gnome.is_some()
-        };
+        // GSettings reads/writes (and `sync`) block; keep them off the async
+        // workers. `gio::Settings` is not `Send`, so it lives entirely
+        // inside the blocking closure.
+        let need_gnome_backup = backup.gnome.is_none();
+        let (has_gnome, gnome_backup) = gnome_blocking(move || match gnome_settings() {
+            Some(g) => (true, need_gnome_backup.then(|| gnome_read(&g))),
+            None => (false, None),
+        })
+        .await?;
+        if gnome_backup.is_some() {
+            backup.gnome = gnome_backup;
+        }
         if !has_gnome && !kde {
             return Err(Error::SysProxy(
                 "no supported desktop found (GNOME GSettings or KDE kioslaverc)".into(),
@@ -119,8 +166,13 @@ impl SysProxy {
         state.proxy_backup = Some(backup);
         state.save(&self.state_file)?;
 
-        if let Some(g) = gnome_settings() {
-            gnome_write(&g, port);
+        if has_gnome {
+            gnome_blocking(move || {
+                if let Some(g) = gnome_settings() {
+                    gnome_write(&g, port);
+                }
+            })
+            .await?;
         }
         if kde && let Err(e) = kde_write(port).await {
             if has_gnome {
@@ -138,12 +190,17 @@ impl SysProxy {
 
     /// Restores whatever `apply` changed and marks the state clean.
     pub async fn restore(&self) -> Result<()> {
-        let mut state = State::load(&self.state_file)?;
+        let mut state = State::load_or_quarantine(&self.state_file)?;
         let Some(backup) = state.proxy_backup.take() else {
             return Ok(());
         };
-        if let (Some(b), Some(gnome)) = (&backup.gnome, gnome_settings()) {
-            gnome_restore(&gnome, b);
+        if let Some(b) = backup.gnome.clone() {
+            gnome_blocking(move || {
+                if let Some(g) = gnome_settings() {
+                    gnome_restore(&g, &b);
+                }
+            })
+            .await?;
         }
         if let Some(b) = &backup.kde
             && kde_available()
@@ -152,6 +209,13 @@ impl SysProxy {
         }
         state.save(&self.state_file)
     }
+}
+
+/// Runs GSettings work on the blocking pool.
+async fn gnome_blocking<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Result<T> {
+    tokio::task::spawn_blocking(f)
+        .await
+        .map_err(|e| Error::SysProxy(format!("gsettings task failed: {e}")))
 }
 
 // ---------------------------------------------------------------------------
@@ -249,10 +313,16 @@ fn kwriteconfig() -> Option<&'static str> {
         .find(|bin| which(bin))
 }
 
+/// `true` if an executable regular file named `bin` is on `PATH`.
 fn which(bin: &str) -> bool {
     std::env::var_os("PATH")
-        .map(|p| std::env::split_paths(&p).any(|d| d.join(bin).is_file()))
+        .map(|p| std::env::split_paths(&p).any(|d| is_executable(&d.join(bin))))
         .unwrap_or(false)
+}
+
+fn is_executable(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::metadata(path).is_ok_and(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
 }
 
 fn kde_available() -> bool {
@@ -389,6 +459,93 @@ mod tests {
         st.save(&path).unwrap();
         assert!(sp.is_dirty());
         assert_eq!(State::load(&path).unwrap(), st);
+    }
+
+    #[test]
+    fn parses_odd_kioslaverc_files() {
+        // No group at all.
+        assert_eq!(
+            parse_kioslaverc("ProxyType=1\nhttpProxy=x\n"),
+            KdeBackup::default()
+        );
+        // CRLF line endings, spaces around '=', duplicate keys (last wins,
+        // like KConfig) and the group appearing twice.
+        let text = "[Proxy Settings]\r\nProxyType = 1\r\nProxyType=2\r\n[Other]\r\nhttpProxy=no\r\n[Proxy Settings]\r\nhttpProxy=http://h 8080\r\nsocksProxy=\r\n";
+        let b = parse_kioslaverc(text);
+        assert_eq!(b.proxy_type.as_deref(), Some("2"));
+        assert_eq!(b.http_proxy.as_deref(), Some("http://h 8080"));
+        assert_eq!(b.socks_proxy.as_deref(), Some(""));
+        assert_eq!(b.https_proxy, None);
+        // Values may contain '='; garbage lines are skipped; no panics on
+        // unicode or a truncated header.
+        let b = parse_kioslaverc(
+            "[Proxy Settings]\nNoProxyFor=a=b,ç.example\njunk line\n=orphan\n[Proxy Sett",
+        );
+        assert_eq!(b.no_proxy_for.as_deref(), Some("a=b,ç.example"));
+        assert_eq!(parse_kioslaverc(""), KdeBackup::default());
+    }
+
+    #[test]
+    fn which_requires_the_exec_bit() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let f = dir.path().join("kwriteconfig6");
+        std::fs::write(&f, b"#!/bin/sh\n").unwrap();
+        std::fs::set_permissions(&f, std::fs::Permissions::from_mode(0o644)).unwrap();
+        assert!(!is_executable(&f));
+        std::fs::set_permissions(&f, std::fs::Permissions::from_mode(0o755)).unwrap();
+        assert!(is_executable(&f));
+        assert!(!is_executable(dir.path()), "directories do not count");
+        assert!(!is_executable(&dir.path().join("missing")));
+    }
+
+    fn corrupt_files(dir: &Path) -> Vec<String> {
+        std::fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .filter(|n| n.starts_with("state.json.corrupt-"))
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn corrupt_state_is_dirty_then_quarantined_by_restore() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("state.json");
+        std::fs::write(&path, b"{\"proxy_backup\": {\"gno").unwrap();
+        let sp = SysProxy::new(path.clone());
+        assert!(State::load(&path).is_err());
+        assert!(sp.is_dirty(), "unknown state must be looked at");
+        // Nothing known to restore, but the broken file no longer blocks.
+        sp.restore().await.unwrap();
+        assert!(!path.exists());
+        assert_eq!(corrupt_files(dir.path()).len(), 1);
+        assert!(!sp.is_dirty());
+        assert_eq!(State::load_or_quarantine(&path).unwrap(), State::default());
+    }
+
+    #[test]
+    fn quarantine_keeps_good_state_and_moves_bad_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("state.json");
+        assert_eq!(State::load_or_quarantine(&path).unwrap(), State::default());
+        let st = State {
+            proxy_backup: Some(ProxyBackup::default()),
+        };
+        st.save(&path).unwrap();
+        assert_eq!(State::load_or_quarantine(&path).unwrap(), st);
+        assert!(corrupt_files(dir.path()).is_empty());
+        for junk in [
+            &b""[..],
+            b"null",
+            b"[]",
+            b"\xff\xfe",
+            b"{\"proxy_backup\": 5}",
+        ] {
+            std::fs::write(&path, junk).unwrap();
+            assert_eq!(State::load_or_quarantine(&path).unwrap(), State::default());
+            assert!(!path.exists());
+        }
+        assert!(!corrupt_files(dir.path()).is_empty());
     }
 
     #[test]
