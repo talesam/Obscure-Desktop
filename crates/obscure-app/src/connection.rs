@@ -29,6 +29,9 @@ use crate::subscription_object::SubscriptionObject;
 const MAX_LOG_LINES: usize = 500;
 const MAX_ACCESS_EVENTS: usize = 1000;
 
+/// Callback receiving the id of the fastest server, if any.
+type LatencyDone = Box<dyn FnOnce(Option<String>)>;
+
 /// Boxed access event so it can travel through a GLib signal.
 #[derive(Clone, Debug, glib::Boxed)]
 #[boxed_type(name = "ObscureAccessEventBox")]
@@ -39,7 +42,11 @@ pub struct AccessEventBox(pub AccessEvent);
 enum UiEvent {
     Progress(Progress),
     Log(String),
-    Connected,
+    /// Connected. `first` is false after an automatic core restart, which
+    /// must not notify the user again.
+    Connected {
+        first: bool,
+    },
     /// The core died and is being restarted (attempt number).
     Restarting(u32),
     Traffic(TrafficSample),
@@ -56,7 +63,6 @@ struct SessionParams {
     listed_domains: Vec<String>,
     apply_mode: ApplyMode,
     dns: String,
-    prerelease: bool,
     custom_rules: Vec<RouteRule>,
     config_override: Option<String>,
 }
@@ -92,6 +98,9 @@ mod imp {
         pub selected_name: RefCell<String>,
         #[property(get, set)]
         pub has_servers: Cell<bool>,
+        /// Port of the local proxy (mirrors `Profiles::local_port`).
+        #[property(get, set)]
+        pub local_port: Cell<u32>,
         /// `local_only`, `system_proxy` or `tunnel` (mirrors ApplyMode).
         #[property(get, set)]
         pub apply_mode: RefCell<String>,
@@ -122,6 +131,16 @@ mod imp {
         pub access: RefCell<VecDeque<AccessEvent>>,
         pub cmd_tx: RefCell<Option<tokio::sync::mpsc::Sender<Cmd>>>,
         pub last_error: RefCell<Option<String>>,
+        /// Incremented per connection attempt; events from an older session
+        /// are ignored so a slow shutdown cannot clobber the new one.
+        pub session: Cell<u64>,
+        /// Identifies the current "connect to the fastest server" attempt;
+        /// `disconnect()` bumps it so a pending result is ignored.
+        pub auto_attempt: Cell<u64>,
+        /// Callers waiting for the latency test that is already running.
+        pub latency_waiters: RefCell<Vec<super::LatencyDone>>,
+        /// Shown once by the first window (e.g. unreadable profiles file).
+        pub startup_warning: RefCell<Option<String>>,
     }
 
     impl Default for ConnectionManager {
@@ -134,6 +153,7 @@ mod imp {
                 progress_visible: Cell::new(false),
                 selected_name: RefCell::new(String::new()),
                 has_servers: Cell::new(false),
+                local_port: Cell::new(u32::from(obscure_core::DEFAULT_LOCAL_PORT)),
                 apply_mode: RefCell::new("system_proxy".into()),
                 traffic_text: RefCell::new(String::new()),
                 route_preset: RefCell::new("smart".into()),
@@ -149,6 +169,10 @@ mod imp {
                 access: RefCell::new(VecDeque::new()),
                 cmd_tx: RefCell::new(None),
                 last_error: RefCell::new(None),
+                session: Cell::new(0),
+                auto_attempt: Cell::new(0),
+                latency_waiters: RefCell::new(Vec::new()),
+                startup_warning: RefCell::new(None),
             }
         }
     }
@@ -210,16 +234,20 @@ impl ConnectionManager {
     // -- profiles -----------------------------------------------------------
 
     fn load_profiles(&self) {
-        let profiles = match Profiles::load(&paths::profiles_file()) {
-            Ok(p) => p,
-            Err(e) => {
-                tracing::error!("cannot load profiles: {e}");
-                Profiles::default()
-            }
-        };
+        let (profiles, backup) = Profiles::load_or_recover(&paths::profiles_file());
+        if backup.is_some() {
+            self.imp()
+                .startup_warning
+                .replace(Some(profiles_recovered_message()));
+        }
         *self.imp().profiles.borrow_mut() = profiles;
         self.sync_from_profiles();
         self.resolve_countries();
+    }
+
+    /// A message for the user that arose before any window existed.
+    pub fn take_startup_warning(&self) -> Option<String> {
+        self.imp().startup_warning.take()
     }
 
     fn save_profiles(&self) {
@@ -282,6 +310,7 @@ impl ConnectionManager {
         self.set_apply_mode(mode_to_str(profiles.apply_mode));
         self.set_route_preset(preset_to_str(profiles.route_preset));
         self.set_auto_select(profiles.auto_select);
+        self.set_local_port(u32::from(profiles.local_port));
     }
 
     pub fn subscriptions(&self) -> &gio::ListStore {
@@ -319,7 +348,7 @@ impl ConnectionManager {
         if changed {
             self.save_profiles();
             self.set_route_preset(preset_to_str(preset));
-            if self.connected() {
+            if self.session_active() {
                 self.reconnect();
             }
         }
@@ -348,7 +377,7 @@ impl ConnectionManager {
         };
         if changed {
             self.save_profiles();
-            if self.connected() {
+            if self.session_active() {
                 self.reconnect();
             }
         }
@@ -363,14 +392,14 @@ impl ConnectionManager {
         };
         if changed {
             self.save_profiles();
-            if self.connected() {
+            if self.session_active() {
                 self.reconnect();
             }
         }
     }
 
     /// Updates connection settings from Preferences. Reconnects if needed.
-    pub fn update_settings(&self, local_port: u16, dns: &str, prerelease: bool) {
+    pub fn update_settings(&self, local_port: u16, dns: &str) {
         let dns = if dns.trim().is_empty() {
             obscure_core::profile::DEFAULT_DNS.to_owned()
         } else {
@@ -378,15 +407,15 @@ impl ConnectionManager {
         };
         let changed = {
             let mut p = self.imp().profiles.borrow_mut();
-            let changed = p.local_port != local_port || p.dns != dns || p.prerelease != prerelease;
+            let changed = p.local_port != local_port || p.dns != dns;
             p.local_port = local_port;
             p.dns = dns;
-            p.prerelease = prerelease;
             changed
         };
         if changed {
             self.save_profiles();
-            if self.connected() {
+            self.set_local_port(u32::from(local_port));
+            if self.session_active() {
                 self.reconnect();
             }
         }
@@ -532,6 +561,8 @@ impl ConnectionManager {
     /// the id of the fastest server, if any.
     pub fn test_all_latency(&self, done: impl FnOnce(Option<String>) + 'static) {
         if self.testing() {
+            // Join the running test instead of dropping `done`.
+            self.imp().latency_waiters.borrow_mut().push(Box::new(done));
             return;
         }
         let entries: Vec<(String, Server)> = self
@@ -559,21 +590,29 @@ impl ConnectionManager {
             self,
             async move {
                 let results = task.await.unwrap_or_default();
+                let mut results = results.into_iter();
                 let mut best: Option<(u32, String)> = None;
-                for ((id, _), r) in entries.iter().zip(results) {
-                    let ms = match r {
-                        Ok(ms) => {
+                for (id, _) in &entries {
+                    // A missing result (the task failed) counts as a failure,
+                    // so no row is left showing "testing".
+                    let ms = match results.next() {
+                        Some(Ok(ms)) => {
                             if best.as_ref().is_none_or(|(b, _)| ms < *b) {
                                 best = Some((ms, id.clone()));
                             }
                             ms as i32
                         }
-                        Err(_) => LATENCY_FAILED,
+                        _ => LATENCY_FAILED,
                     };
                     this.set_latency(id, ms);
                 }
                 this.set_testing(false);
-                done(best.map(|(_, id)| id));
+                let best = best.map(|(_, id)| id);
+                let waiters = this.imp().latency_waiters.take();
+                done(best.clone());
+                for w in waiters {
+                    w(best.clone());
+                }
             }
         ));
     }
@@ -721,7 +760,7 @@ impl ConnectionManager {
         if changed {
             self.save_profiles();
             self.set_apply_mode(mode_to_str(mode));
-            if self.connected() {
+            if self.session_active() {
                 self.reconnect();
             }
         }
@@ -749,6 +788,9 @@ impl ConnectionManager {
                 access.push_back(ev.clone());
             }
             self.emit_by_name::<()>("access-event", &[&AccessEventBox(ev)]);
+            // Access lines live in "Live connections"; keeping them here too
+            // would push Xray's errors out of the 500-line log in minutes.
+            return;
         }
         {
             let mut log = self.imp().log.borrow_mut();
@@ -764,11 +806,18 @@ impl ConnectionManager {
         self.imp().log.borrow_mut().clear();
     }
 
+    pub fn clear_access_events(&self) {
+        self.imp().access.borrow_mut().clear();
+    }
+
     // -- connection ---------------------------------------------------------
 
     /// Restores a system proxy left behind by a crash. Returns `true` if
     /// something was restored.
     pub fn recover_from_crash(&self) -> bool {
+        // A core left running by a killed app would keep the port (and, in
+        // tunnel mode, the routes) while nothing controls it.
+        runtime().block_on(core_supervisor().stop_orphan());
         let sysproxy = SysProxy::new(paths::state_file());
         if !sysproxy.is_dirty() {
             return false;
@@ -799,13 +848,25 @@ impl ConnectionManager {
             self,
             async move {
                 let mut tries = 0;
-                while (this.busy() || this.connected()) && tries < 50 {
+                while (this.busy() || this.connected()) && tries < 300 {
                     glib::timeout_future(Duration::from_millis(100)).await;
                     tries += 1;
                 }
-                this.connect();
+                if this.busy() || this.connected() {
+                    tracing::warn!("previous session did not stop in time; not reconnecting");
+                    return;
+                }
+                // Same server: a settings change must not re-run the
+                // automatic "fastest server" pick and switch servers.
+                this.connect_selected();
             }
         ));
+    }
+
+    /// `true` while a session is running or starting (not during the
+    /// fastest-server test, which reads the settings only when it ends).
+    fn session_active(&self) -> bool {
+        self.connected() || self.imp().cmd_tx.borrow().is_some()
     }
 
     pub fn connect(&self) {
@@ -817,11 +878,17 @@ impl ConnectionManager {
         {
             // Pick the fastest server first, then connect to it.
             self.set_busy(true);
+            let attempt = self.imp().auto_attempt.get() + 1;
+            self.imp().auto_attempt.set(attempt);
             self.set_status_text(gettext("Finding the fastest server…"));
             self.test_all_latency(clone!(
                 #[weak(rename_to = this)]
                 self,
                 move |best| {
+                    if this.imp().auto_attempt.get() != attempt {
+                        // Cancelled (or superseded) while testing.
+                        return;
+                    }
                     this.set_busy(false);
                     if let Some(id) = best {
                         let mut p = this.imp().profiles.borrow_mut();
@@ -846,16 +913,7 @@ impl ConnectionManager {
             self.set_status_text(gettext("Choose a server to connect"));
             return;
         };
-        let (
-            local_port,
-            preset,
-            listed,
-            apply_mode,
-            dns,
-            prerelease,
-            custom_rules,
-            config_override,
-        ) = {
+        let (local_port, preset, listed, apply_mode, dns, custom_rules, config_override) = {
             let p = self.imp().profiles.borrow();
             (
                 p.local_port,
@@ -863,7 +921,6 @@ impl ConnectionManager {
                 p.listed_domains.clone(),
                 p.apply_mode,
                 p.dns.clone(),
-                p.prerelease,
                 p.custom_rules.clone(),
                 p.config_override.clone(),
             )
@@ -880,7 +937,6 @@ impl ConnectionManager {
             listed_domains: listed,
             apply_mode,
             dns,
-            prerelease,
             custom_rules,
             config_override,
         };
@@ -888,6 +944,8 @@ impl ConnectionManager {
         let (ui_tx, ui_rx) = async_channel::unbounded::<UiEvent>();
         let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel::<Cmd>(4);
         *self.imp().cmd_tx.borrow_mut() = Some(cmd_tx);
+        let session = self.imp().session.get() + 1;
+        self.imp().session.set(session);
 
         let user_agent = obscure_core::user_agent(obscure_core::APP_VERSION);
         runtime().spawn(actor(params, user_agent, ui_tx, cmd_rx));
@@ -897,7 +955,24 @@ impl ConnectionManager {
             self,
             async move {
                 while let Ok(ev) = ui_rx.recv().await {
+                    if this.imp().session.get() != session {
+                        // A newer session took over; only keep its log lines.
+                        if let UiEvent::Log(line) = ev {
+                            this.push_log(format!("[previous session] {line}"));
+                        }
+                        continue;
+                    }
                     this.handle_event(ev);
+                }
+                // The actor is gone. Normally its last event already settled
+                // the state; if it panicked, don't leave the UI "connecting".
+                if this.imp().session.get() == session && (this.busy() || this.connected()) {
+                    this.push_log("connection engine stopped unexpectedly".into());
+                    this.finish_disconnected();
+                    this.set_status_text(gettext("Disconnected"));
+                    runtime().spawn(async {
+                        let _ = SysProxy::new(paths::state_file()).restore().await;
+                    });
                 }
             }
         ));
@@ -905,6 +980,15 @@ impl ConnectionManager {
 
     pub fn disconnect(&self) {
         let tx = self.imp().cmd_tx.borrow().clone();
+        if tx.is_none() && self.busy() {
+            // Still choosing the fastest server: abort that instead. The
+            // test may keep running; its result is ignored.
+            let imp = self.imp();
+            imp.auto_attempt.set(imp.auto_attempt.get() + 1);
+            self.set_busy(false);
+            self.set_status_text(gettext("Disconnected"));
+            return;
+        }
         if let Some(tx) = tx {
             self.set_busy(true);
             self.set_status_text(gettext("Disconnecting…"));
@@ -974,7 +1058,7 @@ impl ConnectionManager {
                     format_bytes(sample.total.uplink + sample.total.downlink)
                 ));
             }
-            UiEvent::Connected => {
+            UiEvent::Connected { first } => {
                 self.set_progress_visible(false);
                 self.set_busy(false);
                 self.set_connected(true);
@@ -984,10 +1068,12 @@ impl ConnectionManager {
                     ApplyMode::LocalOnly => gettext("Connected · local proxy only"),
                     ApplyMode::Tunnel => gettext("Connected · all traffic through the tunnel"),
                 });
-                self.emit_by_name::<()>(
-                    "notification",
-                    &[&gettext("Connected"), &self.selected_name(), &false],
-                );
+                if first {
+                    self.emit_by_name::<()>(
+                        "notification",
+                        &[&gettext("Connected"), &self.selected_name(), &false],
+                    );
+                }
             }
             UiEvent::Disconnected => {
                 self.finish_disconnected();
@@ -1068,115 +1154,39 @@ async fn actor(
     let send = |ev: UiEvent| {
         let _ = ui.send_blocking(ev);
     };
-
     let manager = CoreManager::new(paths::core_dir(), &user_agent);
-    let ui_progress = ui.clone();
-    let ensure = manager.ensure_installed(params.prerelease, move |p| {
-        let _ = ui_progress.send_blocking(UiEvent::Progress(p));
-    });
-    // Allow cancelling during a long download.
-    let installed = tokio::select! {
-        r = ensure => r,
+    let supervisor = core_supervisor();
+    let sysproxy = SysProxy::new(paths::state_file());
+    let system_proxy = params.apply_mode == ApplyMode::SystemProxy;
+
+    // Everything up to "connected" can be cancelled: dropping the future
+    // kills a half-started core (`kill_on_drop`) and the polkit prompt.
+    let setup = setup_session(&params, &manager, &supervisor, &sysproxy, &ui);
+    let ready = tokio::select! {
+        r = setup => r,
         _ = cmds.recv() => {
+            if system_proxy {
+                restore_proxy(&sysproxy, &ui).await;
+            }
             send(UiEvent::Disconnected);
             return;
         }
     };
-    if let Err(e) = installed {
-        send(UiEvent::Failed(e));
-        return;
-    }
-
-    let api_port = match obscure_core::latency::free_port().await {
-        Ok(p) => p,
+    let Ready {
+        mut core,
+        api_port,
+        cfg_path,
+    } = match ready {
+        Ok(r) => r,
         Err(e) => {
+            if system_proxy {
+                restore_proxy(&sysproxy, &ui).await;
+            }
             send(UiEvent::Failed(e));
             return;
         }
     };
-    let tunnel = params.apply_mode == ApplyMode::Tunnel;
-    let cfg = match &params.config_override {
-        Some(raw) => match serde_json::from_str::<serde_json::Value>(raw) {
-            Ok(mut v) => {
-                // Keep stats reachable even with a custom config.
-                v["api"] = serde_json::json!({ "tag": "api", "listen": format!("127.0.0.1:{api_port}"), "services": ["StatsService"] });
-                if v.get("stats").is_none() {
-                    v["stats"] = serde_json::json!({});
-                }
-                v
-            }
-            Err(e) => {
-                send(UiEvent::Failed(Error::InvalidOverride(e.to_string())));
-                return;
-            }
-        },
-        None => {
-            let mut opts = ConfigOptions::new(&params.server);
-            opts.local_port = params.local_port;
-            opts.route_preset = params.route_preset;
-            opts.listed_domains = &params.listed_domains;
-            opts.dns = &params.dns;
-            opts.api_port = Some(api_port);
-            opts.tunnel = tunnel;
-            opts.custom_rules = &params.custom_rules;
-            build(&opts)
-        }
-    };
-    let cfg_path = paths::runtime_config_file();
-    if let Err(e) = write_config(&cfg_path, &cfg) {
-        send(UiEvent::Failed(e));
-        return;
-    }
-
-    // Tunnel mode: the binary needs file capabilities. Ask once through
-    // polkit; a core update replaces the binary, so this is re-checked on
-    // every connection.
-    if tunnel {
-        let xray = manager.xray_path();
-        let status = capabilities(&xray);
-        if status != CapStatus::Granted {
-            send(UiEvent::Log(format!(
-                "tunnel: capabilities {status:?}, requesting grant"
-            )));
-            send(UiEvent::Progress(Progress::Resolving));
-            match grant(&helper_path(), &xray).await {
-                Ok(CapStatus::Granted) => send(UiEvent::Log("tunnel: capabilities granted".into())),
-                Ok(other) => {
-                    send(UiEvent::Failed(Error::Tun(format!(
-                        "capabilities still {other:?} after grant"
-                    ))));
-                    return;
-                }
-                Err(e) => {
-                    send(UiEvent::Failed(e));
-                    return;
-                }
-            }
-        }
-    }
-
-    let supervisor = Supervisor::new(manager.xray_path(), manager.dir().to_path_buf());
-    let mut core: RunningCore = match supervisor.start(&cfg_path, params.local_port).await {
-        Ok(c) => c,
-        Err(e) => {
-            send(UiEvent::Failed(e));
-            return;
-        }
-    };
-
-    let sysproxy = SysProxy::new(paths::state_file());
-    let mut proxy_applied = false;
-    if params.apply_mode == ApplyMode::SystemProxy {
-        match sysproxy.apply(params.local_port).await {
-            Ok(()) => proxy_applied = true,
-            Err(e) => {
-                // Not fatal: the local proxy works; tell the user via log/status.
-                tracing::warn!("system proxy not applied: {e}");
-                send(UiEvent::Log(format!("system proxy not applied: {e}")));
-            }
-        }
-    }
-    send(UiEvent::Connected);
+    send(UiEvent::Connected { first: true });
 
     // Refresh geo data in the background at most once a day.
     if manager.geo_needs_update() {
@@ -1205,10 +1215,7 @@ async fn actor(
             cmd = cmds.recv() => match cmd {
                 Some(Cmd::Stop) | None => break Ok(()),
             },
-            ev = core.events.recv() => match ev {
-                Some(CoreEvent::Log(line)) => send(UiEvent::Log(line)),
-                Some(CoreEvent::Exited { .. }) | None => {}
-            },
+            Some(CoreEvent::Log(line)) = core.events.recv() => send(UiEvent::Log(line)),
             _ = tick.tick() => {
                 if let Some(status) = core.check_exit() {
                     // Unexpected exit: restart with backoff or give up.
@@ -1228,19 +1235,21 @@ async fn actor(
                         _ = tokio::time::sleep(delay) => {}
                         _ = cmds.recv() => break Ok(()),
                     }
-                    match supervisor.start(&cfg_path, params.local_port).await {
+                    match restart_core(&supervisor, &cfg_path, &params, &ui).await {
                         Ok(c) => {
                             core = c;
                             started_at = tokio::time::Instant::now();
                             meter = RateMeter::default();
-                            send(UiEvent::Connected);
+                            send(UiEvent::Connected { first: false });
                         }
                         Err(e) => break Err(e),
                     }
                     continue;
                 }
+                // Bounded so a stuck stats call never delays Stop.
                 if let Some(client) = stats.as_mut()
-                    && let Ok(traffic) = client.proxy_traffic().await
+                    && let Ok(Ok(traffic)) =
+                        tokio::time::timeout(Duration::from_millis(800), client.proxy_traffic()).await
                 {
                     send(UiEvent::Traffic(meter.update(traffic)));
                 }
@@ -1248,20 +1257,174 @@ async fn actor(
         }
     };
 
-    if proxy_applied && let Err(e) = sysproxy.restore().await {
-        tracing::error!("restoring system proxy failed: {e}");
-        send(UiEvent::Log(format!("restoring system proxy failed: {e}")));
+    if system_proxy {
+        restore_proxy(&sysproxy, &ui).await;
+    }
+    core.stop().await;
+    match outcome {
+        Ok(()) => send(UiEvent::Disconnected),
+        Err(e) => send(UiEvent::Failed(e)),
+    }
+}
+
+/// What a successful setup hands to the session loop.
+struct Ready {
+    core: RunningCore,
+    api_port: u16,
+    cfg_path: std::path::PathBuf,
+}
+
+/// Installs/updates the core, writes the config, gets tunnel permission,
+/// starts Xray, waits for the tunnel route and applies the system proxy.
+async fn setup_session(
+    params: &SessionParams,
+    manager: &CoreManager,
+    supervisor: &Supervisor,
+    sysproxy: &SysProxy,
+    ui: &async_channel::Sender<UiEvent>,
+) -> obscure_core::Result<Ready> {
+    let send = |ev: UiEvent| {
+        let _ = ui.send_blocking(ev);
+    };
+    let ui_progress = ui.clone();
+    manager
+        .ensure_latest(move |p| {
+            let _ = ui_progress.send_blocking(UiEvent::Progress(p));
+        })
+        .await?;
+
+    let api_port = obscure_core::latency::free_port().await?;
+    let tunnel = params.apply_mode == ApplyMode::Tunnel;
+    let cfg = match &params.config_override {
+        Some(raw) => {
+            let mut v = serde_json::from_str::<serde_json::Value>(raw)
+                .map_err(|e| Error::InvalidOverride(e.to_string()))?;
+            // Keep stats reachable even with a custom config.
+            v["api"] = serde_json::json!({ "tag": "api", "listen": format!("127.0.0.1:{api_port}"), "services": ["StatsService"] });
+            if v.get("stats").is_none() {
+                v["stats"] = serde_json::json!({});
+            }
+            v
+        }
+        None => {
+            let mut opts = ConfigOptions::new(&params.server);
+            opts.local_port = params.local_port;
+            opts.route_preset = params.route_preset;
+            opts.listed_domains = &params.listed_domains;
+            opts.dns = &params.dns;
+            opts.api_port = Some(api_port);
+            opts.tunnel = tunnel;
+            opts.custom_rules = &params.custom_rules;
+            build(&opts)
+        }
+    };
+    let cfg_path = paths::runtime_config_file();
+    write_config(&cfg_path, &cfg)?;
+
+    // Tunnel mode: the binary needs file capabilities. Ask once through
+    // polkit; a core update replaces the binary, so this is re-checked on
+    // every connection.
+    if tunnel {
+        // Stable cores older than 26.7.11 create the interface but never set
+        // routes: the tunnel would "connect" and carry nothing. Upgrade first.
+        let ui_progress = ui.clone();
+        let (version, replaced) = manager
+            .ensure_tun_capable(move |p| {
+                let _ = ui_progress.send_blocking(UiEvent::Progress(p));
+            })
+            .await?;
+        if replaced {
+            send(UiEvent::Log(format!(
+                "tunnel: core updated to {version} for routing support"
+            )));
+        }
+        let xray = manager.xray_path();
+        let status = capabilities(&xray);
+        if status != CapStatus::Granted {
+            send(UiEvent::Log(format!(
+                "tunnel: capabilities {status:?}, requesting grant"
+            )));
+            send(UiEvent::Progress(Progress::Resolving));
+            match grant(&helper_path(), &xray).await? {
+                CapStatus::Granted => send(UiEvent::Log("tunnel: capabilities granted".into())),
+                other => {
+                    return Err(Error::Tun(format!(
+                        "capabilities still {other:?} after grant"
+                    )));
+                }
+            }
+        }
     }
 
-    match outcome {
-        Ok(()) => {
+    let core = supervisor.start(&cfg_path, params.local_port).await?;
+
+    if tunnel {
+        // Xray installs the address and routes right after start-up; only
+        // report "connected" once traffic really flows through the tunnel.
+        send(UiEvent::Log(
+            "tunnel: waiting for the route and a probe through it".into(),
+        ));
+        if let Err(e) = obscure_core::tun::wait_until_routed(
+            obscure_core::config::TUN_NAME,
+            ("1.1.1.1", 443),
+            Duration::from_secs(20),
+        )
+        .await
+        {
             core.stop().await;
-            send(UiEvent::Disconnected);
+            return Err(e);
         }
-        Err(e) => {
+        send(UiEvent::Log(
+            "tunnel: route installed and traffic flowing".into(),
+        ));
+    }
+
+    if params.apply_mode == ApplyMode::SystemProxy
+        && let Err(e) = sysproxy.apply(params.local_port).await
+    {
+        // Not fatal: the local proxy works; tell the user via the log.
+        tracing::warn!("system proxy not applied: {e}");
+        send(UiEvent::Log(format!("system proxy not applied: {e}")));
+    }
+    Ok(Ready {
+        core,
+        api_port,
+        cfg_path,
+    })
+}
+
+/// Starts the core again after a crash. In tunnel mode "connected" again
+/// means routed again, exactly like the first start.
+async fn restart_core(
+    supervisor: &Supervisor,
+    cfg_path: &std::path::Path,
+    params: &SessionParams,
+    ui: &async_channel::Sender<UiEvent>,
+) -> obscure_core::Result<RunningCore> {
+    let core = supervisor.start(cfg_path, params.local_port).await?;
+    if params.apply_mode == ApplyMode::Tunnel {
+        let _ = ui.send_blocking(UiEvent::Log(
+            "tunnel: waiting for the route after the restart".into(),
+        ));
+        if let Err(e) = obscure_core::tun::wait_until_routed(
+            obscure_core::config::TUN_NAME,
+            ("1.1.1.1", 443),
+            Duration::from_secs(20),
+        )
+        .await
+        {
             core.stop().await;
-            send(UiEvent::Failed(e));
+            return Err(e);
         }
+    }
+    Ok(core)
+}
+
+/// Restores the system proxy if a backup exists (no-op otherwise).
+async fn restore_proxy(sysproxy: &SysProxy, ui: &async_channel::Sender<UiEvent>) {
+    if let Err(e) = sysproxy.restore().await {
+        tracing::error!("restoring system proxy failed: {e}");
+        let _ = ui.send_blocking(UiEvent::Log(format!("restoring system proxy failed: {e}")));
     }
 }
 
@@ -1286,6 +1449,13 @@ async fn geoip_db(path: &std::path::Path) -> Option<std::sync::Arc<obscure_core:
     Some(db)
 }
 
+/// Supervisor of the connection core; records its pid so a core orphaned by
+/// a killed app is stopped on the next start.
+fn core_supervisor() -> Supervisor {
+    Supervisor::new(paths::core_dir().join("xray"), paths::core_dir())
+        .with_pid_file(paths::data_dir().join("xray.pid"))
+}
+
 /// Installed helper if present, otherwise the one from the build tree.
 fn helper_path() -> std::path::PathBuf {
     let installed = std::path::Path::new(crate::config::LIBEXECDIR).join("obscure-helper");
@@ -1297,4 +1467,10 @@ fn helper_path() -> std::path::PathBuf {
         return build.to_path_buf();
     }
     installed
+}
+
+fn profiles_recovered_message() -> String {
+    gettext(
+        "Your saved servers could not be read. A copy was kept next to the settings file and the list starts empty.",
+    )
 }

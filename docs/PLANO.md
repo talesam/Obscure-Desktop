@@ -148,7 +148,7 @@ Obscure-Desktop/
 - Segredos (senhas de assinatura com auth) → `oo7`.
 
 ### 3.3 Gerenciamento do Xray-core
-- Versionamento por data (`v26.3.27` estável "latest"; pré-releases 26.9.x). Padrão: **estável**; toggle "canal pré-release" em Avançado.
+- Versionamento por data. **Decisão (2026-09-25): usar sempre a release mais nova, pré-releases incluídas.** O Xray publica seu fluxo normal como pré-release e raramente promove uma estável (a "latest" v26.3.27 tinha 6 meses e não fazia rotas do `tun` no Linux). Checagem de atualização 1×/dia ao conectar (`ensure_latest`), offline mantém o instalado. Sem toggle de canal.
 - Download de `https://api.github.com/repos/XTLS/Xray-core/releases/latest` → asset `Xray-linux-64.zip` (x86_64) / `Xray-linux-arm64-v8a.zip` (aarch64) + `.dgst`. Verificar SHA-256 antes de extrair.
 - Geo: `Loyalsoldier/v2ray-rules-dat` (`geoip.dat`, `geosite.dat`, releases diárias) via `releases/latest/download/…` + `.sha256sum`. Checagem 1×/dia.
 - Execução: `xray run -c <config>` com `XRAY_LOCATION_ASSET` apontando para o dir de dados. Validação prévia com `xray run -test`. Stdout/stderr lidos em stream para o painel de log.
@@ -179,7 +179,7 @@ Suporte de protocolos (fase 1): **VLESS** (raw/ws/grpc/xhttp/httpupgrade; tls/re
 - Referência: `sysproxy-rs` (Clash Verge Rev).
 
 ### 3.7 Modo TUN (Avançado, fase 4)
-- Usar o **inbound `tun` nativo do Xray** (desde v26.1.23): `gateway`, `autoSystemRoutingTable: ["0.0.0.0/0","::/0"]`, `autoOutboundsInterface: "auto"`. Dispensa sing-box e tun2socks.
+- Usar o **inbound `tun` nativo do Xray**: `gateway`, `autoSystemRoutingTable: ["0.0.0.0/0","::/0"]`, `autoOutboundsInterface: "auto"`. Dispensa sing-box e tun2socks. **Atenção: endereço e rotas automáticos no Linux só existem a partir do v26.7.11** (`ensure_tun_capable` garante isso; versões antigas só criam a interface). Gateway em 198.18.0.1/30 (faixa de benchmark, RFC 2544) para não colidir com as bridges 172.x do Docker.
 - Privilégio, em dois níveis:
   1. **Simples (primeiro):** botão "Conceder permissão" → `pkexec setcap cap_net_admin,cap_net_raw,cap_net_bind_service+ep <xray>` com arquivo `.policy` próprio. Reaplicado automaticamente após atualizar o core. Funciona em instalação nativa (Arch/AUR).
   2. **Robusto (depois):** `obscure-helper` como serviço D-Bus de sistema ativado por polkit, que abre `/dev/net/tun`, configura rotas e passa o fd via `XRAY_TUN_FD`. É o único caminho viável para Flatpak (via `flatpak-spawn --host` ou serviço pré-instalado) e AppImage (`nosuid`).
@@ -298,6 +298,109 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
 ---
 
 ## 8. Registro de progresso e pendências
+
+### Revisão geral 2026-10-10 (itens de prioridade alta corrigidos)
+- `links::looks_like_link` entrava em pânico com texto não ASCII (fatiava `&str` no meio de um
+  caractere). Assinaturas com linhas em chinês/russo derrubavam o app.
+- `profiles.json` ilegível era sobrescrito no próximo save (perda total). Agora é movido para
+  `profiles.json.corrupt-<ts>` (`Profiles::load_or_recover`) e a janela mostra um aviso.
+- Proxy do sistema: o backup é gravado em `state.json` **antes** de qualquer escrita. Falha do KDE
+  com GNOME presente vira aviso; só KDE presente → desfaz e devolve erro. Testes em
+  `tests/sysproxy_*.rs` (GSettings em memória + `kwriteconfig6` falso).
+- `CoreManager`: timeouts (conexão 10 s, leitura 30 s, API 20 s). Falha ao atualizar com core
+  instalado não bloqueia mais a conexão (adia 1 dia) e nunca faz downgrade (`is_upgrade`).
+- Modo Automático: "Conectar" com "Testar todos" em andamento deixava a UI presa em "Procurando o
+  servidor mais rápido…". Agora quem chega entra na fila do teste em andamento; "Cancelar" volta na
+  hora para "Desconectado" e o resultado antigo é ignorado (`auto_attempt`).
+- Helper privilegiado: o binário é aberto com `O_NOFOLLOW`, o caminho tem de ser canônico (nenhum
+  symlink), o fd é conferido por `/proc/self/fd`, dono = `PKEXEC_UID` (ou o uid do chamador no
+  D-Bus) e `nlink == 1`. A capability é gravada pelo fd (`fsetxattr security.capability`, v2),
+  sem `setcap`/`getcap` no PATH. Policy: `auth_admin` (não mais `_keep`) e a mensagem mostra
+  `$(command_line)`. O app canonicaliza o caminho antes do pkexec (`/home -> /var/home`).
+  Verificado em user namespace (`unshare -r`): bytes idênticos aos do `setcap`; symlink no
+  diretório e hard link recusados.
+- Atalho global: desligar e religar a opção abria outra sessão do portal sem fechar a anterior
+  (uma tecla → N `toggle()`). Agora a sessão é fechada ao desligar (e em erro no `bind`) e só uma
+  é criada. Verificado com um portal GlobalShortcuts falso em `dbus-run-session`.
+- **Pendente de teste manual:** concessão real via pkexec (senha) e proxy num KDE de verdade.
+- Itens de prioridade média aplicados em seguida (ver bloco abaixo).
+
+### Revisão geral 2026-10-10 (itens de prioridade média)
+- Core/parsing: `write_private` com temporário único (`create_new`, 0600, fsync do diretório);
+  também usado por `write_config`. IDs únicos e dedup em `replace_group_servers`/`add_subscription`
+  (O(n) com `Hash`). Assinatura: só redirect 301/308 troca a URL, https→http recusado, ≤ 5 saltos,
+  corpo ≤ 8 MiB. Query dos links sem `+`→espaço. Endpoint WireGuard IPv6 com colchetes.
+  Transportes desconhecidos e esquemas hy2/tuic/ssr viram erro visível. `listed_domains` respeita
+  prefixos; regras vazias/CIDR inválido descartadas. `Error::Http` sem URL (token). Aritmética
+  saturante e `profile-title` UTF-8.
+- Runtime: pidfile `xray.pid` (`<core> <app>`): um Xray órfão (app morto com `kill -9`) é
+  encerrado na abertura e antes de cada start, só se o app dono não existir mais e o
+  `/proc/<pid>/cmdline` for o nosso binário. Porta ocupada por outro processo não dá mais falso
+  "pronto". `latency::url_test` sempre apaga a config. `freedom.domainStrategy` (obsoleto) →
+  `sockopt.domainStrategy`.
+- App: preparação da sessão cancelável (Cancelar no túnel/pkexec/espera da rota funciona e mata o
+  pkexec); proxy restaurado em qualquer saída; pânico do ator não deixa a UI presa; stats com
+  timeout. `reconnect` não refaz o teste automático (mantém o servidor escolhido) e mudanças de
+  ajuste durante "conectando" reconectam. Bandeja via canal `watch`. Linhas de acesso fora do log
+  bruto; diálogos limitados a 1000 linhas e só seguem o fim se o usuário estiver nele; "Limpar"
+  limpa o histórico. Porta configurada no "Copiar variáveis" e no tooltip (`%s`).
+- Testado na UI (AT-SPI + app isolado em HOME temporário): tooltip/clipboard com a porta 3456,
+  reconexão mantendo Alpha com Automático ligado, órfão encerrado após `kill -9`, Cancelar durante
+  o pkexec simulado, log bruto sem linhas de acesso, "Limpar" persistente, 1100 conexões → 1000
+  linhas.
+- Prioridade baixa: aplicada em seguida (ver bloco abaixo).
+
+### Revisão geral 2026-10-10 (itens de prioridade baixa + mais testes)
+- **Xray 26.9.9 recusa a configuração inteira com `"allowInsecure": true`** (removido em favor de
+  `pinnedPeerCertSha256`/`verifyPeerCertByName`). A chave nunca é emitida; links com
+  `allowInsecure=1` passam a verificar o certificado (aviso no log). `pcs`/`vcn`, `pqv`
+  (`mldsa65Verify`) e `extra` do XHTTP são suportados. Plugin do Shadowsocks → erro claro.
+- Links/config: `Profiles::load` descarta entradas inconsistentes (sem pânico); VMess aceita
+  `null`/número/string; SNI usa o `host` do transporte quando o endereço é IP; exportação sem perda
+  (ida e volta testada em 39 links); regra do próprio servidor vira `ip:` quando é IP; sem `uot`.
+- Runtime: geoip indexado (busca ~2600× mais rápida, idêntica ao algoritmo antigo no arquivo real);
+  instalação do core com temporários únicos, fsync, VERSION por último, limite por entrada do zip,
+  espera de ETXTBSY; geo com recuo de 1 h após falha; versões com sufixo (`-rc1`) ordenadas;
+  `state.json` corrompido vai para quarentena; GSettings em `spawn_blocking`; sem `HOME` usa
+  `home_dir()`; parser do access log corrigido para IPv6 sem tags.
+- App/helper: QR fora da thread da UI; porta aplicada só quando para de mudar; "Adicionar regra"
+  validado; restart do core não renotifica e, no túnel, espera a rota; link aberto com
+  `--start-minimized` mostra a janela; handlers da janela desconectados no `dispose`; import de
+  arquivo limitado a 8 MiB; helper D-Bus sai após 60 s ocioso; `obscure-helper.service` endurecido
+  (`systemd-analyze security`: 1.7 OK; seccomp conferido com `systemd-run --user`).
+- Testes novos: fuzz sem pânico (links, VMess JSON, access log, stats), round-trip de links,
+  opt-in `OBSCURE_TEST_XRAY=<dir do core>` (`tests/xray_config_check.rs`: o Xray real valida as
+  configs do corpus) e `OBSCURE_TEST_GEOIP=<geoip.dat>` (`tests/geoip_real.rs`). UI (AT-SPI):
+  `--start-minimized` + link, bandeja coerente após alternâncias rápidas, validação de regra,
+  notificação única com restart do core. Perfis reais do usuário: 3/3 carregam, ida e volta
+  idêntica, 3/3 aceitos pelo Xray.
+- Não testado na UI: atraso da porta (o AT-SPI não expõe o `AdwSpinRow` e o XWayland recusou o
+  ponteiro sintético), import de arquivo grande e QR (exigem o seletor de arquivos).
+
+### Correções 2026-09-25 (túnel: lentidão e crash)
+- **Primeiro tráfego demorava ~20 s** em modo túnel: com `dns.queryStrategy: UseIP` a discagem do
+  Xray ao servidor esperava A e AAAA; a resposta AAAA vazia travava até o timeout de 16 s.
+  `UseIPv4` resolve (medido: 21 s → 1,9 s). Aplicado a todos os modos.
+- "Conectado" em modo túnel agora só aparece após a rota padrão via `obscure0` existir e uma sonda
+  TCP passar pelo túnel (`tun::wait_until_routed`); antes o estado vinha do inbound local.
+- Crash ao ligar "Automático": callback do template com tipo errado (`AdwSwitchRow` vs `GtkSwitch`).
+- Observado: Tailscale (STUN e encaminhador de DNS) gera uma rajada de conexões pelo túnel ao subir;
+  o DNS capturado (porta 53 → `dns-out`) responde e o Tailscale se acalma em ~20 s. Sem impacto após
+  o ajuste do DNS.
+
+### Correções 2026-09-25 (bug do túnel + revisão de código)
+- **Túnel sem tráfego**: o Xray 26.3.27 criava `obscure0` mas não atribuía endereço nem rotas
+  (função só existe desde 26.7.11). Agora o core é sempre o mais novo (`ensure_latest`, checagem
+  diária) e o modo túnel exige `>= 26.7.11` (`ensure_tun_capable`). Gateway movido para
+  198.18.0.1/30 (172.19.x colidia com Docker). Verificado: atualização automática para v26.9.9 e
+  conexão por proxy OK; o túnel real ainda depende do teste manual (senha) porque o binário novo
+  perde as capabilities.
+- Revisão (agente): `profiles.json`/`state.json` agora gravados com 0600 (`paths::write_private`);
+  eventos de uma sessão antiga do ator são ignorados por um token de sessão (reconexão lenta não
+  zera mais o canal da sessão nova); Desconectar durante "servidor mais rápido" cancela o teste;
+  falhas de `gsettings set` viram aviso no log. Teste do supervisor endurecido contra ETXTBSY.
+- Sugestões da revisão ainda não aplicadas: atualizar a `ListStore` de servidores de forma
+  incremental (hoje `sync_from_profiles` reconstrói tudo; só importa com centenas de servidores).
 
 ### Correção 2026-09-22
 - `--start-minimized` abria a janela porque a bandeja registra de forma assíncrona e a primeira

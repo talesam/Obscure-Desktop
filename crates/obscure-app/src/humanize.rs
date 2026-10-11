@@ -44,6 +44,9 @@ pub fn error_message(err: &Error) -> String {
                 gettext("The connection engine stopped unexpectedly.")
             }
         }
+        Error::StartTimeout(m) if m.starts_with("tunnel") => gettext(
+            "The tunnel came up but no traffic passes through it. Check the connection log.",
+        ),
         Error::StartTimeout(_) => gettext("The connection engine did not respond in time."),
         Error::SysProxy(_) => {
             gettext("Could not change the system proxy. The local connection is still available.")

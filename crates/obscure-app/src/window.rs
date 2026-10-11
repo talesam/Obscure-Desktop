@@ -47,6 +47,8 @@ mod imp {
         #[template_child]
         pub mode_group: TemplateChild<adw::ToggleGroup>,
         #[template_child]
+        pub local_only_toggle: TemplateChild<adw::Toggle>,
+        #[template_child]
         pub route_group: TemplateChild<adw::ToggleGroup>,
         #[template_child]
         pub servers_list: TemplateChild<gtk::ListBox>,
@@ -60,6 +62,8 @@ mod imp {
         pub auto_switch: TemplateChild<gtk::Switch>,
 
         pub manager: std::cell::OnceCell<ConnectionManager>,
+        /// Handlers on the (longer-lived) manager, removed in `dispose`.
+        pub manager_handlers: std::cell::RefCell<Vec<glib::SignalHandlerId>>,
     }
 
     #[glib::object_subclass]
@@ -114,10 +118,10 @@ mod imp {
         }
 
         #[template_callback]
-        fn on_auto_toggled(&self, _pspec: glib::ParamSpec, row: &adw::SwitchRow) {
+        fn on_auto_toggled(&self, _pspec: glib::ParamSpec, switch: &gtk::Switch) {
             self.obj()
                 .manager()
-                .set_auto_select_from_ui(row.is_active());
+                .set_auto_select_from_ui(switch.is_active());
         }
 
         #[template_callback]
@@ -140,6 +144,14 @@ mod imp {
                 .set_icon_name(Some(&format!("{APP_ID}-symbolic")));
             obj.bind_settings();
             obj.setup_paste_shortcut();
+        }
+
+        fn dispose(&self) {
+            if let Some(m) = self.manager.get() {
+                for id in self.manager_handlers.take() {
+                    glib::signal::signal_handler_disconnect(m, id);
+                }
+            }
         }
     }
 
@@ -262,6 +274,21 @@ impl ObscureWindow {
                 move |result| {
                     let Ok(file) = result else { return };
                     glib::spawn_future_local(async move {
+                        // A server list is small; refuse to load a huge file
+                        // into memory (and into the import dialog).
+                        let size = file
+                            .query_info_future(
+                                gio::FILE_ATTRIBUTE_STANDARD_SIZE,
+                                gio::FileQueryInfoFlags::NONE,
+                                glib::Priority::DEFAULT,
+                            )
+                            .await
+                            .map(|i| i.size())
+                            .unwrap_or(0);
+                        if size > MAX_IMPORT_FILE as i64 {
+                            win.toast(&file_too_large_message());
+                            return;
+                        }
                         match file.load_contents_future().await {
                             Ok((bytes, _)) => {
                                 let text = String::from_utf8_lossy(&bytes).into_owned();
@@ -355,7 +382,7 @@ impl ObscureWindow {
 
     fn copy_env(&self) {
         self.clipboard()
-            .set_text(&env_snippet(obscure_core::DEFAULT_LOCAL_PORT));
+            .set_text(&env_snippet(self.manager().profiles().local_port));
         self.toast(&gettext(
             "Environment variables copied. Paste them in a terminal.",
         ));
@@ -403,6 +430,10 @@ impl ObscureWindow {
         m.bind_property("apply_mode", &*imp.mode_group, "active-name")
             .sync_create()
             .build();
+        m.bind_property("local_port", &*imp.local_only_toggle, "tooltip")
+            .transform_to(|_, port: u32| Some(local_only_tooltip(port)))
+            .sync_create()
+            .build();
         m.bind_property("route_preset", &*imp.route_group, "active-name")
             .sync_create()
             .build();
@@ -412,8 +443,11 @@ impl ObscureWindow {
             self,
             move |m: &ConnectionManager| win.update_connect_button(m)
         );
-        m.connect_connected_notify(update_button.clone());
-        m.connect_busy_notify(update_button.clone());
+        let handlers = [
+            m.connect_connected_notify(update_button.clone()),
+            m.connect_busy_notify(update_button.clone()),
+        ];
+        imp.manager_handlers.borrow_mut().extend(handlers);
         update_button(m);
 
         m.connect_closure(
@@ -429,6 +463,10 @@ impl ObscureWindow {
                 }
             ),
         );
+
+        if let Some(msg) = m.take_startup_warning() {
+            self.toast(&msg);
+        }
 
         imp.servers_list.bind_model(
             Some(m.servers()),
@@ -707,6 +745,18 @@ impl ObscureWindow {
 }
 
 /// Toast text after an import. Kept out of macros so xgettext sees it.
+/// Largest file accepted by "Import from file" (same cap as subscriptions).
+const MAX_IMPORT_FILE: usize = obscure_core::subscription::MAX_BODY_SIZE;
+
+fn file_too_large_message() -> String {
+    gettext("That file is too large to be a list of servers.")
+}
+
+fn local_only_tooltip(port: u32) -> String {
+    gettext("Nothing changes on the system. Point the programs you want at 127.0.0.1:%s.")
+        .replace("%s", &port.to_string())
+}
+
 fn added_message(added: usize) -> String {
     if added == 0 {
         gettext("These servers were already added.")

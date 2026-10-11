@@ -14,6 +14,7 @@ mod server_dialog;
 mod server_object;
 mod shortcuts;
 mod subscription_object;
+mod textlog;
 mod tray;
 mod window;
 

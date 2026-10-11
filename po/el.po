@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: obscure 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-20 23:55-0300\n"
+"POT-Creation-Date: 2026-10-10 20:46-0300\n"
 "PO-Revision-Date: 2026-09-20 19:23\n"
 "Last-Translator: Tales A. Mendonça <talesam@gmail.com>\n"
 "Language-Team: Ελληνικά\n"
@@ -26,7 +26,7 @@ msgid "Proxy Client"
 msgstr "Πρόγραμμα-πελάτης proxy"
 
 #. Translators: the slogan of the app
-#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:435
+#: data/io.github.talesam.Obscure.desktop.in.in:6 crates/obscure-app/src/ui/window.blp:38 crates/obscure-app/src/application.rs:498
 msgid "Connect. That's it."
 msgstr "Συνδεθείτε. Αυτό είναι όλο."
 
@@ -107,7 +107,7 @@ msgstr "Κύριο μενού"
 msgid "Paste a link or a subscription to get started."
 msgstr "Επικολλήστε έναν σύνδεσμο ή μια συνδρομή για να ξεκινήσετε."
 
-#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:587 crates/obscure-app/src/tray.rs:83
+#: crates/obscure-app/src/ui/window.blp:152 crates/obscure-app/src/window.rs:625 crates/obscure-app/src/tray.rs:83
 msgid "Connect"
 msgstr "Σύνδεση"
 
@@ -127,91 +127,87 @@ msgstr "Τα προγράμματα περιήγησης και οι περισ�
 msgid "Local proxy only"
 msgstr "Μόνο τοπικός proxy"
 
-#: crates/obscure-app/src/ui/window.blp:179
-msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:2080."
-msgstr "Τίποτα δεν αλλάζει στο σύστημα. Ρυθμίστε τα προγράμματα που θέλετε στο 127.0.0.1:2080."
-
-#: crates/obscure-app/src/ui/window.blp:184
+#: crates/obscure-app/src/ui/window.blp:183
 msgid "Tunnel"
 msgstr "Τούνελ"
 
-#: crates/obscure-app/src/ui/window.blp:185
+#: crates/obscure-app/src/ui/window.blp:184
 msgid "All traffic from this computer, every app. Asks for your password once."
 msgstr "Όλη η κίνηση αυτού του υπολογιστή, κάθε εφαρμογή. Ζητά τον κωδικό σας μία φορά."
 
-#: crates/obscure-app/src/ui/window.blp:191
+#: crates/obscure-app/src/ui/window.blp:190
 msgid "What goes through the connection"
 msgstr "Τι περνάει από τη σύνδεση"
 
-#: crates/obscure-app/src/ui/window.blp:199
+#: crates/obscure-app/src/ui/window.blp:198
 msgid "Smart"
 msgstr "Έξυπνο"
 
-#: crates/obscure-app/src/ui/window.blp:200
+#: crates/obscure-app/src/ui/window.blp:199
 msgid "Everything, except local network addresses. Ads are blocked."
 msgstr "Όλα, εκτός από διευθύνσεις του τοπικού δικτύου. Οι διαφημίσεις μπλοκάρονται."
 
-#: crates/obscure-app/src/ui/window.blp:205
+#: crates/obscure-app/src/ui/window.blp:204
 msgid "Everything"
 msgstr "Όλα"
 
-#: crates/obscure-app/src/ui/window.blp:206
+#: crates/obscure-app/src/ui/window.blp:205
 msgid "All traffic goes through the connection, except local network addresses."
 msgstr "Όλη η κίνηση περνάει από τη σύνδεση, εκτός από διευθύνσεις του τοπικού δικτύου."
 
-#: crates/obscure-app/src/ui/window.blp:212
+#: crates/obscure-app/src/ui/window.blp:211
 msgid "Subscriptions"
 msgstr "Συνδρομές"
 
-#: crates/obscure-app/src/ui/window.blp:225
+#: crates/obscure-app/src/ui/window.blp:224
 msgid "Servers"
 msgstr "Διακομιστές"
 
-#: crates/obscure-app/src/ui/window.blp:234
+#: crates/obscure-app/src/ui/window.blp:233
 msgid "Automatic"
 msgstr "Αυτόματα"
 
-#: crates/obscure-app/src/ui/window.blp:235
+#: crates/obscure-app/src/ui/window.blp:234
 msgid "Tests all servers when you connect and picks the quickest one."
 msgstr "Δοκιμάζει όλους τους διακομιστές κατά τη σύνδεση και επιλέγει τον ταχύτερο."
 
-#: crates/obscure-app/src/ui/window.blp:245
+#: crates/obscure-app/src/ui/window.blp:244
 msgid "Automatic: fastest server"
 msgstr "Αυτόματα: ο ταχύτερος διακομιστής"
 
-#: crates/obscure-app/src/ui/window.blp:251
+#: crates/obscure-app/src/ui/window.blp:250
 msgid "Measure the response time of every server"
 msgstr "Μέτρηση του χρόνου απόκρισης κάθε διακομιστή"
 
-#: crates/obscure-app/src/ui/window.blp:256
+#: crates/obscure-app/src/ui/window.blp:255
 msgid "Test All"
 msgstr "Δοκιμή όλων"
 
-#: crates/obscure-app/src/ui/window.blp:286
+#: crates/obscure-app/src/ui/window.blp:285
 msgid "_Import from File…"
 msgstr "_Εισαγωγή από αρχείο…"
 
-#: crates/obscure-app/src/ui/window.blp:291
+#: crates/obscure-app/src/ui/window.blp:290
 msgid "_Live Connections"
 msgstr "_Ζωντανές συνδέσεις"
 
-#: crates/obscure-app/src/ui/window.blp:296
+#: crates/obscure-app/src/ui/window.blp:295
 msgid "_Connection Log"
 msgstr "_Καταγραφή σύνδεσης"
 
-#: crates/obscure-app/src/ui/window.blp:301
+#: crates/obscure-app/src/ui/window.blp:300
 msgid "_Copy Environment Variables"
 msgstr "_Αντιγραφή μεταβλητών περιβάλλοντος"
 
-#: crates/obscure-app/src/ui/window.blp:308
+#: crates/obscure-app/src/ui/window.blp:307
 msgid "_Preferences"
 msgstr "_Προτιμήσεις"
 
-#: crates/obscure-app/src/ui/window.blp:313
+#: crates/obscure-app/src/ui/window.blp:312
 msgid "_Keyboard Shortcuts"
 msgstr "_Συντομεύσεις πληκτρολογίου"
 
-#: crates/obscure-app/src/ui/window.blp:318
+#: crates/obscure-app/src/ui/window.blp:317
 msgid "_About Obscure"
 msgstr "_Περί του Obscure"
 
@@ -283,59 +279,51 @@ msgstr "Όπου τα προγράμματα αυτού του υπολογισ�
 msgid "DNS server (DNS over HTTPS)"
 msgstr "Διακομιστής DNS (DNS μέσω HTTPS)"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:54
-msgid "Try pre-release versions of the engine"
-msgstr "Δοκιμή προεκδόσεων της μηχανής"
-
-#: crates/obscure-app/src/ui/preferences-dialog.blp:55
-msgid "Newer features, but less tested. Off is the safe choice."
-msgstr "Νεότερες λειτουργίες, αλλά λιγότερο δοκιμασμένες. Ανενεργό είναι η ασφαλής επιλογή."
-
-#: crates/obscure-app/src/ui/preferences-dialog.blp:61
+#: crates/obscure-app/src/ui/preferences-dialog.blp:56
 msgid "Advanced"
 msgstr "Για προχωρημένους"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:65
+#: crates/obscure-app/src/ui/preferences-dialog.blp:60
 msgid "Shortcut"
 msgstr "Συντόμευση"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:68
+#: crates/obscure-app/src/ui/preferences-dialog.blp:63
 msgid "System-wide shortcut to connect or disconnect"
 msgstr "Συντόμευση συστήματος για σύνδεση ή αποσύνδεση"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:69
+#: crates/obscure-app/src/ui/preferences-dialog.blp:64
 msgid "Works even when Obscure is hidden. The system lets you choose the keys."
 msgstr "Λειτουργεί ακόμη κι όταν το Obscure είναι κρυφό. Το σύστημα σάς αφήνει να επιλέξετε τα πλήκτρα."
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:74
+#: crates/obscure-app/src/ui/preferences-dialog.blp:69
 msgid "Route rules"
 msgstr "Κανόνες δρομολόγησης"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:75
+#: crates/obscure-app/src/ui/preferences-dialog.blp:70
 msgid "Your rules win over the preset. Use a domain (example.com), an address (10.0.0.0/8) or a category (geosite:netflix)."
 msgstr "Οι κανόνες σας υπερισχύουν της προεπιλογής. Χρησιμοποιήστε τομέα (example.com), διεύθυνση (10.0.0.0/8) ή κατηγορία (geosite:netflix)."
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:80
+#: crates/obscure-app/src/ui/preferences-dialog.blp:75
 msgid "Add rule"
 msgstr "Προσθήκη κανόνα"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:99
+#: crates/obscure-app/src/ui/preferences-dialog.blp:94
 msgid "Engine configuration"
 msgstr "Ρύθμιση μηχανής"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:102
+#: crates/obscure-app/src/ui/preferences-dialog.blp:97
 msgid "Edit the engine configuration"
 msgstr "Επεξεργασία της ρύθμισης της μηχανής"
 
-#: crates/obscure-app/src/ui/preferences-dialog.blp:103
+#: crates/obscure-app/src/ui/preferences-dialog.blp:98
 msgid "See or replace the JSON that Obscure sends to Xray."
 msgstr "Δείτε ή αντικαταστήστε το JSON που το Obscure στέλνει στο Xray."
 
-#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:550 crates/obscure-app/src/window.rs:579 crates/obscure-app/src/window.rs:691 crates/obscure-app/src/preferences_dialog.rs:242
+#: crates/obscure-app/src/ui/import-dialog.blp:17 crates/obscure-app/src/window.rs:588 crates/obscure-app/src/window.rs:617 crates/obscure-app/src/window.rs:729 crates/obscure-app/src/preferences_dialog.rs:236
 msgid "Cancel"
 msgstr "Ακύρωση"
 
-#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:242
+#: crates/obscure-app/src/ui/import-dialog.blp:23 crates/obscure-app/src/preferences_dialog.rs:236
 msgid "Add"
 msgstr "Προσθήκη"
 
@@ -363,158 +351,174 @@ msgstr "Λήψη στιγμιότυπου οθόνης και ανάγνωση �
 msgid "QR from Screen"
 msgstr "QR από οθόνη"
 
-#: crates/obscure-app/src/application.rs:98
+#: crates/obscure-app/src/application.rs:124
 msgid "The system proxy settings from a previous session were restored."
 msgstr "Οι ρυθμίσεις proxy συστήματος από την προηγούμενη συνεδρία επαναφέρθηκαν."
 
+#: crates/obscure-app/src/application.rs:198
+msgid "Start hidden in the tray (used by autostart)"
+msgstr "Εκκίνηση κρυφά στην περιοχή ειδοποιήσεων (για την αυτόματη εκκίνηση)"
+
 #. Translators: replace with your name and, optionally, e-mail.
-#: crates/obscure-app/src/application.rs:432
+#: crates/obscure-app/src/application.rs:495
 msgid "translator-credits"
 msgstr ""
 
-#: crates/obscure-app/src/application.rs:436
+#: crates/obscure-app/src/application.rs:499
 msgid "Obscure uses Xray-core, downloaded separately on first run."
 msgstr "Το Obscure χρησιμοποιεί το Xray-core, που κατεβαίνει ξεχωριστά στην πρώτη εκτέλεση."
 
-#: crates/obscure-app/src/application.rs:442
+#: crates/obscure-app/src/application.rs:505
 msgid "Project plan"
 msgstr "Σχέδιο έργου"
 
-#: crates/obscure-app/src/window.rs:223
+#: crates/obscure-app/src/window.rs:235
 msgid "The clipboard does not contain a server link."
 msgstr "Το πρόχειρο δεν περιέχει σύνδεσμο διακομιστή."
 
-#: crates/obscure-app/src/window.rs:245
+#: crates/obscure-app/src/window.rs:257
 msgid "Text files"
 msgstr "Αρχεία κειμένου"
 
-#: crates/obscure-app/src/window.rs:252
+#: crates/obscure-app/src/window.rs:264
 msgid "Import servers from a file"
 msgstr "Εισαγωγή διακομιστών από αρχείο"
 
-#: crates/obscure-app/src/window.rs:272
+#: crates/obscure-app/src/window.rs:299
 msgid "Could not read that file."
 msgstr "Δεν ήταν δυνατή η ανάγνωση αυτού του αρχείου."
 
-#: crates/obscure-app/src/window.rs:360
+#: crates/obscure-app/src/window.rs:387
 msgid "Environment variables copied. Paste them in a terminal."
 msgstr "Οι μεταβλητές περιβάλλοντος αντιγράφηκαν. Επικολλήστε τις σε ένα τερματικό."
 
-#: crates/obscure-app/src/window.rs:497
+#: crates/obscure-app/src/window.rs:535
 msgid "Update now"
 msgstr "Ενημέρωση τώρα"
 
-#: crates/obscure-app/src/window.rs:527
+#: crates/obscure-app/src/window.rs:565
 msgid "Remove subscription"
 msgstr "Αφαίρεση συνδρομής"
 
-#: crates/obscure-app/src/window.rs:544
+#: crates/obscure-app/src/window.rs:582
 msgid "Remove “%s” and all its servers?"
 msgstr "Αφαίρεση του «%s» και όλων των διακομιστών του;"
 
-#: crates/obscure-app/src/window.rs:546
+#: crates/obscure-app/src/window.rs:584
 msgid "You can add the subscription again later by pasting its address."
 msgstr "Μπορείτε να προσθέσετε ξανά τη συνδρομή αργότερα επικολλώντας τη διεύθυνσή της."
 
-#: crates/obscure-app/src/window.rs:551 crates/obscure-app/src/window.rs:692 crates/obscure-app/src/ui/server-dialog.blp:82
+#: crates/obscure-app/src/window.rs:589 crates/obscure-app/src/window.rs:730 crates/obscure-app/src/ui/server-dialog.blp:82
 msgid "Remove"
 msgstr "Αφαίρεση"
 
-#: crates/obscure-app/src/window.rs:571 crates/obscure-app/src/tray.rs:81
+#: crates/obscure-app/src/window.rs:609 crates/obscure-app/src/tray.rs:81
 msgid "Disconnect"
 msgstr "Αποσύνδεση"
 
-#: crates/obscure-app/src/window.rs:670
+#: crates/obscure-app/src/window.rs:708
 msgid "Server details"
 msgstr "Λεπτομέρειες διακομιστή"
 
-#: crates/obscure-app/src/window.rs:687
+#: crates/obscure-app/src/window.rs:725
 msgid "Remove “%s”?"
 msgstr "Αφαίρεση του «%s»;"
 
-#: crates/obscure-app/src/window.rs:688
+#: crates/obscure-app/src/window.rs:726
 msgid "You can add it again later by pasting its link."
 msgstr "Μπορείτε να τον προσθέσετε ξανά αργότερα επικολλώντας τον σύνδεσμό του."
 
-#: crates/obscure-app/src/window.rs:712
+#: crates/obscure-app/src/window.rs:752
+msgid "That file is too large to be a list of servers."
+msgstr "Το αρχείο είναι πολύ μεγάλο για να είναι λίστα διακομιστών."
+
+#: crates/obscure-app/src/window.rs:756
+msgid "Nothing changes on the system. Point the programs you want at 127.0.0.1:%s."
+msgstr "Τίποτα δεν αλλάζει στο σύστημα. Ρυθμίστε τα προγράμματα που θέλετε στο 127.0.0.1:%s."
+
+#: crates/obscure-app/src/window.rs:762
 msgid "These servers were already added."
 msgstr "Αυτοί οι διακομιστές είχαν ήδη προστεθεί."
 
-#: crates/obscure-app/src/window.rs:714
+#: crates/obscure-app/src/window.rs:764
 msgid "%n server added."
 msgid_plural "%n servers added."
 msgstr[0] "Προστέθηκε %n διακομιστής."
 msgstr[1] "Προστέθηκαν %n διακομιστές."
 
-#: crates/obscure-app/src/window.rs:720
+#: crates/obscure-app/src/window.rs:770
 msgid "Downloading the subscription…"
 msgstr "Λήψη της συνδρομής…"
 
-#: crates/obscure-app/src/window.rs:725
+#: crates/obscure-app/src/window.rs:775
 msgid "Subscription updated: %n server."
 msgid_plural "Subscription updated: %n servers."
 msgstr[0] "Η συνδρομή ενημερώθηκε: %n διακομιστής."
 msgstr[1] "Η συνδρομή ενημερώθηκε: %n διακομιστές."
 
-#: crates/obscure-app/src/connection.rs:206 crates/obscure-app/src/connection.rs:994
+#: crates/obscure-app/src/connection.rs:228 crates/obscure-app/src/connection.rs:970 crates/obscure-app/src/connection.rs:987 crates/obscure-app/src/connection.rs:1078
 msgid "Disconnected"
 msgstr "Αποσυνδεδεμένο"
 
-#: crates/obscure-app/src/connection.rs:820
+#: crates/obscure-app/src/connection.rs:881
 msgid "Finding the fastest server…"
 msgstr "Αναζήτηση του ταχύτερου διακομιστή…"
 
-#: crates/obscure-app/src/connection.rs:846
+#: crates/obscure-app/src/connection.rs:911
 msgid "Choose a server to connect"
 msgstr "Επιλέξτε διακομιστή για σύνδεση"
 
-#: crates/obscure-app/src/connection.rs:874 crates/obscure-app/src/connection.rs:966
+#: crates/obscure-app/src/connection.rs:929 crates/obscure-app/src/connection.rs:1048
 msgid "Connecting…"
 msgstr "Σύνδεση…"
 
-#: crates/obscure-app/src/connection.rs:910
+#: crates/obscure-app/src/connection.rs:992
 msgid "Disconnecting…"
 msgstr "Αποσύνδεση…"
 
-#: crates/obscure-app/src/connection.rs:933
+#: crates/obscure-app/src/connection.rs:1015
 msgid "Preparing the connection engine…"
 msgstr "Προετοιμασία της μηχανής σύνδεσης…"
 
-#: crates/obscure-app/src/connection.rs:944
+#: crates/obscure-app/src/connection.rs:1026
 msgid "Downloading the connection engine: %a of %b MB"
 msgstr "Λήψη της μηχανής σύνδεσης: %a από %b MB"
 
-#: crates/obscure-app/src/connection.rs:947
+#: crates/obscure-app/src/connection.rs:1029
 msgid "Downloading the connection engine: %a MB"
 msgstr "Λήψη της μηχανής σύνδεσης: %a MB"
 
-#: crates/obscure-app/src/connection.rs:952
+#: crates/obscure-app/src/connection.rs:1034
 msgid "Verifying the download…"
 msgstr "Επαλήθευση της λήψης…"
 
-#: crates/obscure-app/src/connection.rs:954
+#: crates/obscure-app/src/connection.rs:1036
 msgid "Installing the connection engine…"
 msgstr "Εγκατάσταση της μηχανής σύνδεσης…"
 
-#: crates/obscure-app/src/connection.rs:983
+#: crates/obscure-app/src/connection.rs:1065
 msgid "Connected · system proxy active"
 msgstr "Συνδεδεμένο · proxy συστήματος ενεργός"
 
-#: crates/obscure-app/src/connection.rs:984
+#: crates/obscure-app/src/connection.rs:1066
 msgid "Connected · local proxy only"
 msgstr "Συνδεδεμένο · μόνο τοπικός proxy"
 
-#: crates/obscure-app/src/connection.rs:985
+#: crates/obscure-app/src/connection.rs:1067
 msgid "Connected · all traffic through the tunnel"
 msgstr "Συνδεδεμένο · όλη η κίνηση μέσω του τούνελ"
 
-#: crates/obscure-app/src/connection.rs:989
+#: crates/obscure-app/src/connection.rs:1072
 msgid "Connected"
 msgstr "Συνδεδεμένο"
 
-#: crates/obscure-app/src/connection.rs:1006
+#: crates/obscure-app/src/connection.rs:1090
 msgid "Connection failed"
 msgstr "Η σύνδεση απέτυχε"
+
+#: crates/obscure-app/src/connection.rs:1472
+msgid "Your saved servers could not be read. A copy was kept next to the settings file and the list starts empty."
+msgstr "Δεν ήταν δυνατή η ανάγνωση των αποθηκευμένων διακομιστών. Κρατήθηκε αντίγραφο δίπλα στο αρχείο ρυθμίσεων και η λίστα ξεκινά κενή."
 
 #: crates/obscure-app/src/humanize.rs:9
 msgid "This kind of link is not supported yet: %s"
@@ -572,55 +576,59 @@ msgstr "Η τοπική θύρα χρησιμοποιείται ήδη από ά
 msgid "The connection engine stopped unexpectedly."
 msgstr "Η μηχανή σύνδεσης σταμάτησε απροσδόκητα."
 
-#: crates/obscure-app/src/humanize.rs:47
+#: crates/obscure-app/src/humanize.rs:48
+msgid "The tunnel came up but no traffic passes through it. Check the connection log."
+msgstr "Το τούνελ σηκώθηκε, αλλά δεν περνά κίνηση από αυτό. Δείτε την καταγραφή σύνδεσης."
+
+#: crates/obscure-app/src/humanize.rs:50
 msgid "The connection engine did not respond in time."
 msgstr "Η μηχανή σύνδεσης δεν απάντησε εγκαίρως."
 
-#: crates/obscure-app/src/humanize.rs:49
+#: crates/obscure-app/src/humanize.rs:52
 msgid "Could not change the system proxy. The local connection is still available."
 msgstr "Δεν ήταν δυνατή η αλλαγή του proxy συστήματος. Η τοπική σύνδεση παραμένει διαθέσιμη."
 
-#: crates/obscure-app/src/humanize.rs:51
+#: crates/obscure-app/src/humanize.rs:54
 msgid "Could not notify the system about the new proxy."
 msgstr "Δεν ήταν δυνατή η ενημέρωση του συστήματος για τον νέο proxy."
 
-#: crates/obscure-app/src/humanize.rs:52
+#: crates/obscure-app/src/humanize.rs:55
 msgid "Could not read or write Obscure's files."
 msgstr "Δεν ήταν δυνατή η ανάγνωση ή εγγραφή των αρχείων του Obscure."
 
-#: crates/obscure-app/src/humanize.rs:53
+#: crates/obscure-app/src/humanize.rs:56
 msgid "Could not read traffic statistics."
 msgstr "Δεν ήταν δυνατή η ανάγνωση των στατιστικών κίνησης."
 
-#: crates/obscure-app/src/humanize.rs:54
+#: crates/obscure-app/src/humanize.rs:57
 msgid "The server did not respond to the latency test."
 msgstr "Ο διακομιστής δεν απάντησε στη δοκιμή καθυστέρησης."
 
-#: crates/obscure-app/src/humanize.rs:55
+#: crates/obscure-app/src/humanize.rs:58
 msgid "The subscription could not be read. Check the address."
 msgstr "Δεν ήταν δυνατή η ανάγνωση της συνδρομής. Ελέγξτε τη διεύθυνση."
 
-#: crates/obscure-app/src/humanize.rs:57
+#: crates/obscure-app/src/humanize.rs:60
 msgid "This subscription is in Clash format, which Obscure does not support yet."
 msgstr "Αυτή η συνδρομή είναι σε μορφή Clash, που το Obscure δεν υποστηρίζει ακόμη."
 
-#: crates/obscure-app/src/humanize.rs:60
+#: crates/obscure-app/src/humanize.rs:63
 msgid "Tunnel mode is not possible here: the engine is stored on a filesystem that ignores permissions (nosuid)."
 msgstr "Η λειτουργία τούνελ δεν είναι δυνατή εδώ: η μηχανή βρίσκεται σε σύστημα αρχείων που αγνοεί δικαιώματα (nosuid)."
 
-#: crates/obscure-app/src/humanize.rs:62
+#: crates/obscure-app/src/humanize.rs:65
 msgid "Could not get permission for tunnel mode."
 msgstr "Δεν ήταν δυνατή η λήψη άδειας για τη λειτουργία τούνελ."
 
-#: crates/obscure-app/src/humanize.rs:63
+#: crates/obscure-app/src/humanize.rs:66
 msgid "Tunnel mode needs your permission to route all traffic."
 msgstr "Η λειτουργία τούνελ χρειάζεται την άδειά σας για να δρομολογεί όλη την κίνηση."
 
-#: crates/obscure-app/src/humanize.rs:64
+#: crates/obscure-app/src/humanize.rs:67
 msgid "The custom configuration is not valid JSON."
 msgstr "Η προσαρμοσμένη ρύθμιση δεν είναι έγκυρο JSON."
 
-#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:253
+#: crates/obscure-app/src/import_dialog.rs:60 crates/obscure-app/src/import_dialog.rs:259
 msgid "No valid link found."
 msgstr "Δεν βρέθηκε έγκυρος σύνδεσμος."
 
@@ -632,29 +640,29 @@ msgstr "Εικόνες"
 msgid "Choose an image with a QR code"
 msgstr "Επιλέξτε μια εικόνα με κωδικό QR"
 
-#: crates/obscure-app/src/import_dialog.rs:97 crates/obscure-app/src/import_dialog.rs:149
-msgid "No QR code was found in that image."
-msgstr "Δεν βρέθηκε κωδικός QR σε αυτήν την εικόνα."
-
-#: crates/obscure-app/src/import_dialog.rs:119
+#: crates/obscure-app/src/import_dialog.rs:125
 msgid "No QR code was found on the screen. Make sure it is fully visible and try again."
 msgstr "Δεν βρέθηκε κωδικός QR στην οθόνη. Βεβαιωθείτε ότι είναι πλήρως ορατός και δοκιμάστε ξανά."
 
-#: crates/obscure-app/src/import_dialog.rs:246
+#: crates/obscure-app/src/import_dialog.rs:252
 msgid "Subscription address: the servers will be downloaded and kept up to date."
 msgstr "Διεύθυνση συνδρομής: οι διακομιστές θα κατέβουν και θα διατηρούνται ενημερωμένοι."
 
-#: crates/obscure-app/src/import_dialog.rs:256
+#: crates/obscure-app/src/import_dialog.rs:262
 msgid "%n server ready to add."
 msgid_plural "%n servers ready to add."
 msgstr[0] "%n διακομιστής έτοιμος για προσθήκη."
 msgstr[1] "%n διακομιστές έτοιμοι για προσθήκη."
 
-#: crates/obscure-app/src/import_dialog.rs:266
+#: crates/obscure-app/src/import_dialog.rs:272
 msgid "%n link could not be read."
 msgid_plural "%n links could not be read."
 msgstr[0] "%n σύνδεσμος δεν ήταν δυνατό να διαβαστεί."
 msgstr[1] "%n σύνδεσμοι δεν ήταν δυνατό να διαβαστούν."
+
+#: crates/obscure-app/src/import_dialog.rs:295
+msgid "No QR code was found in that image."
+msgstr "Δεν βρέθηκε κωδικός QR σε αυτήν την εικόνα."
 
 #: crates/obscure-app/src/tray.rs:87
 msgid "Show Obscure"
@@ -688,7 +696,7 @@ msgstr "Διεύθυνση"
 msgid "Copy Link"
 msgstr "Αντιγραφή συνδέσμου"
 
-#: crates/obscure-app/src/log_dialog.rs:85
+#: crates/obscure-app/src/log_dialog.rs:84
 msgid "Nothing logged yet. Connect to see what the engine reports."
 msgstr "Τίποτα καταγεγραμμένο ακόμη. Συνδεθείτε για να δείτε τι αναφέρει η μηχανή."
 
@@ -704,35 +712,35 @@ msgstr "Το σύστημα δεν επέτρεψε στο Obscure να ξεκι
 msgid "Automatic start is not available on this system."
 msgstr "Η αυτόματη έναρξη δεν είναι διαθέσιμη σε αυτό το σύστημα."
 
-#: crates/obscure-app/src/preferences_dialog.rs:197
+#: crates/obscure-app/src/preferences_dialog.rs:191
 msgid "Remove rule"
 msgstr "Αφαίρεση κανόνα"
 
-#: crates/obscure-app/src/preferences_dialog.rs:223
+#: crates/obscure-app/src/preferences_dialog.rs:217
 msgid "New rule"
 msgstr "Νέος κανόνας"
 
-#: crates/obscure-app/src/preferences_dialog.rs:224
+#: crates/obscure-app/src/preferences_dialog.rs:218
 msgid "What should match, and where it goes."
 msgstr "Τι πρέπει να ταιριάζει και πού πηγαίνει."
 
-#: crates/obscure-app/src/preferences_dialog.rs:228
+#: crates/obscure-app/src/preferences_dialog.rs:222
 msgid "Domain, address or category"
 msgstr "Τομέας, διεύθυνση ή κατηγορία"
 
-#: crates/obscure-app/src/preferences_dialog.rs:231 crates/obscure-app/src/preferences_dialog.rs:282
+#: crates/obscure-app/src/preferences_dialog.rs:225 crates/obscure-app/src/preferences_dialog.rs:309
 msgid "Through the server"
 msgstr "Μέσω διακομιστή"
 
-#: crates/obscure-app/src/preferences_dialog.rs:232 crates/obscure-app/src/preferences_dialog.rs:283
+#: crates/obscure-app/src/preferences_dialog.rs:226 crates/obscure-app/src/preferences_dialog.rs:310
 msgid "Direct"
 msgstr "Απευθείας"
 
-#: crates/obscure-app/src/preferences_dialog.rs:233 crates/obscure-app/src/preferences_dialog.rs:284
+#: crates/obscure-app/src/preferences_dialog.rs:227 crates/obscure-app/src/preferences_dialog.rs:311
 msgid "Block"
 msgstr "Μπλοκάρισμα"
 
-#: crates/obscure-app/src/preferences_dialog.rs:236
+#: crates/obscure-app/src/preferences_dialog.rs:230
 msgid "Send to"
 msgstr "Αποστολή σε"
 
@@ -782,24 +790,24 @@ msgstr "→ απευθείας"
 msgid "✕ blocked"
 msgstr "✕ μπλοκαρισμένο"
 
-#: crates/obscure-app/src/connections_dialog.rs:157
+#: crates/obscure-app/src/connections_dialog.rs:153
 msgid "rejected"
 msgstr "απορρίφθηκε"
 
-#: crates/obscure-app/src/connections_dialog.rs:158
+#: crates/obscure-app/src/connections_dialog.rs:154
 msgid "blocked"
 msgstr "μπλοκαρισμένο"
 
-#: crates/obscure-app/src/connections_dialog.rs:159
+#: crates/obscure-app/src/connections_dialog.rs:155
 msgid "direct"
 msgstr "απευθείας"
 
-#: crates/obscure-app/src/connections_dialog.rs:160
+#: crates/obscure-app/src/connections_dialog.rs:156
 msgid "via server"
 msgstr "μέσω διακομιστή"
 
 #. DNS-over-HTTPS lookups are logged as `[local]`.
-#: crates/obscure-app/src/connections_dialog.rs:162
+#: crates/obscure-app/src/connections_dialog.rs:158
 msgid "DNS lookup"
 msgstr "ερώτημα DNS"
 
@@ -855,6 +863,6 @@ msgstr "Η μηχανή δέχθηκε τη ρύθμιση αλλά δεν μπ�
 msgid "The engine rejected it: %s"
 msgstr "Η μηχανή την απέρριψε: %s"
 
-#: crates/obscure-app/src/shortcuts.rs:19
+#: crates/obscure-app/src/shortcuts.rs:46
 msgid "Connect or disconnect Obscure"
 msgstr "Σύνδεση ή αποσύνδεση του Obscure"

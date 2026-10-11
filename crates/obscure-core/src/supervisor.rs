@@ -1,6 +1,7 @@
 //! Runs the Xray process: validates the configuration with `-test`, spawns
 //! `xray run`, streams its output and detects exit.
 
+use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration;
@@ -14,15 +15,15 @@ use crate::error::{Error, Result};
 /// Events emitted by a running core.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CoreEvent {
-    /// A line from stdout/stderr.
+    /// A line from stdout/stderr. Exit is detected by polling
+    /// [`RunningCore::check_exit`].
     Log(String),
-    /// The process ended. `status` is a human string such as `exit code 1`.
-    Exited { status: String },
 }
 
 /// Handle to a running Xray process. Dropping it kills the process.
 pub struct RunningCore {
     child: Child,
+    pid_file: Option<PathBuf>,
     pub local_port: u16,
     pub events: mpsc::UnboundedReceiver<CoreEvent>,
 }
@@ -50,12 +51,22 @@ impl RunningCore {
                 libc_kill(pid as i32, 15);
             }
             match tokio::time::timeout(Duration::from_secs(3), self.child.wait()).await {
-                Ok(_) => return,
+                Ok(_) => {
+                    self.remove_pid_file();
+                    return;
+                }
                 Err(_) => tracing::warn!("xray did not exit after SIGTERM, killing"),
             }
         }
         let _ = self.child.kill().await;
         let _ = self.child.wait().await;
+        self.remove_pid_file();
+    }
+
+    fn remove_pid_file(&self) {
+        if let Some(f) = &self.pid_file {
+            let _ = std::fs::remove_file(f);
+        }
     }
 }
 
@@ -69,11 +80,66 @@ unsafe extern "C" {
 pub struct Supervisor {
     xray: PathBuf,
     asset_dir: PathBuf,
+    pid_file: Option<PathBuf>,
 }
 
 impl Supervisor {
     pub fn new(xray: PathBuf, asset_dir: PathBuf) -> Self {
-        Self { xray, asset_dir }
+        Self {
+            xray,
+            asset_dir,
+            pid_file: None,
+        }
+    }
+
+    /// Records the running core's pid in `pid_file`, so a core left behind
+    /// by a crashed or killed app (`kill -9` skips `kill_on_drop`) is
+    /// stopped before the next start instead of holding the port.
+    pub fn with_pid_file(mut self, pid_file: PathBuf) -> Self {
+        self.pid_file = Some(pid_file);
+        self
+    }
+
+    /// Stops the core recorded in the pid file, if it is still running and
+    /// really is our Xray (checked through its command line, so a reused
+    /// pid is never touched).
+    pub async fn stop_orphan(&self) {
+        let Some(pid_file) = &self.pid_file else {
+            return;
+        };
+        let Some((pid, owner)) = std::fs::read_to_string(pid_file)
+            .ok()
+            .and_then(|s| parse_pid_file(&s))
+        else {
+            return;
+        };
+        // Another live instance (e.g. the installed app next to a
+        // development build, sharing the data dir) still owns it.
+        if let Some(owner) = owner
+            && owner != std::process::id() as i32
+            && process_alive(owner)
+        {
+            return;
+        }
+        let _ = std::fs::remove_file(pid_file);
+        if !is_our_core(pid, &self.xray) {
+            return;
+        }
+        tracing::warn!("stopping a leftover Xray (pid {pid}) from a previous session");
+        // SAFETY: plain libc calls; the pid was verified above.
+        unsafe {
+            libc_kill(pid, 15);
+        }
+        for _ in 0..30 {
+            if !is_our_core(pid, &self.xray) {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        unsafe {
+            libc_kill(pid, 9);
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
     }
 
     fn command(&self) -> Command {
@@ -110,6 +176,7 @@ impl Supervisor {
     /// Validates, spawns and waits until the local port accepts connections.
     pub async fn start(&self, config: &Path, local_port: u16) -> Result<RunningCore> {
         self.test_config(config).await?;
+        self.stop_orphan().await;
 
         let mut child = self
             .command()
@@ -126,8 +193,15 @@ impl Supervisor {
             spawn_line_reader(BufReader::new(stderr), tx);
         }
 
+        if let (Some(f), Some(pid)) = (&self.pid_file, child.id())
+            && let Err(e) =
+                crate::paths::write_private(f, format!("{pid} {}", std::process::id()).as_bytes())
+        {
+            tracing::warn!("cannot record the core pid: {e}");
+        }
         let mut core = RunningCore {
             child,
+            pid_file: self.pid_file.clone(),
             local_port,
             events: rx,
         };
@@ -142,10 +216,8 @@ impl Supervisor {
                 .try_wait()
                 .map_err(|e| Error::io(&self.xray, e))?
             {
-                while let Ok(ev) = core.events.try_recv() {
-                    if let CoreEvent::Log(l) = ev {
-                        early_output.push(l);
-                    }
+                while let Ok(CoreEvent::Log(l)) = core.events.try_recv() {
+                    early_output.push(l);
                 }
                 return Err(Error::CoreExited {
                     status: describe_status(status),
@@ -153,7 +225,19 @@ impl Supervisor {
                 });
             }
             if tokio::net::TcpStream::connect(&addr).await.is_ok() {
-                break;
+                // Something answered; make sure it is our child and not
+                // another process holding the port (ours would then die
+                // with "address already in use").
+                tokio::time::sleep(Duration::from_millis(150)).await;
+                if core
+                    .child
+                    .try_wait()
+                    .map_err(|e| Error::io(&self.xray, e))?
+                    .is_none()
+                {
+                    break;
+                }
+                continue;
             }
             if tokio::time::Instant::now() >= deadline {
                 core.stop().await;
@@ -193,6 +277,33 @@ impl RunningCore {
     }
 }
 
+/// Pid file contents: `<core pid> <app pid>` (older files: just the core).
+fn parse_pid_file(text: &str) -> Option<(i32, Option<i32>)> {
+    let mut it = text.split_whitespace();
+    let pid = it.next()?.parse::<i32>().ok().filter(|p| *p > 1)?;
+    let owner = it.next().and_then(|o| o.parse::<i32>().ok());
+    Some((pid, owner))
+}
+
+fn process_alive(pid: i32) -> bool {
+    std::fs::read_to_string(format!("/proc/{pid}/stat")).is_ok_and(|s| {
+        s.rsplit(')')
+            .next()
+            .and_then(|r| r.split_whitespace().next())
+            != Some("Z")
+    })
+}
+
+/// `true` if `pid` is alive and was started from the `xray` binary.
+fn is_our_core(pid: i32, xray: &Path) -> bool {
+    let Ok(cmdline) = std::fs::read(format!("/proc/{pid}/cmdline")) else {
+        return false;
+    };
+    let argv0 = cmdline.split(|b| *b == 0).next().unwrap_or_default();
+    // A zombie has an empty command line.
+    !argv0.is_empty() && Path::new(std::ffi::OsStr::from_bytes(argv0)) == xray
+}
+
 fn describe_status(status: std::process::ExitStatus) -> String {
     use std::os::unix::process::ExitStatusExt;
     if let Some(code) = status.code() {
@@ -206,26 +317,29 @@ fn describe_status(status: std::process::ExitStatus) -> String {
 
 /// Writes `config` to `path` (0600) atomically.
 pub fn write_config(path: &Path, config: &serde_json::Value) -> Result<()> {
-    use std::os::unix::fs::OpenOptionsExt;
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
-    }
-    let tmp = path.with_extension("json.tmp");
-    let mut f = std::fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(0o600)
-        .open(&tmp)
-        .map_err(|e| Error::io(&tmp, e))?;
-    serde_json::to_writer_pretty(&mut f, config)?;
-    std::fs::rename(&tmp, path).map_err(|e| Error::io(path, e))?;
-    Ok(())
+    crate::paths::write_private(path, &serde_json::to_vec_pretty(config)?)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Writes an executable script and waits until it can actually be
+    /// executed: a concurrent test may fork while our write fd is still
+    /// open, which makes exec fail with ETXTBSY for a moment.
+    fn make_script(path: &Path, body: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::write(path, body).unwrap();
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        for _ in 0..50 {
+            match std::process::Command::new(path).arg("--probe").output() {
+                Err(e) if e.raw_os_error() == Some(26) => {
+                    std::thread::sleep(Duration::from_millis(20))
+                }
+                _ => return,
+            }
+        }
+    }
 
     #[tokio::test]
     async fn missing_binary_is_reported() {
@@ -238,9 +352,7 @@ mod tests {
     async fn fake_core_rejecting_config() {
         let dir = tempfile::tempdir().unwrap();
         let fake = dir.path().join("xray");
-        std::fs::write(&fake, "#!/bin/sh\necho 'bad config' >&2\nexit 23\n").unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        make_script(&fake, "#!/bin/sh\necho 'bad config' >&2\nexit 23\n");
         let s = Supervisor::new(fake, dir.path().to_path_buf());
         let err = s.test_config(Path::new("/dev/null")).await.unwrap_err();
         assert!(matches!(err, Error::ConfigRejected(ref t) if t.contains("bad config")));
@@ -252,9 +364,10 @@ mod tests {
         // python, so we exercise readiness detection and SIGTERM handling.
         let dir = tempfile::tempdir().unwrap();
         let fake = dir.path().join("xray");
-        std::fs::write(
+        make_script(
             &fake,
             r#"#!/bin/sh
+if [ "$1" = "--probe" ]; then exit 0; fi
 if [ "$2" = "-test" ]; then exit 0; fi
 echo "fake xray started"
 exec python3 -c 'import socket,time,signal
@@ -262,13 +375,11 @@ signal.signal(signal.SIGTERM, lambda *a: exit(0))
 s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1); s.bind(("127.0.0.1", 28765)); s.listen(1)
 while True: time.sleep(1)'
 "#,
-        )
-        .unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&fake, std::fs::Permissions::from_mode(0o755)).unwrap();
+        );
         let s = Supervisor::new(fake, dir.path().to_path_buf());
         let cfg = dir.path().join("c.json");
         write_config(&cfg, &serde_json::json!({})).unwrap();
+        use std::os::unix::fs::PermissionsExt;
         assert_eq!(
             std::fs::metadata(&cfg).unwrap().permissions().mode() & 0o777,
             0o600
@@ -281,6 +392,130 @@ while True: time.sleep(1)'
             .unwrap();
         assert_eq!(first, Some(CoreEvent::Log("fake xray started".into())));
         core.stop().await;
+    }
+
+    /// Fake core that listens on the port written in its config (argv0 is
+    /// kept as the script path, like a real `xray`).
+    const LISTENING_CORE: &str = r#"#!/bin/bash
+if [ "$1" = "--probe" ]; then exit 0; fi
+if [ "$2" = "-test" ]; then exit 0; fi
+exec -a "$0" python3 -c 'import socket,time,signal,sys
+signal.signal(signal.SIGTERM, lambda *a: sys.exit(0))
+port=int(open(sys.argv[1]).read())
+s=socket.socket(); s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+try:
+    s.bind(("127.0.0.1", port))
+except OSError as e:
+    print("listen failed:", e); sys.exit(1)
+s.listen(1)
+while True: time.sleep(1)' "$3"
+"#;
+
+    fn free_port() -> u16 {
+        std::net::TcpListener::bind("127.0.0.1:0")
+            .unwrap()
+            .local_addr()
+            .unwrap()
+            .port()
+    }
+
+    fn alive(pid: u32) -> bool {
+        std::fs::read_to_string(format!("/proc/{pid}/stat"))
+            .is_ok_and(|s| !s.split(' ').nth(2).is_some_and(|st| st == "Z"))
+    }
+
+    #[tokio::test]
+    async fn leftover_core_is_stopped_before_the_next_start() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("xray");
+        make_script(&fake, LISTENING_CORE);
+        let port = free_port();
+        let cfg = dir.path().join("c.json");
+        std::fs::write(&cfg, port.to_string()).unwrap();
+        let pid_file = dir.path().join("xray.pid");
+        let s =
+            Supervisor::new(fake.clone(), dir.path().to_path_buf()).with_pid_file(pid_file.clone());
+
+        // Simulate an app killed with SIGKILL: the core outlives its handle.
+        let first = s.start(&cfg, port).await.unwrap();
+        let old_pid = first.pid().unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&pid_file).unwrap(),
+            format!("{old_pid} {}", std::process::id())
+        );
+        std::mem::forget(first);
+        // Pretend the owning app is gone (its pid is now a dead one).
+        std::fs::write(&pid_file, format!("{old_pid} {}", dead_pid())).unwrap();
+
+        let second = s.start(&cfg, port).await.expect("starts after the orphan");
+        let new_pid = second.pid().unwrap();
+        assert_ne!(new_pid, old_pid);
+        assert!(!alive(old_pid), "orphan stopped");
+        assert!(second_is_listener(port));
+        second.stop().await;
+        assert!(!pid_file.exists(), "pid file removed on stop");
+    }
+
+    fn dead_pid() -> u32 {
+        let mut c = std::process::Command::new("true").spawn().unwrap();
+        let pid = c.id();
+        c.wait().unwrap();
+        pid
+    }
+
+    #[tokio::test]
+    async fn core_of_another_live_instance_is_left_alone() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("xray");
+        make_script(&fake, LISTENING_CORE);
+        let port = free_port();
+        let cfg = dir.path().join("c.json");
+        std::fs::write(&cfg, port.to_string()).unwrap();
+        let pid_file = dir.path().join("xray.pid");
+        let s = Supervisor::new(fake, dir.path().to_path_buf()).with_pid_file(pid_file.clone());
+        let core = s.start(&cfg, port).await.unwrap();
+        let pid = core.pid().unwrap();
+        // Owned by another live process (pid 1 stands in for it).
+        std::fs::write(&pid_file, format!("{pid} 1")).unwrap();
+        s.stop_orphan().await;
+        assert!(alive(pid), "a live instance's core is not touched");
+        core.stop().await;
+    }
+
+    #[test]
+    fn pid_file_formats() {
+        assert_eq!(parse_pid_file("123 456\n"), Some((123, Some(456))));
+        assert_eq!(parse_pid_file("123"), Some((123, None)));
+        assert_eq!(parse_pid_file("1"), None);
+        assert_eq!(parse_pid_file("x"), None);
+    }
+
+    fn second_is_listener(port: u16) -> bool {
+        std::net::TcpStream::connect(("127.0.0.1", port)).is_ok()
+    }
+
+    #[tokio::test]
+    async fn port_held_by_someone_else_is_not_reported_ready() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("xray");
+        make_script(&fake, LISTENING_CORE);
+        let squatter = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = squatter.local_addr().unwrap().port();
+        let cfg = dir.path().join("c.json");
+        std::fs::write(&cfg, port.to_string()).unwrap();
+        let s = Supervisor::new(fake, dir.path().to_path_buf());
+        let err = s.start(&cfg, port).await.unwrap_err();
+        assert!(
+            matches!(err, Error::CoreExited { ref output, .. } if output.contains("listen failed")),
+            "{err:?}"
+        );
+    }
+
+    #[test]
+    fn pid_check_ignores_other_programs() {
+        let me = std::process::id() as i32;
+        assert!(!is_our_core(me, Path::new("/nonexistent/xray")));
+        assert!(!is_our_core(i32::MAX, Path::new("/x")));
     }
 }
 

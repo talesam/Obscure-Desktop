@@ -2,14 +2,15 @@
 //! de-facto standard headers (`subscription-userinfo`, `profile-title`,
 //! `profile-update-interval`, `profile-web-page-url`, `support-url`).
 
+use std::cell::Cell;
 use std::time::Duration;
 
-use base64::Engine;
-use base64::engine::general_purpose::{STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD};
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 use crate::error::{Error, Result};
-use crate::links::{Server, parse_many};
+use crate::links::{Server, decode_base64_lenient, parse_many};
 
 /// Quota information from `subscription-userinfo`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -25,7 +26,7 @@ impl UserInfo {
     pub fn used(&self) -> Option<u64> {
         match (self.upload, self.download) {
             (None, None) => None,
-            (u, d) => Some(u.unwrap_or(0) + d.unwrap_or(0)),
+            (u, d) => Some(u.unwrap_or(0).saturating_add(d.unwrap_or(0))),
         }
     }
 
@@ -84,16 +85,13 @@ pub fn decode_body(body: &str) -> Result<String> {
     if trimmed.contains("://") {
         return Ok(trimmed.to_owned());
     }
-    let compact: String = trimmed.chars().filter(|c| !c.is_whitespace()).collect();
-    for engine in [&STANDARD, &STANDARD_NO_PAD, &URL_SAFE, &URL_SAFE_NO_PAD] {
-        if let Ok(bytes) = engine.decode(&compact) {
-            let text = String::from_utf8_lossy(&bytes).into_owned();
-            if looks_like_clash_yaml(&text) {
-                return Err(Error::ClashYaml);
-            }
-            if text.contains("://") {
-                return Ok(text);
-            }
+    if let Some(bytes) = decode_base64_lenient(trimmed) {
+        let text = String::from_utf8_lossy(&bytes).into_owned();
+        if looks_like_clash_yaml(&text) {
+            return Err(Error::ClashYaml);
+        }
+        if text.contains("://") {
+            return Ok(text);
         }
     }
     Err(Error::Subscription(
@@ -114,40 +112,104 @@ pub fn decode_title(header: &str) -> Option<String> {
         return None;
     }
     if let Some(b64) = h.strip_prefix("base64:") {
-        for engine in [&STANDARD, &STANDARD_NO_PAD, &URL_SAFE, &URL_SAFE_NO_PAD] {
-            if let Ok(bytes) = engine.decode(b64.trim()) {
-                return Some(String::from_utf8_lossy(&bytes).trim().to_owned());
-            }
-        }
-        return None;
+        return decode_base64_lenient(b64)
+            .map(|bytes| String::from_utf8_lossy(&bytes).trim().to_owned());
     }
     Some(h.to_owned())
 }
 
-/// Fetches and decodes a subscription.
+/// Largest subscription body accepted.
+pub const MAX_BODY_SIZE: usize = 8 * 1024 * 1024;
+
+/// Redirects seen while fetching one subscription.
+#[derive(Debug, Clone, Copy)]
+struct RedirectTrail {
+    hops: u32,
+    all_permanent: bool,
+}
+
+tokio::task_local! {
+    static REDIRECTS: Cell<RedirectTrail>;
+}
+
+/// Called by the redirect policy of [`crate::http_client`] for every hop it
+/// follows. Only records something inside [`fetch`]; the policy runs while
+/// the request future is polled, i.e. on the fetching task.
+pub(crate) fn record_redirect(status: reqwest::StatusCode) {
+    let _ = REDIRECTS.try_with(|trail| {
+        let mut t = trail.get();
+        t.hops += 1;
+        t.all_permanent &= matches!(
+            status,
+            reqwest::StatusCode::MOVED_PERMANENTLY | reqwest::StatusCode::PERMANENT_REDIRECT
+        );
+        trail.set(t);
+    });
+}
+
+fn too_large() -> Error {
+    Error::Subscription("subscription is too large".into())
+}
+
+/// Validates a URL the server asks us to use from now on: it must be HTTP(S)
+/// and must not downgrade an HTTPS subscription to plain HTTP.
+fn acceptable_new_url(original: &Url, candidate: &str) -> Option<Url> {
+    let new = Url::parse(candidate).ok()?;
+    crate::check_redirect(Some(original), &new, 1).ok()?;
+    (new != *original).then_some(new)
+}
+
+/// Fetches and decodes a subscription. With a client from
+/// [`crate::http_client`], `new_url` is only reported when every redirect
+/// was permanent (301/308); temporary ones never replace the stored URL.
 pub async fn fetch(client: &reqwest::Client, url: &str) -> Result<Fetched> {
-    let resp = client
-        .get(url)
-        .header("Accept", "text/plain, */*")
-        .send()
-        .await?
-        .error_for_status()?;
+    let trail = Cell::new(RedirectTrail {
+        hops: 0,
+        all_permanent: true,
+    });
+    let (resp, trail) = REDIRECTS
+        .scope(trail, async {
+            let resp = client
+                .get(url)
+                .header("Accept", "text/plain, */*")
+                .send()
+                .await;
+            (resp, REDIRECTS.with(Cell::get))
+        })
+        .await;
+    let resp = resp?.error_for_status()?;
 
     let headers = resp.headers().clone();
     let header = |name: &str| {
         headers
             .get(name)
-            .and_then(|v| v.to_str().ok())
-            .map(str::trim)
+            .map(|v| String::from_utf8_lossy(v.as_bytes()).trim().to_owned())
             .filter(|s| !s.is_empty())
-            .map(str::to_owned)
     };
-    let final_url = resp.url().to_string();
-    let new_url =
-        header("moved-permanently-to").or_else(|| (final_url != url).then_some(final_url));
+    let original = Url::parse(url).ok();
+    let new_url = original.as_ref().and_then(|orig| {
+        let header_url = header("moved-permanently-to").and_then(|h| acceptable_new_url(orig, &h));
+        let redirected = (trail.hops > 0 && trail.all_permanent && resp.url() != orig)
+            .then(|| resp.url().clone());
+        header_url.or(redirected).map(String::from)
+    });
 
-    let body = resp.text().await?;
-    let text = decode_body(&body)?;
+    if resp
+        .content_length()
+        .is_some_and(|len| len > MAX_BODY_SIZE as u64)
+    {
+        return Err(too_large());
+    }
+    let mut body = Vec::new();
+    let mut stream = resp.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        if body.len() + chunk.len() > MAX_BODY_SIZE {
+            return Err(too_large());
+        }
+        body.extend_from_slice(&chunk);
+    }
+    let text = decode_body(&String::from_utf8_lossy(&body))?;
     let (servers, failed) = parse_many(&text);
     if servers.is_empty() {
         return Err(Error::Subscription("no servers in subscription".into()));
@@ -160,7 +222,7 @@ pub async fn fetch(client: &reqwest::Client, url: &str) -> Result<Fetched> {
         update_interval: header("profile-update-interval")
             .and_then(|h| h.parse::<u64>().ok())
             .filter(|h| *h > 0)
-            .map(|hours| Duration::from_secs(hours * 3600)),
+            .map(|hours| Duration::from_secs(hours.saturating_mul(3600))),
         web_page_url: header("profile-web-page-url"),
         support_url: header("support-url"),
         new_url,
@@ -170,6 +232,8 @@ pub async fn fetch(client: &reqwest::Client, url: &str) -> Result<Fetched> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::Engine;
+    use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     const UUID: &str = "2b1e4a3c-6f7d-4e8a-9b0c-1d2e3f4a5b6c";
@@ -270,6 +334,143 @@ mod tests {
         assert_eq!(f.web_page_url.as_deref(), Some("https://panel.example"));
         assert_eq!(f.support_url.as_deref(), Some("https://t.me/x"));
         assert_eq!(f.new_url, None);
+    }
+
+    /// Serves the responses built by `make(port)`, one per connection, in order.
+    async fn serve_seq(make: impl FnOnce(u16) -> Vec<String>) -> u16 {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let responses = make(port);
+        tokio::spawn(async move {
+            for response in responses {
+                let (mut sock, _) = listener.accept().await.unwrap();
+                let mut buf = [0u8; 4096];
+                let _ = sock.read(&mut buf).await;
+                sock.write_all(response.as_bytes()).await.unwrap();
+                sock.shutdown().await.ok();
+            }
+        });
+        port
+    }
+
+    fn redirect(status: &str, port: u16, path: &str) -> String {
+        format!(
+            "HTTP/1.1 {status}\r\nLocation: http://127.0.0.1:{port}{path}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        )
+    }
+
+    fn links_ok() -> String {
+        let body = format!("vless://{UUID}@a.example:443?security=none#A\n");
+        format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        )
+    }
+
+    async fn fetch_after(chain: &'static [&'static str]) -> Result<Fetched> {
+        crate::init_crypto();
+        let port = serve_seq(|port| {
+            let mut v: Vec<String> = chain
+                .iter()
+                .enumerate()
+                .map(|(i, status)| redirect(status, port, &format!("/hop{}", i + 1)))
+                .collect();
+            v.push(links_ok());
+            v
+        })
+        .await;
+        let client = crate::http_client("Obscure/test");
+        fetch(&client, &format!("http://127.0.0.1:{port}/sub")).await
+    }
+
+    #[tokio::test]
+    async fn only_permanent_redirects_replace_the_url() {
+        let f = fetch_after(&["302 Found"]).await.unwrap();
+        assert_eq!(f.new_url, None, "temporary redirect");
+        let f = fetch_after(&["307 Temporary Redirect"]).await.unwrap();
+        assert_eq!(f.new_url, None, "temporary redirect");
+        let f = fetch_after(&["301 Moved Permanently", "302 Found"])
+            .await
+            .unwrap();
+        assert_eq!(f.new_url, None, "mixed chain");
+        let f = fetch_after(&["301 Moved Permanently"]).await.unwrap();
+        assert!(f.new_url.unwrap().ends_with("/hop1"));
+        let f = fetch_after(&["308 Permanent Redirect", "301 Moved Permanently"])
+            .await
+            .unwrap();
+        assert!(f.new_url.unwrap().ends_with("/hop2"));
+    }
+
+    #[tokio::test]
+    async fn redirect_chains_are_limited() {
+        let err = fetch_after(&["302 Found"; 6]).await.unwrap_err();
+        assert!(
+            matches!(err, Error::Http(ref e) if e.is_redirect()),
+            "{err:?}"
+        );
+        assert!(fetch_after(&["302 Found"; 5]).await.is_ok());
+    }
+
+    #[test]
+    fn moved_permanently_header_cannot_downgrade() {
+        let https = Url::parse("https://a.example/sub?token=1").unwrap();
+        assert_eq!(acceptable_new_url(&https, "http://a.example/sub"), None);
+        assert_eq!(acceptable_new_url(&https, "not a url"), None);
+        assert_eq!(acceptable_new_url(&https, https.as_str()), None);
+        assert!(acceptable_new_url(&https, "https://b.example/sub").is_some());
+    }
+
+    #[tokio::test]
+    async fn oversized_bodies_are_refused() {
+        crate::init_crypto();
+        let client = crate::http_client("Obscure/test");
+        // Announced size over the limit: refused before reading.
+        let port = serve_once(format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\nvless://",
+            MAX_BODY_SIZE + 1
+        ))
+        .await;
+        let err = fetch(&client, &format!("http://127.0.0.1:{port}/"))
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(&err, Error::Subscription(m) if m.contains("too large")),
+            "{err:?}"
+        );
+        // No length announced: the stream is cut at the limit.
+        let body = "a".repeat(MAX_BODY_SIZE + 1024);
+        let port = serve_once(format!(
+            "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n{body}"
+        ))
+        .await;
+        let err = fetch(&client, &format!("http://127.0.0.1:{port}/"))
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(&err, Error::Subscription(m) if m.contains("too large")),
+            "{err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn raw_utf8_title_and_huge_numbers() {
+        crate::init_crypto();
+        let body = format!("vless://{UUID}@a.example:443?security=none#A\n");
+        let resp = format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nprofile-title: Assinatura São Paulo\r\nprofile-update-interval: {}\r\nsubscription-userinfo: upload={}; download={}\r\nConnection: close\r\n\r\n{body}",
+            body.len(),
+            u64::MAX,
+            u64::MAX,
+            u64::MAX
+        );
+        let port = serve_once(resp).await;
+        let client = crate::http_client("Obscure/test");
+        let f = fetch(&client, &format!("http://127.0.0.1:{port}/"))
+            .await
+            .unwrap();
+        assert_eq!(f.title.as_deref(), Some("Assinatura São Paulo"));
+        assert_eq!(f.update_interval, Some(Duration::from_secs(u64::MAX)));
+        assert_eq!(f.user_info.unwrap().used(), Some(u64::MAX));
     }
 
     #[tokio::test]

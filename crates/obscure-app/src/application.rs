@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gettextrs::gettext;
@@ -8,6 +11,15 @@ use crate::connection::ConnectionManager;
 use crate::tray::{ObscureTray, TrayCmd};
 use crate::window::ObscureWindow;
 use obscure_core::APP_VERSION;
+
+/// What the tray shows; sent as a whole so it is always consistent.
+#[derive(Clone)]
+struct TrayState {
+    connected: bool,
+    busy: bool,
+    server: String,
+    status: String,
+}
 
 mod imp {
     use super::*;
@@ -62,6 +74,7 @@ mod imp {
                 .expect("settings set once");
             self.obj().handle_termination_signals();
             self.obj().setup_tray();
+            self.obj().follow_background_policy();
             self.obj().setup_notifications();
             self.obj().setup_global_shortcut();
             self.first_activation.set(true);
@@ -120,6 +133,9 @@ mod imp {
         /// `obscure vless://…` or clicking a share link in a browser.
         fn open(&self, files: &[gio::File], _hint: &str) {
             let app = self.obj();
+            // Opening a link is an explicit request: show the window even
+            // if this launch also asked to start minimized.
+            self.start_minimized.set(false);
             app.activate();
             let text: Vec<String> = files.iter().map(|f| f.uri().to_string()).collect();
             if let Some(win) = app.active_window().and_downcast::<ObscureWindow>() {
@@ -179,7 +195,7 @@ impl ObscureApplication {
             glib::Char::from(0),
             glib::OptionFlags::NONE,
             glib::OptionArg::None,
-            "Start hidden in the tray (used by autostart)",
+            &gettext("Start hidden in the tray (used by autostart)"),
             None,
         );
         app
@@ -189,34 +205,39 @@ impl ObscureApplication {
     /// re-evaluates when it changes. The portal session ends when the
     /// runtime task is dropped (app exit).
     fn setup_global_shortcut(&self) {
-        let app = self.clone();
-        let start = move |app: &Self| {
-            if !app.settings().boolean("global-shortcut") {
+        // Stop signal of the running portal session, if any.
+        let running: Rc<RefCell<Option<tokio::sync::oneshot::Sender<()>>>> = Rc::default();
+        let apply = move |app: &Self| {
+            let enabled = app.settings().boolean("global-shortcut");
+            if !enabled {
+                if let Some(stop) = running.borrow_mut().take() {
+                    let _ = stop.send(());
+                }
                 return;
             }
+            if running.borrow().is_some() {
+                return;
+            }
+            let (stop_tx, stop_rx) = tokio::sync::oneshot::channel();
+            running.replace(Some(stop_tx));
             let (tx, rx) = async_channel::unbounded::<()>();
             crate::runtime::runtime().spawn(async move {
-                if let Err(e) = crate::shortcuts::run(tx).await {
+                if let Err(e) = crate::shortcuts::run(tx, stop_rx).await {
                     tracing::warn!("global shortcut unavailable: {e}");
                 }
             });
             let app = app.clone();
+            // Ends when the session task drops `tx`.
             glib::spawn_future_local(async move {
                 while rx.recv().await.is_ok() {
-                    if app.settings().boolean("global-shortcut") {
-                        app.manager().toggle();
-                    }
+                    app.manager().toggle();
                 }
             });
         };
-        start(&app);
-        let start2 = start;
+        apply(self);
+        let app = self.clone();
         self.settings()
-            .connect_changed(Some("global-shortcut"), move |s, _| {
-                if s.boolean("global-shortcut") {
-                    start2(&app);
-                }
-            });
+            .connect_changed(Some("global-shortcut"), move |_, _| apply(&app));
     }
 
     /// Desktop notifications for connection events. Routine events are
@@ -343,16 +364,22 @@ impl ObscureApplication {
         self.imp().tray.borrow().is_some() && self.settings().boolean("run-in-background")
     }
 
-    /// Hides instead of destroying the window when running in background,
-    /// and follows the preference live.
+    /// Hides instead of destroying the window when running in background.
     fn apply_background_policy(&self, win: &ObscureWindow) {
         win.set_hide_on_close(self.runs_in_background());
-        let app = self.clone();
-        let win_weak = win.downgrade();
+    }
+
+    /// Follows the "run in background" preference live, for every window.
+    /// Registered once (it used to be once per window and per tray start).
+    fn follow_background_policy(&self) {
+        let app = self.downgrade();
         self.settings()
             .connect_changed(Some("run-in-background"), move |_, _| {
-                if let Some(win) = win_weak.upgrade() {
-                    win.set_hide_on_close(app.runs_in_background());
+                let Some(app) = app.upgrade() else { return };
+                for win in app.windows() {
+                    if let Ok(win) = win.downcast::<ObscureWindow>() {
+                        app.apply_background_policy(&win);
+                    }
                 }
             });
     }
@@ -404,34 +431,45 @@ impl ObscureApplication {
         });
     }
 
-    /// Pushes connection state changes to the tray icon and menu.
+    /// Pushes connection state changes to the tray icon and menu. A single
+    /// task applies the latest snapshot, so updates can neither arrive out
+    /// of order nor pile up (one transition notifies four properties).
     fn mirror_state_to_tray(&self) {
+        let Some(handle) = self.imp().tray.borrow().clone() else {
+            return;
+        };
         let m = self.manager();
-        let update = {
-            let app = self.clone();
-            move |m: &ConnectionManager| {
-                let Some(handle) = app.imp().tray.borrow().clone() else {
-                    return;
-                };
-                let (connected, busy, server, status) =
-                    (m.connected(), m.busy(), m.selected_name(), m.status_text());
-                crate::runtime::runtime().spawn(async move {
-                    handle
-                        .update(|t| {
-                            t.connected = connected;
-                            t.busy = busy;
-                            t.server_name = server;
-                            t.status_text = status;
-                        })
-                        .await;
-                });
+        let snapshot = |m: &ConnectionManager| TrayState {
+            connected: m.connected(),
+            busy: m.busy(),
+            server: m.selected_name(),
+            status: m.status_text(),
+        };
+        let (tx, mut rx) = tokio::sync::watch::channel(snapshot(m));
+        crate::runtime::runtime().spawn(async move {
+            loop {
+                let state = rx.borrow_and_update().clone();
+                handle
+                    .update(move |t| {
+                        t.connected = state.connected;
+                        t.busy = state.busy;
+                        t.server_name = state.server;
+                        t.status_text = state.status;
+                    })
+                    .await;
+                if rx.changed().await.is_err() {
+                    break;
+                }
             }
+        });
+        let tx = std::rc::Rc::new(tx);
+        let update = move |m: &ConnectionManager| {
+            let _ = tx.send(snapshot(m));
         };
         m.connect_connected_notify(update.clone());
         m.connect_busy_notify(update.clone());
         m.connect_selected_name_notify(update.clone());
-        m.connect_status_text_notify(update.clone());
-        update(m);
+        m.connect_status_text_notify(update);
     }
 
     fn show_shortcuts(&self) {

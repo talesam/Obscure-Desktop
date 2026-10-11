@@ -15,8 +15,10 @@ pub enum Error {
     },
     #[error("json error: {0}")]
     Json(#[from] serde_json::Error),
+    /// Built through `From<reqwest::Error>`, which strips the URL: subscription
+    /// URLs carry access tokens and must not end up in messages or logs.
     #[error("network error: {0}")]
-    Http(#[from] reqwest::Error),
+    Http(reqwest::Error),
     #[error("no Xray release asset for architecture `{0}`")]
     NoAssetForArch(String),
     #[error("checksum mismatch for {file}: expected {expected}, got {actual}")]
@@ -57,11 +59,41 @@ pub enum Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+impl From<reqwest::Error> for Error {
+    fn from(e: reqwest::Error) -> Self {
+        Self::Http(e.without_url())
+    }
+}
+
 impl Error {
     pub fn io(path: impl Into<PathBuf>, source: std::io::Error) -> Self {
         Self::Io {
             path: path.into(),
             source,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn http_errors_do_not_leak_the_url() {
+        crate::init_crypto();
+        // Nothing listens on port 1; the request fails with a connect error.
+        let err = reqwest::Client::new()
+            .get("http://127.0.0.1:1/sub?token=s3cr3t")
+            .send()
+            .await
+            .unwrap_err();
+        assert!(err.url().is_some());
+        let err: Error = err.into();
+        let Error::Http(inner) = &err else {
+            panic!("unexpected {err:?}");
+        };
+        assert!(inner.url().is_none());
+        assert!(!err.to_string().contains("s3cr3t"), "{err}");
+        assert!(!format!("{err:?}").contains("s3cr3t"), "{err:?}");
     }
 }

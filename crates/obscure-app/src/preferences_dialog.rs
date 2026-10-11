@@ -29,8 +29,6 @@ mod imp {
         #[template_child]
         pub dns_row: TemplateChild<adw::EntryRow>,
         #[template_child]
-        pub prerelease_row: TemplateChild<adw::SwitchRow>,
-        #[template_child]
         pub shortcut_row: TemplateChild<adw::SwitchRow>,
         #[template_child]
         pub rules_group: TemplateChild<adw::PreferencesGroup>,
@@ -42,6 +40,8 @@ mod imp {
         pub json_row: TemplateChild<adw::ActionRow>,
         pub manager: std::cell::OnceCell<ConnectionManager>,
         pub rules: std::cell::RefCell<Vec<RouteRule>>,
+        /// Bumped on each port change; only the last one is applied.
+        pub port_generation: std::cell::Cell<u64>,
     }
 
     #[glib::object_subclass]
@@ -149,19 +149,13 @@ impl PreferencesDialog {
         let profiles = manager.profiles();
         imp.port_row.set_value(f64::from(profiles.local_port));
         imp.dns_row.set_text(&profiles.dns);
-        imp.prerelease_row.set_active(profiles.prerelease);
 
-        // Port and pre-release apply immediately; DNS applies on ✓ or when
-        // the dialog closes (EntryRow apply button).
+        // Port applies once the value settles (holding the + button must
+        // not reconnect on every step); DNS applies on ✓; both on close.
         imp.port_row.connect_value_notify(clone!(
             #[weak]
             dialog,
-            move |_| dialog.push_settings()
-        ));
-        imp.prerelease_row.connect_active_notify(clone!(
-            #[weak]
-            dialog,
-            move |_| dialog.push_settings()
+            move |_| dialog.push_settings_soon()
         ));
         imp.dns_row.connect_apply(clone!(
             #[weak]
@@ -242,6 +236,22 @@ impl PreferencesDialog {
         dialog.add_responses(&[("cancel", &gettext("Cancel")), ("add", &gettext("Add"))]);
         dialog.set_response_appearance("add", adw::ResponseAppearance::Suggested);
         dialog.set_default_response(Some("add"));
+        // "Add" only for a pattern Xray accepts; mark the entry otherwise.
+        dialog.set_response_enabled("add", false);
+        entry.connect_changed(clone!(
+            #[weak]
+            dialog,
+            move |e| {
+                let text = e.text();
+                let valid = rule_pattern_is_valid(&text);
+                dialog.set_response_enabled("add", valid);
+                if valid || text.trim().is_empty() {
+                    e.remove_css_class("error");
+                } else {
+                    e.add_css_class("error");
+                }
+            }
+        ));
         dialog.connect_response(
             Some("add"),
             clone!(
@@ -249,7 +259,7 @@ impl PreferencesDialog {
                 self,
                 move |_, _| {
                     let pattern = entry.text().trim().to_owned();
-                    if pattern.is_empty() || pattern.contains(char::is_whitespace) {
+                    if !rule_pattern_is_valid(&pattern) {
                         return;
                     }
                     let target = match combo.selected() {
@@ -269,11 +279,28 @@ impl PreferencesDialog {
         dialog.present(Some(self));
     }
 
+    /// Applies the settings after 800 ms without further changes.
+    fn push_settings_soon(&self) {
+        let imp = self.imp();
+        let generation = imp.port_generation.get() + 1;
+        imp.port_generation.set(generation);
+        glib::spawn_future_local(clone!(
+            #[weak(rename_to = dialog)]
+            self,
+            async move {
+                glib::timeout_future(std::time::Duration::from_millis(800)).await;
+                if dialog.imp().port_generation.get() == generation {
+                    dialog.push_settings();
+                }
+            }
+        ));
+    }
+
     fn push_settings(&self) {
         let imp = self.imp();
         let Some(m) = imp.manager.get() else { return };
         let port = imp.port_row.value().clamp(1025.0, 65535.0) as u16;
-        m.update_settings(port, &imp.dns_row.text(), imp.prerelease_row.is_active());
+        m.update_settings(port, &imp.dns_row.text());
     }
 }
 
@@ -282,5 +309,93 @@ fn target_label(t: RuleTarget) -> String {
         RuleTarget::Proxy => gettext("Through the server"),
         RuleTarget::Direct => gettext("Direct"),
         RuleTarget::Block => gettext("Block"),
+    }
+}
+
+/// What a custom rule may contain: a domain, an address or a CIDR range, or
+/// a prefixed pattern (`geosite:`, `geoip:`, `domain:`, `full:`,
+/// `keyword:`, `regexp:`) with something after the prefix. Anything else
+/// would make Xray reject the whole configuration.
+fn rule_pattern_is_valid(pattern: &str) -> bool {
+    let p = pattern.trim();
+    if p.is_empty() || p.contains(char::is_whitespace) {
+        return false;
+    }
+    for prefix in ["geosite:", "geoip:", "domain:", "full:", "keyword:"] {
+        if let Some(rest) = p.strip_prefix(prefix) {
+            // A second `:` is never valid after these prefixes.
+            return !rest.is_empty() && !rest.contains(':');
+        }
+    }
+    if let Some(rest) = p.strip_prefix("regexp:") {
+        return !rest.is_empty();
+    }
+    if let Some((addr, len)) = p.split_once('/') {
+        let Ok(len) = len.parse::<u8>() else {
+            return false;
+        };
+        return match addr.parse::<std::net::IpAddr>() {
+            Ok(std::net::IpAddr::V4(_)) => len <= 32,
+            Ok(std::net::IpAddr::V6(_)) => len <= 128,
+            Err(_) => false,
+        };
+    }
+    if p.parse::<std::net::IpAddr>().is_ok() {
+        return true;
+    }
+    // Plain domain: letters, digits, dots, dashes, underscores.
+    !p.starts_with('.')
+        && !p.ends_with('.')
+        && !p.contains("..")
+        && p.chars()
+            .all(|c| c.is_alphanumeric() || matches!(c, '.' | '-' | '_'))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rule_pattern_is_valid as ok;
+
+    #[test]
+    fn rule_patterns() {
+        for good in [
+            "example.com",
+            "sub.example.co.uk",
+            "xn--d1acufc.xn--p1ai",
+            "пример.рф",
+            "1.2.3.4",
+            "2001:db8::1",
+            "10.0.0.0/8",
+            "2001:db8::/32",
+            "geosite:netflix",
+            "geosite:category-ads-all",
+            "geoip:br",
+            "geoip:!cn",
+            "domain:example.com",
+            "full:www.example.com",
+            "keyword:ads",
+            "regexp:^ads\\..*$",
+            "  padded.example  ",
+        ] {
+            assert!(ok(good), "{good}");
+        }
+        for bad in [
+            "",
+            "   ",
+            "two words",
+            "geosite:",
+            "domain:",
+            "regexp:",
+            "10.0.0.0/33",
+            "2001:db8::/129",
+            "10.0.0.0/x",
+            "not-an-ip/8",
+            "example..com",
+            ".example.com",
+            "http://example.com",
+            "exa*mple.com",
+            "domain:a:b",
+        ] {
+            assert!(!ok(bad), "{bad}");
+        }
     }
 }

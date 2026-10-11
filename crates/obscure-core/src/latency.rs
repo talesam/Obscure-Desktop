@@ -67,9 +67,17 @@ pub async fn url_test(
     let cfg_path = scratch_dir.join(format!("latency-{port}.json"));
     write_config(&cfg_path, &cfg)?;
 
-    let core = supervisor.start(&cfg_path, port).await?;
-    let result = measure(port, url, timeout).await;
-    core.stop().await;
+    // The config holds the server's credentials: remove it on every path,
+    // including a core that fails to start (common for a dead server).
+    let started = supervisor.start(&cfg_path, port).await;
+    let result = match started {
+        Ok(core) => {
+            let r = measure(port, url, timeout).await;
+            core.stop().await;
+            r
+        }
+        Err(e) => Err(e),
+    };
     let _ = std::fs::remove_file(&cfg_path);
     result
 }
