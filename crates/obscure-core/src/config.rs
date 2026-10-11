@@ -1,9 +1,11 @@
 //! Generates the Xray `config.json` for a server and connection preferences.
 //! See docs/PLANO.md §3.4.
 
+use std::net::IpAddr;
+
 use serde_json::{Value, json};
 
-use crate::links::{Auth, Protocol, Security, Server, Transport};
+use crate::links::{Auth, Protocol, Security, Server, Transport, xhttp_extra_object};
 use crate::profile::{RoutePreset, RouteRule, RuleTarget};
 
 /// TUN interface name created in tunnel mode.
@@ -178,10 +180,14 @@ fn dns(opts: &ConfigOptions) -> Value {
 }
 
 fn routing(opts: &ConfigOptions) -> Value {
-    let mut rules = vec![
-        // Never proxy the proxy itself.
-        json!({ "type": "field", "domain": [ format!("full:{}", opts.server.address) ], "outboundTag": "direct" }),
-    ];
+    // Never proxy the proxy itself. A `full:` domain rule never matches a
+    // connection to an IP literal, so that case needs an `ip` rule.
+    let own = &opts.server.address;
+    let mut rules = vec![if own.parse::<IpAddr>().is_ok() {
+        json!({ "type": "field", "ip": [ own ], "outboundTag": "direct" })
+    } else {
+        json!({ "type": "field", "domain": [ format!("full:{own}") ], "outboundTag": "direct" })
+    }];
     if opts.tunnel {
         // DNS from the system goes to Xray's resolver (DoH), not to the LAN resolver.
         rules.push(json!({ "type": "field", "inboundTag": ["tun-in"], "port": 53, "network": "udp,tcp", "outboundTag": "dns-out" }));
@@ -250,7 +256,7 @@ pub fn outbound(server: &Server) -> Value {
         (Protocol::Shadowsocks, Auth::Shadowsocks { method, password }) => {
             out["protocol"] = json!("shadowsocks");
             out["settings"] = json!({ "servers": [ { "address": server.address, "port": server.port,
-                "method": method, "password": password, "uot": true } ] });
+                "method": method, "password": password } ] });
         }
         (
             Protocol::Wireguard,
@@ -296,7 +302,17 @@ pub fn outbound(server: &Server) -> Value {
             }
             out["settings"] = json!({ "servers": [ srv ] });
         }
-        _ => unreachable!("protocol/auth mismatch"),
+        _ => {
+            // Only reachable through a hand-edited profile (`Profiles::load`
+            // drops such entries). A blackhole keeps Xray from leaking the
+            // traffic directly instead of panicking.
+            tracing::error!(
+                "server `{}`: credentials do not match {}",
+                server.name,
+                server.protocol.label()
+            );
+            return json!({ "tag": "proxy", "protocol": "blackhole", "settings": {} });
+        }
     }
     out["streamSettings"] = stream_settings(server);
     out
@@ -327,7 +343,12 @@ fn stream_settings(server: &Server) -> Value {
             }
             ss["grpcSettings"] = g;
         }
-        Transport::Xhttp { path, host, mode } => {
+        Transport::Xhttp {
+            path,
+            host,
+            mode,
+            extra,
+        } => {
             ss["network"] = json!("xhttp");
             let mut x = json!({ "path": path.clone().unwrap_or_else(|| "/".into()) });
             if let Some(h) = host {
@@ -335,6 +356,12 @@ fn stream_settings(server: &Server) -> Value {
             }
             if let Some(m) = mode {
                 x["mode"] = json!(m);
+            }
+            // Xray merges `extra` into these settings itself.
+            match extra.as_deref().map(xhttp_extra_object) {
+                Some(Ok(map)) => x["extra"] = Value::Object(map),
+                Some(Err(e)) => tracing::warn!("server `{}`: {e}; ignoring it", server.name),
+                None => {}
             }
             ss["xhttpSettings"] = x;
         }
@@ -364,15 +391,30 @@ fn stream_settings(server: &Server) -> Value {
             alpn,
             fingerprint,
             allow_insecure,
+            pinned_peer_cert_sha256,
+            verify_peer_cert_by_name,
         } => {
             ss["security"] = json!("tls");
-            let mut t = json!({ "serverName": sni.clone().unwrap_or_else(|| server.address.clone()),
-                                "allowInsecure": allow_insecure });
+            let mut t = json!({ "serverName": tls_server_name(server, sni.as_deref()) });
             if !alpn.is_empty() {
                 t["alpn"] = json!(alpn);
             }
             if let Some(fp) = fingerprint {
                 t["fingerprint"] = json!(fp);
+            }
+            if let Some(pcs) = pinned_peer_cert_sha256 {
+                t["pinnedPeerCertSha256"] = json!(pcs);
+            }
+            if let Some(vcn) = verify_peer_cert_by_name {
+                t["verifyPeerCertByName"] = json!(vcn);
+            }
+            // Xray 26 removed `allowInsecure` and rejects any config that
+            // still enables it; `pcs`/`vcn` replace it.
+            if *allow_insecure {
+                tracing::warn!(
+                    "server `{}` asks to skip certificate checks, which Xray no longer supports; verifying normally",
+                    server.name
+                );
             }
             ss["tlsSettings"] = t;
         }
@@ -382,18 +424,47 @@ fn stream_settings(server: &Server) -> Value {
             public_key,
             short_id,
             spider_x,
+            mldsa65_verify,
         } => {
             ss["security"] = json!("reality");
-            ss["realitySettings"] = json!({
+            let mut r = json!({
                 "serverName": sni.clone().unwrap_or_else(|| server.address.clone()),
                 "fingerprint": fingerprint.clone().unwrap_or_else(|| "chrome".into()),
                 "publicKey": public_key,
                 "shortId": short_id.clone().unwrap_or_default(),
                 "spiderX": spider_x.clone().unwrap_or_else(|| "/".into()),
             });
+            if let Some(pqv) = mldsa65_verify {
+                r["mldsa65Verify"] = json!(pqv);
+            }
+            ss["realitySettings"] = r;
         }
     }
     ss
+}
+
+/// TLS `serverName`: the link's SNI, else the address. An IP literal is
+/// never a valid SNI, so behind a CDN (address = IP) the transport's
+/// `host` header, which names the real site, is used when present.
+fn tls_server_name(server: &Server, sni: Option<&str>) -> String {
+    if let Some(sni) = sni.map(str::trim).filter(|s| !s.is_empty()) {
+        return sni.to_owned();
+    }
+    if server.address.parse::<IpAddr>().is_ok() {
+        let host = match &server.transport {
+            Transport::Ws { host, .. }
+            | Transport::HttpUpgrade { host, .. }
+            | Transport::Xhttp { host, .. } => host.as_deref(),
+            _ => None,
+        };
+        if let Some(h) = host
+            .and_then(|h| h.split(',').map(str::trim).find(|h| !h.is_empty()))
+            .filter(|h| h.parse::<IpAddr>().is_err())
+        {
+            return h.to_owned();
+        }
+    }
+    server.address.clone()
 }
 
 #[cfg(test)]
@@ -663,5 +734,136 @@ mod tests {
         let o = outbound(&vm);
         assert_eq!(o["protocol"], "vmess");
         assert_eq!(o["streamSettings"]["grpcSettings"]["multiMode"], true);
+    }
+
+    #[test]
+    fn mismatched_server_builds_a_blackhole_instead_of_panicking() {
+        let mut s = parse_link(&format!("vless://{UUID}@h.example:443#V")).unwrap();
+        s.auth = Auth::Trojan {
+            password: "pw".into(),
+        };
+        let cfg = build(&ConfigOptions::new(&s));
+        assert_eq!(cfg["outbounds"][0]["tag"], "proxy");
+        assert_eq!(cfg["outbounds"][0]["protocol"], "blackhole");
+        assert!(serde_json::to_string(&cfg).is_ok());
+    }
+
+    fn tls_name(link: &str) -> Value {
+        let s = parse_link(link).unwrap();
+        outbound(&s)["streamSettings"]["tlsSettings"]["serverName"].clone()
+    }
+
+    #[test]
+    fn tls_server_name_falls_back_to_transport_host_for_ip_addresses() {
+        // Address is an IP: the CDN host names the site.
+        for t in ["ws", "httpupgrade", "xhttp"] {
+            assert_eq!(
+                tls_name(&format!(
+                    "vless://{UUID}@104.16.1.1:443?type={t}&host=cdn.example&security=tls"
+                )),
+                "cdn.example",
+                "{t}"
+            );
+        }
+        assert_eq!(
+            tls_name(&format!(
+                "vless://{UUID}@[2606:4700::1]:443?type=ws&host=v6.example&security=tls"
+            )),
+            "v6.example"
+        );
+        // Explicit SNI always wins.
+        assert_eq!(
+            tls_name(&format!(
+                "vless://{UUID}@104.16.1.1:443?type=ws&host=cdn.example&sni=sni.example&security=tls"
+            )),
+            "sni.example"
+        );
+        // A domain address keeps its own name, whatever the host header says.
+        assert_eq!(
+            tls_name(&format!(
+                "vless://{UUID}@h.example:443?type=ws&host=cdn.example&security=tls"
+            )),
+            "h.example"
+        );
+        // IP without a host: nothing better than the address.
+        assert_eq!(
+            tls_name(&format!(
+                "vless://{UUID}@104.16.1.1:443?type=ws&security=tls"
+            )),
+            "104.16.1.1"
+        );
+        assert_eq!(
+            tls_name(&format!(
+                "vless://{UUID}@104.16.1.1:443?type=ws&host=10.0.0.1&security=tls"
+            )),
+            "104.16.1.1"
+        );
+    }
+
+    #[test]
+    fn own_ip_address_gets_an_ip_rule() {
+        for (addr, host) in [
+            ("203.0.113.9", "203.0.113.9"),
+            ("2001:db8::7", "[2001:db8::7]"),
+        ] {
+            let s = parse_link(&format!("vless://{UUID}@{host}:443?security=none#T")).unwrap();
+            let cfg = build(&ConfigOptions::new(&s));
+            let first = &cfg["routing"]["rules"][0];
+            assert_eq!(first["ip"], json!([addr]));
+            assert!(first.get("domain").is_none());
+            assert_eq!(first["outboundTag"], "direct");
+        }
+        let s = parse_link(&format!("vless://{UUID}@h.example:443?security=none#T")).unwrap();
+        let cfg = build(&ConfigOptions::new(&s));
+        assert_eq!(
+            cfg["routing"]["rules"][0]["domain"],
+            json!(["full:h.example"])
+        );
+    }
+
+    #[test]
+    fn no_uot_and_no_allow_insecure_keys() {
+        let ss = parse_link("ss://2022-blake3-aes-128-gcm:key@h.example:8388#S").unwrap();
+        assert!(outbound(&ss)["settings"]["servers"][0].get("uot").is_none());
+        for flag in ["", "&allowInsecure=1"] {
+            let s =
+                parse_link(&format!("vless://{UUID}@h.example:443?security=tls{flag}")).unwrap();
+            let t = &outbound(&s)["streamSettings"]["tlsSettings"];
+            assert!(t.get("allowInsecure").is_none(), "{flag}: {t}");
+        }
+    }
+
+    #[test]
+    fn pinning_pq_key_and_xhttp_extra_reach_the_config() {
+        let s = parse_link(&format!(
+            "vless://{UUID}@h.example:443?security=tls&pcs=ABCD&vcn=real.example&type=xhttp&mode=auto&extra=%7B%22xPaddingBytes%22%3A%22100-1000%22%7D"
+        ))
+        .unwrap();
+        let ss = &outbound(&s)["streamSettings"];
+        assert_eq!(ss["tlsSettings"]["pinnedPeerCertSha256"], "ABCD");
+        assert_eq!(ss["tlsSettings"]["verifyPeerCertByName"], "real.example");
+        assert_eq!(ss["xhttpSettings"]["mode"], "auto");
+        assert_eq!(
+            ss["xhttpSettings"]["extra"],
+            json!({ "xPaddingBytes": "100-1000" })
+        );
+
+        let r = parse_link(&format!(
+            "vless://{UUID}@h.example:443?security=reality&pbk=PBK&pqv=PQ"
+        ))
+        .unwrap();
+        assert_eq!(
+            outbound(&r)["streamSettings"]["realitySettings"]["mldsa65Verify"],
+            "PQ"
+        );
+        let plain = parse_link(&format!(
+            "vless://{UUID}@h.example:443?security=reality&pbk=PBK"
+        ))
+        .unwrap();
+        assert!(
+            outbound(&plain)["streamSettings"]["realitySettings"]
+                .get("mldsa65Verify")
+                .is_none()
+        );
     }
 }

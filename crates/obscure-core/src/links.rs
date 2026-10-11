@@ -125,6 +125,10 @@ pub enum Transport {
         host: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         mode: Option<String>,
+        /// `extra` share-link parameter: a JSON object (stored minified)
+        /// merged by Xray into `xhttpSettings`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        extra: Option<String>,
     },
     HttpUpgrade {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -177,8 +181,18 @@ pub enum Security {
         alpn: Vec<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         fingerprint: Option<String>,
+        /// Kept for share-link round trips only: Xray 26 removed
+        /// `allowInsecure`, so it never reaches the generated config.
         #[serde(default)]
         allow_insecure: bool,
+        /// `pcs`: SHA-256 of the server certificate (hex, comma-separated),
+        /// Xray's `pinnedPeerCertSha256`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pinned_peer_cert_sha256: Option<String>,
+        /// `vcn`: name checked against the certificate instead of the SNI,
+        /// Xray's `verifyPeerCertByName`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        verify_peer_cert_by_name: Option<String>,
     },
     Reality {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -190,6 +204,9 @@ pub enum Security {
         short_id: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         spider_x: Option<String>,
+        /// `pqv`: ML-DSA-65 public key, Xray's `mldsa65Verify`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        mldsa65_verify: Option<String>,
     },
 }
 
@@ -230,6 +247,51 @@ impl Server {
             self.address.clone()
         }
     }
+
+    /// Checks invariants the parsers guarantee but a hand-edited
+    /// `profiles.json` may break: credentials matching the protocol and a
+    /// well-formed XHTTP `extra`.
+    pub fn validate(&self) -> Result<()> {
+        let consistent = matches!(
+            (self.protocol, &self.auth),
+            (Protocol::Vless, Auth::Vless { .. })
+                | (Protocol::Vmess, Auth::Vmess { .. })
+                | (Protocol::Trojan, Auth::Trojan { .. })
+                | (Protocol::Shadowsocks, Auth::Shadowsocks { .. })
+                | (Protocol::Wireguard, Auth::Wireguard { .. })
+                | (Protocol::Socks | Protocol::Http, Auth::UserPass { .. })
+        );
+        if !consistent {
+            return Err(Error::MalformedLink(format!(
+                "{} server with credentials of another protocol",
+                self.protocol.label()
+            )));
+        }
+        if let Transport::Xhttp {
+            extra: Some(extra), ..
+        } = &self.transport
+        {
+            xhttp_extra_object(extra)?;
+        }
+        Ok(())
+    }
+}
+
+/// Parses an XHTTP `extra` value, which must be a JSON object.
+pub(crate) fn xhttp_extra_object(
+    extra: &str,
+) -> Result<serde_json::Map<String, serde_json::Value>> {
+    match serde_json::from_str(extra) {
+        Ok(serde_json::Value::Object(map)) => Ok(map),
+        _ => Err(Error::MalformedLink(
+            "xhttp `extra` is not a JSON object".into(),
+        )),
+    }
+}
+
+/// Minified form of an XHTTP `extra` object, so equal settings compare equal.
+fn canonical_xhttp_extra(extra: &str) -> Result<String> {
+    Ok(serde_json::Value::Object(xhttp_extra_object(extra)?).to_string())
 }
 
 /// Returns `true` if the text looks like a share link. This includes
@@ -333,6 +395,17 @@ fn parse_url_like(link: &str) -> Result<Parsed> {
     })
 }
 
+impl Parsed {
+    /// The link's name, or `host:port` when it carries none.
+    fn name(&self) -> String {
+        name_or_default(self.name.clone(), &self.host, self.port)
+    }
+}
+
+fn name_or_default(name: Option<String>, host: &str, port: u16) -> String {
+    name.unwrap_or_else(|| Server::default_name(host, port))
+}
+
 /// Splits a query string into decoded pairs. Unlike form decoding
 /// (`Url::query_pairs`), `+` stays a literal plus: share links carry base64
 /// keys (`publickey=ab+cd/ef=`) and paths where it is significant.
@@ -391,6 +464,9 @@ fn transport_from_query(q: &HashMap<String, String>) -> Result<Transport> {
             path: opt(q, "path"),
             host: opt(q, "host"),
             mode: opt(q, "mode"),
+            extra: opt(q, "extra")
+                .map(|e| canonical_xhttp_extra(&e))
+                .transpose()?,
         },
         "httpupgrade" => Transport::HttpUpgrade {
             path: opt(q, "path"),
@@ -419,12 +495,13 @@ fn security_from_query(q: &HashMap<String, String>, default_tls: bool) -> Result
             sni: opt(q, "sni"),
             alpn: opt(q, "alpn").map(|a| split_list(&a)).unwrap_or_default(),
             fingerprint: opt(q, "fp"),
-            allow_insecure: matches!(
+            allow_insecure: is_truthy(
                 opt(q, "allowInsecure")
                     .or_else(|| opt(q, "insecure"))
                     .as_deref(),
-                Some("1") | Some("true")
             ),
+            pinned_peer_cert_sha256: opt(q, "pcs"),
+            verify_peer_cert_by_name: opt(q, "vcn"),
         },
         "reality" => Security::Reality {
             sni: opt(q, "sni"),
@@ -433,9 +510,14 @@ fn security_from_query(q: &HashMap<String, String>, default_tls: bool) -> Result
                 .ok_or_else(|| Error::MalformedLink("reality link without `pbk`".into()))?,
             short_id: opt(q, "sid"),
             spider_x: opt(q, "spx"),
+            mldsa65_verify: opt(q, "pqv"),
         },
         other => return Err(Error::MalformedLink(format!("unknown security `{other}`"))),
     })
+}
+
+fn is_truthy(v: Option<&str>) -> bool {
+    matches!(v.map(str::trim), Some("1") | Some("true") | Some("True"))
 }
 
 fn add(params: &mut Vec<(String, String)>, k: &str, v: &Option<String>) {
@@ -456,10 +538,16 @@ fn push_transport_params(t: &Transport, params: &mut Vec<(String, String)>) {
             add(params, "serviceName", service_name);
             add(params, "mode", mode);
         }
-        Transport::Xhttp { path, host, mode } => {
+        Transport::Xhttp {
+            path,
+            host,
+            mode,
+            extra,
+        } => {
             add(params, "path", path);
             add(params, "host", host);
             add(params, "mode", mode);
+            add(params, "extra", extra);
         }
         Transport::Kcp { seed, header_type } => {
             add(params, "seed", seed);
@@ -476,6 +564,8 @@ fn push_security_params(s: &Security, params: &mut Vec<(String, String)>) {
             alpn,
             fingerprint,
             allow_insecure,
+            pinned_peer_cert_sha256,
+            verify_peer_cert_by_name,
         } => {
             params.push(("security".into(), "tls".into()));
             add(params, "sni", sni);
@@ -486,6 +576,8 @@ fn push_security_params(s: &Security, params: &mut Vec<(String, String)>) {
             if *allow_insecure {
                 params.push(("allowInsecure".into(), "1".into()));
             }
+            add(params, "pcs", pinned_peer_cert_sha256);
+            add(params, "vcn", verify_peer_cert_by_name);
         }
         Security::Reality {
             sni,
@@ -493,6 +585,7 @@ fn push_security_params(s: &Security, params: &mut Vec<(String, String)>) {
             public_key,
             short_id,
             spider_x,
+            mldsa65_verify,
         } => {
             params.push(("security".into(), "reality".into()));
             add(params, "sni", sni);
@@ -500,6 +593,7 @@ fn push_security_params(s: &Security, params: &mut Vec<(String, String)>) {
             params.push(("pbk".into(), public_key.clone()));
             add(params, "sid", short_id);
             add(params, "spx", spider_x);
+            add(params, "pqv", mldsa65_verify);
         }
     }
 }
@@ -529,7 +623,9 @@ fn build_url_like(
 // VLESS
 
 fn parse_vless(link: &str) -> Result<Server> {
-    let p = parse_url_like(link)?;
+    let mut p = parse_url_like(link)?;
+    // A UUID never holds whitespace; stray spaces come from copy and paste.
+    p.userinfo = p.userinfo.trim().to_owned();
     if p.userinfo.is_empty() {
         return Err(Error::MalformedLink("vless link without uuid".into()));
     }
@@ -539,10 +635,7 @@ fn parse_vless(link: &str) -> Result<Server> {
             "unsupported vless encryption `{encryption}`"
         )));
     }
-    let name = p
-        .name
-        .clone()
-        .unwrap_or_else(|| Server::default_name(&p.host, p.port));
+    let name = p.name();
     Ok(Server {
         name,
         protocol: Protocol::Vless,
@@ -560,56 +653,97 @@ fn parse_vless(link: &str) -> Result<Server> {
 // ---------------------------------------------------------------------------
 // VMess
 
+/// v2rayN-style VMess JSON. Generators disagree on types (`"port":"443"` or
+/// `443`, `"host":null`, `"alpn":["h2"]`), so every field is read leniently.
 #[derive(Debug, Default, Serialize, Deserialize)]
 struct VmessJson {
     #[serde(default)]
     v: serde_json::Value,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     ps: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     add: String,
     #[serde(default)]
     port: serde_json::Value,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     id: String,
     #[serde(default)]
     aid: serde_json::Value,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     scy: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     net: String,
-    #[serde(default, rename = "type")]
+    /// TCP/mKCP header type, or the gRPC/XHTTP mode (v2rayN convention).
+    #[serde(default, rename = "type", deserialize_with = "lenient_string")]
     header_type: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     host: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     path: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     tls: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     sni: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     alpn: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "lenient_string")]
     fp: String,
+    #[serde(
+        default,
+        rename = "allowInsecure",
+        alias = "insecure",
+        deserialize_with = "lenient_string",
+        skip_serializing_if = "String::is_empty"
+    )]
+    allow_insecure: String,
+}
+
+/// Reads any JSON scalar as a string: `null` becomes empty, numbers and
+/// booleans their text, and an array of strings a comma-separated list.
+fn lenient_string<'de, D>(d: D) -> std::result::Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde_json::Value;
+    Ok(match Option::<Value>::deserialize(d)? {
+        None | Some(Value::Null) | Some(Value::Object(_)) => String::new(),
+        Some(Value::String(s)) => s,
+        Some(Value::Number(n)) => n.to_string(),
+        Some(Value::Bool(b)) => b.to_string(),
+        Some(Value::Array(items)) => items
+            .iter()
+            .filter_map(|i| match i {
+                Value::String(s) => Some(s.clone()),
+                Value::Number(n) => Some(n.to_string()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join(","),
+    })
 }
 
 fn value_to_u32(v: &serde_json::Value) -> Option<u32> {
     match v {
-        serde_json::Value::Number(n) => n.as_u64().map(|n| n as u32),
+        serde_json::Value::Number(n) => n
+            .as_u64()
+            .or_else(|| {
+                n.as_f64()
+                    .filter(|f| f.fract() == 0.0 && *f >= 0.0 && *f <= f64::from(u32::MAX))
+                    .map(|f| f as u64)
+            })
+            .and_then(|n| u32::try_from(n).ok()),
         serde_json::Value::String(s) => s.trim().parse().ok(),
         _ => None,
     }
 }
 
-fn decode_base64_lenient(s: &str) -> Option<Vec<u8>> {
-    let s = s.trim();
-    for engine in [&STANDARD, &STANDARD_NO_PAD, &URL_SAFE, &URL_SAFE_NO_PAD] {
-        if let Ok(bytes) = engine.decode(s) {
-            return Some(bytes);
-        }
-    }
-    None
+/// Decodes base64 in any of the alphabets found in the wild (standard or
+/// URL-safe, padded or not). Whitespace (line wrapping) is ignored.
+pub(crate) fn decode_base64_lenient(s: &str) -> Option<Vec<u8>> {
+    let compact: String = s.chars().filter(|c| !c.is_whitespace()).collect();
+    [&STANDARD, &STANDARD_NO_PAD, &URL_SAFE, &URL_SAFE_NO_PAD]
+        .into_iter()
+        .find_map(|engine| engine.decode(&compact).ok())
 }
 
 fn parse_vmess(link: &str) -> Result<Server> {
@@ -617,61 +751,58 @@ fn parse_vmess(link: &str) -> Result<Server> {
     // XTLS-style URL form: vmess://uuid@host:port?...
     if body.contains('@')
         && !body.contains('"')
-        && let Ok(p) = parse_url_like(link)
+        && let Ok(mut p) = parse_url_like(link)
     {
-        {
-            let name = p
-                .name
-                .clone()
-                .unwrap_or_else(|| Server::default_name(&p.host, p.port));
-            return Ok(Server {
-                name,
-                protocol: Protocol::Vmess,
-                address: p.host.clone(),
-                port: p.port,
-                auth: Auth::Vmess {
-                    uuid: p.userinfo.clone(),
-                    alter_id: 0,
-                    security: opt(&p.query, "encryption").unwrap_or_else(default_vmess_security),
-                },
-                transport: transport_from_query(&p.query)?,
-                security: security_from_query(&p.query, false)?,
-            });
+        p.userinfo = p.userinfo.trim().to_owned();
+        if p.userinfo.is_empty() {
+            return Err(Error::MalformedLink("vmess link without uuid".into()));
         }
+        return Ok(Server {
+            name: p.name(),
+            protocol: Protocol::Vmess,
+            address: p.host.clone(),
+            port: p.port,
+            auth: Auth::Vmess {
+                uuid: p.userinfo.clone(),
+                // Not part of the standard (AEAD only); written by our own
+                // export so that legacy servers survive a round trip.
+                alter_id: opt(&p.query, "aid")
+                    .and_then(|a| a.parse().ok())
+                    .unwrap_or(0),
+                security: opt(&p.query, "encryption").unwrap_or_else(default_vmess_security),
+            },
+            transport: transport_from_query(&p.query)?,
+            security: security_from_query(&p.query, false)?,
+        });
     }
     let bytes = decode_base64_lenient(body)
         .ok_or_else(|| Error::MalformedLink("vmess body is not base64".into()))?;
     let j: VmessJson = serde_json::from_slice(&bytes)
         .map_err(|e| Error::MalformedLink(format!("vmess json: {e}")))?;
-    if j.add.is_empty() || j.id.is_empty() {
+    let non_empty = |s: &str| Some(s.trim().to_owned()).filter(|s| !s.is_empty());
+    let (Some(address), Some(uuid)) = (non_empty(&j.add), non_empty(&j.id)) else {
         return Err(Error::MalformedLink(
             "vmess json without `add` or `id`".into(),
         ));
-    }
+    };
     let port = value_to_u32(&j.port)
         .and_then(|p| u16::try_from(p).ok())
         .ok_or_else(|| Error::MalformedLink("vmess json without valid port".into()))?;
-    let non_empty = |s: &str| {
-        if s.trim().is_empty() {
-            None
-        } else {
-            Some(s.trim().to_owned())
-        }
-    };
     let header_type = non_empty(&j.header_type).filter(|h| h != "none");
-    let transport = match j.net.to_ascii_lowercase().as_str() {
+    let transport = match j.net.trim().to_ascii_lowercase().as_str() {
         "ws" => Transport::Ws {
             path: non_empty(&j.path),
             host: non_empty(&j.host),
         },
         "grpc" | "gun" => Transport::Grpc {
             service_name: non_empty(&j.path),
-            mode: None,
+            mode: header_type,
         },
         "xhttp" | "splithttp" => Transport::Xhttp {
             path: non_empty(&j.path),
             host: non_empty(&j.host),
-            mode: None,
+            mode: header_type,
+            extra: None,
         },
         "httpupgrade" => Transport::HttpUpgrade {
             path: non_empty(&j.path),
@@ -684,29 +815,109 @@ fn parse_vmess(link: &str) -> Result<Server> {
         "" | "tcp" | "raw" => Transport::Tcp { header_type },
         other => return Err(unsupported_transport(other)),
     };
-    let security = if j.tls.eq_ignore_ascii_case("tls") {
-        Security::Tls {
+    let security = match j.tls.trim().to_ascii_lowercase().as_str() {
+        "tls" | "xtls" => Security::Tls {
             sni: non_empty(&j.sni),
             alpn: split_list(&j.alpn),
             fingerprint: non_empty(&j.fp),
-            allow_insecure: false,
+            allow_insecure: is_truthy(Some(&j.allow_insecure)),
+            pinned_peer_cert_sha256: None,
+            verify_peer_cert_by_name: None,
+        },
+        // REALITY needs `pbk`, which the JSON form has no field for.
+        "reality" => {
+            return Err(Error::MalformedLink(
+                "vmess json cannot describe reality".into(),
+            ));
         }
-    } else {
-        Security::None
+        _ => Security::None,
     };
     Ok(Server {
-        name: non_empty(&j.ps).unwrap_or_else(|| Server::default_name(&j.add, port)),
+        name: name_or_default(non_empty(&j.ps), &address, port),
         protocol: Protocol::Vmess,
-        address: j.add.clone(),
+        address,
         port,
         auth: Auth::Vmess {
-            uuid: j.id.clone(),
+            uuid,
             alter_id: value_to_u32(&j.aid).unwrap_or(0),
             security: non_empty(&j.scy).unwrap_or_else(default_vmess_security),
         },
         transport,
         security,
     })
+}
+
+/// VMess share link. The v2rayN JSON form is what most clients read, so it
+/// is preferred; settings it cannot carry (REALITY, certificate pinning,
+/// XHTTP `extra`) switch to the XTLS URL form, which keeps them all.
+fn vmess_link(server: &Server, uuid: &str, alter_id: u32, security: &str) -> String {
+    let json_lossy = match &server.security {
+        Security::Reality { .. } => true,
+        Security::Tls {
+            pinned_peer_cert_sha256,
+            verify_peer_cert_by_name,
+            ..
+        } => pinned_peer_cert_sha256.is_some() || verify_peer_cert_by_name.is_some(),
+        Security::None => false,
+    } || matches!(server.transport, Transport::Xhttp { extra: Some(_), .. });
+    if json_lossy {
+        let mut params = vec![("encryption".to_owned(), security.to_owned())];
+        if alter_id != 0 {
+            params.push(("aid".into(), alter_id.to_string()));
+        }
+        push_security_params(&server.security, &mut params);
+        push_transport_params(&server.transport, &mut params);
+        return build_url_like("vmess", uuid, server, params);
+    }
+    let (net, host, path, header_type) = match &server.transport {
+        Transport::Tcp { header_type } => ("tcp", None, None, header_type.clone()),
+        Transport::Ws { path, host } => ("ws", host.clone(), path.clone(), None),
+        Transport::Grpc { service_name, mode } => {
+            ("grpc", None, service_name.clone(), mode.clone())
+        }
+        Transport::Xhttp {
+            path, host, mode, ..
+        } => ("xhttp", host.clone(), path.clone(), mode.clone()),
+        Transport::HttpUpgrade { path, host } => ("httpupgrade", host.clone(), path.clone(), None),
+        Transport::Kcp { seed, header_type } => ("kcp", None, seed.clone(), header_type.clone()),
+    };
+    let (tls, sni, alpn, fp, insecure) = match &server.security {
+        Security::Tls {
+            sni,
+            alpn,
+            fingerprint,
+            allow_insecure,
+            ..
+        } => (
+            "tls",
+            sni.clone(),
+            alpn.join(","),
+            fingerprint.clone(),
+            *allow_insecure,
+        ),
+        _ => ("", None, String::new(), None, false),
+    };
+    let j = VmessJson {
+        v: serde_json::Value::String("2".into()),
+        ps: server.name.clone(),
+        add: server.address.clone(),
+        port: serde_json::Value::String(server.port.to_string()),
+        id: uuid.to_owned(),
+        aid: serde_json::Value::String(alter_id.to_string()),
+        scy: security.to_owned(),
+        net: net.into(),
+        header_type: header_type.unwrap_or_else(|| "none".into()),
+        host: host.unwrap_or_default(),
+        path: path.unwrap_or_default(),
+        tls: tls.into(),
+        sni: sni.unwrap_or_default(),
+        alpn,
+        fp: fp.unwrap_or_default(),
+        allow_insecure: if insecure { "1".into() } else { String::new() },
+    };
+    // Serialising a struct of strings and JSON values cannot fail.
+    let json = serde_json::to_string(&j).unwrap_or_default();
+    format!("vmess://{}", STANDARD.encode(json))
 }
 
 // ---------------------------------------------------------------------------
@@ -717,10 +928,7 @@ fn parse_trojan(link: &str) -> Result<Server> {
     if p.userinfo.is_empty() {
         return Err(Error::MalformedLink("trojan link without password".into()));
     }
-    let name = p
-        .name
-        .clone()
-        .unwrap_or_else(|| Server::default_name(&p.host, p.port));
+    let name = p.name();
     Ok(Server {
         name,
         protocol: Protocol::Trojan,
@@ -745,9 +953,19 @@ fn parse_shadowsocks(link: &str) -> Result<Server> {
         let bytes = decode_base64_lenient(b64)
             .ok_or_else(|| Error::MalformedLink("legacy ss link is not base64".into()))?;
         let inner = String::from_utf8_lossy(&bytes).into_owned();
-        let rebuilt = format!("ss://{inner}#{frag}");
-        return parse_shadowsocks(&rebuilt);
+        // Decoding once is enough; anything else would recurse forever on
+        // an empty body (`ss://#x`).
+        if !inner.contains('@') {
+            return Err(Error::MalformedLink(
+                "legacy ss link without `method:password@host:port`".into(),
+            ));
+        }
+        return parse_shadowsocks_sip002(&format!("ss://{inner}#{frag}"));
     }
+    parse_shadowsocks_sip002(link)
+}
+
+fn parse_shadowsocks_sip002(link: &str) -> Result<Server> {
     let p = parse_url_like(link)?;
     // SIP002: userinfo is base64url(method:password) or plain method:password (2022).
     let userinfo = if p.userinfo.contains(':') {
@@ -762,13 +980,14 @@ fn parse_shadowsocks(link: &str) -> Result<Server> {
     let (method, password) = userinfo
         .split_once(':')
         .ok_or_else(|| Error::MalformedLink("ss userinfo without `method:password`".into()))?;
-    if opt(&p.query, "plugin").is_some() {
-        tracing::warn!("ss link uses a plugin, which is not supported; ignoring it");
+    // Without its plugin (obfs, v2ray-plugin…) the server cannot be reached.
+    if let Some(plugin) = opt(&p.query, "plugin") {
+        let name = plugin.split(';').next().unwrap_or_default().trim();
+        return Err(Error::MalformedLink(format!(
+            "unsupported shadowsocks plugin `{name}`"
+        )));
     }
-    let name = p
-        .name
-        .clone()
-        .unwrap_or_else(|| Server::default_name(&p.host, p.port));
+    let name = p.name();
     Ok(Server {
         name,
         protocol: Protocol::Shadowsocks,
@@ -810,10 +1029,7 @@ fn parse_wireguard(link: &str) -> Result<Server> {
         .iter()
         .filter_map(|s| s.parse().ok())
         .collect();
-    let name = p
-        .name
-        .clone()
-        .unwrap_or_else(|| Server::default_name(&p.host, p.port));
+    let name = p.name();
     Ok(Server {
         name,
         protocol: Protocol::Wireguard,
@@ -840,12 +1056,15 @@ fn parse_socks(link: &str) -> Result<Server> {
     let (user, pass) = if p.userinfo.is_empty() {
         (None, None)
     } else {
-        // Plain `user:pass` or base64(user:pass), as some clients emit.
+        // Plain `user:pass` or base64(user:pass), as some clients emit. A
+        // bare user name may happen to be valid base64 (`abc`), so the
+        // decoded form only wins when it is text holding `user:pass`.
         let raw = if p.userinfo.contains(':') {
             p.userinfo.clone()
         } else {
             decode_base64_lenient(&p.userinfo)
-                .map(|b| String::from_utf8_lossy(&b).into_owned())
+                .and_then(|b| String::from_utf8(b).ok())
+                .filter(|s| s.contains(':'))
                 .unwrap_or_else(|| p.userinfo.clone())
         };
         match raw.split_once(':') {
@@ -853,10 +1072,7 @@ fn parse_socks(link: &str) -> Result<Server> {
             None => (Some(raw), None),
         }
     };
-    let name = p
-        .name
-        .clone()
-        .unwrap_or_else(|| Server::default_name(&p.host, p.port));
+    let name = p.name();
     Ok(Server {
         name,
         protocol: Protocol::Socks,
@@ -871,9 +1087,11 @@ fn parse_socks(link: &str) -> Result<Server> {
 // ---------------------------------------------------------------------------
 // Serialising
 
-/// Produces a share link for the server.
-pub fn to_link(server: &Server) -> String {
-    match (&server.protocol, &server.auth) {
+/// Produces a share link for the server, or an error when the server is
+/// inconsistent (see [`Server::validate`]).
+pub fn try_to_link(server: &Server) -> Result<String> {
+    server.validate()?;
+    Ok(match (&server.protocol, &server.auth) {
         (Protocol::Vless, Auth::Vless { uuid, flow }) => {
             let mut params = vec![("encryption".to_owned(), "none".to_owned())];
             if let Some(flow) = flow {
@@ -891,16 +1109,11 @@ pub fn to_link(server: &Server) -> String {
         }
         (Protocol::Shadowsocks, Auth::Shadowsocks { method, password }) => {
             let userinfo = if method.starts_with("2022-") {
-                format!("{method}:{password}")
+                encode(&format!("{method}:{password}"))
             } else {
                 URL_SAFE_NO_PAD.encode(format!("{method}:{password}"))
             };
             let host = server.url_host();
-            let userinfo = if method.starts_with("2022-") {
-                encode(&userinfo)
-            } else {
-                userinfo
-            };
             format!(
                 "ss://{userinfo}@{host}:{}#{}",
                 server.port,
@@ -914,53 +1127,7 @@ pub fn to_link(server: &Server) -> String {
                 alter_id,
                 security,
             },
-        ) => {
-            let (net, host, path, header_type) = match &server.transport {
-                Transport::Tcp { header_type } => ("tcp", None, None, header_type.clone()),
-                Transport::Ws { path, host } => ("ws", host.clone(), path.clone(), None),
-                Transport::Grpc { service_name, .. } => ("grpc", None, service_name.clone(), None),
-                Transport::Xhttp { path, host, .. } => ("xhttp", host.clone(), path.clone(), None),
-                Transport::HttpUpgrade { path, host } => {
-                    ("httpupgrade", host.clone(), path.clone(), None)
-                }
-                Transport::Kcp { seed, header_type } => {
-                    ("kcp", None, seed.clone(), header_type.clone())
-                }
-            };
-            let (tls, sni, alpn, fp) = match &server.security {
-                Security::Tls {
-                    sni,
-                    alpn,
-                    fingerprint,
-                    ..
-                } => (
-                    "tls",
-                    sni.clone(),
-                    Some(alpn.join(",")),
-                    fingerprint.clone(),
-                ),
-                _ => ("", None, None, None),
-            };
-            let j = VmessJson {
-                v: serde_json::Value::String("2".into()),
-                ps: server.name.clone(),
-                add: server.address.clone(),
-                port: serde_json::Value::String(server.port.to_string()),
-                id: uuid.clone(),
-                aid: serde_json::Value::String(alter_id.to_string()),
-                scy: security.clone(),
-                net: net.into(),
-                header_type: header_type.unwrap_or_else(|| "none".into()),
-                host: host.unwrap_or_default(),
-                path: path.unwrap_or_default(),
-                tls: tls.into(),
-                sni: sni.unwrap_or_default(),
-                alpn: alpn.unwrap_or_default(),
-                fp: fp.unwrap_or_default(),
-            };
-            let json = serde_json::to_string(&j).expect("vmess json is serialisable");
-            format!("vmess://{}", STANDARD.encode(json))
-        }
+        ) => vmess_link(server, uuid, *alter_id, security),
         (
             Protocol::Wireguard,
             Auth::Wireguard {
@@ -1030,8 +1197,21 @@ pub fn to_link(server: &Server) -> String {
             out.push_str(&encode(&server.name));
             out
         }
-        _ => unreachable!("protocol/auth mismatch"),
-    }
+        _ => {
+            return Err(Error::MalformedLink(
+                "protocol and credentials do not match".into(),
+            ));
+        }
+    })
+}
+
+/// Produces a share link for the server. An inconsistent server (only
+/// possible through a hand-edited profile) yields an empty string.
+pub fn to_link(server: &Server) -> String {
+    try_to_link(server).unwrap_or_else(|e| {
+        tracing::warn!("cannot export server `{}`: {e}", server.name);
+        String::new()
+    })
 }
 
 #[cfg(test)]
@@ -1066,6 +1246,7 @@ mod tests {
                 public_key: "RApWyxh62PUorKsccEnjo-KVi3OWKOtsyEhq5xgk9CU".into(),
                 short_id: Some("95".into()),
                 spider_x: Some("/23b6910affbb7a5".into()),
+                mldsa65_verify: None,
             }
         );
         // Round trip.
@@ -1095,6 +1276,8 @@ mod tests {
                 alpn: vec!["h2".into(), "http/1.1".into()],
                 fingerprint: Some("chrome".into()),
                 allow_insecure: true,
+                pinned_peer_cert_sha256: None,
+                verify_peer_cert_by_name: None,
             }
         );
         assert_eq!(parse_link(&to_link(&s)).unwrap(), s);
@@ -1383,5 +1566,226 @@ mod tests {
         let (servers, failed) = parse_many("节点列表 日本語日本語\nvless://u@h:1#n");
         assert_eq!(servers.len(), 1);
         assert!(failed.is_empty());
+    }
+
+    fn vmess(json: &str) -> Result<Server> {
+        parse_link(&format!("vmess://{}", STANDARD.encode(json)))
+    }
+
+    #[test]
+    fn mismatched_protocol_and_auth_does_not_panic() {
+        let mut s = parse_link(&format!("vless://{UUID}@h.example:443#V")).unwrap();
+        assert!(s.validate().is_ok());
+        s.auth = Auth::Shadowsocks {
+            method: "aes-256-gcm".into(),
+            password: "pw".into(),
+        };
+        assert!(matches!(s.validate(), Err(Error::MalformedLink(_))));
+        assert!(try_to_link(&s).is_err());
+        assert_eq!(to_link(&s), "");
+        // Http with user/pass is consistent even though no link produces it.
+        s.protocol = Protocol::Http;
+        s.auth = Auth::UserPass {
+            user: None,
+            pass: None,
+        };
+        assert!(s.validate().is_ok());
+    }
+
+    #[test]
+    fn vmess_json_accepts_null_and_mixed_types() {
+        let s = vmess(&format!(
+            r#"{{"v":2,"ps":null,"add":"h.example","port":"8443","id":"{UUID}","aid":"16","scy":null,"net":null,"type":null,"host":null,"path":null,"tls":null,"sni":null,"alpn":null,"fp":null}}"#
+        ))
+        .unwrap();
+        assert_eq!(s.port, 8443);
+        assert_eq!(s.name, "h.example:8443");
+        assert_eq!(
+            s.auth,
+            Auth::Vmess {
+                uuid: UUID.into(),
+                alter_id: 16,
+                security: "auto".into()
+            }
+        );
+        assert_eq!(s.transport, Transport::Tcp { header_type: None });
+        assert_eq!(s.security, Security::None);
+
+        let s = vmess(&format!(
+            r#"{{"add":"h.example","port":443.0,"id":"{UUID}","aid":0,"net":"ws","host":"cdn.example","path":"/w","tls":"tls","alpn":["h2","http/1.1"],"sni":123}}"#
+        ))
+        .unwrap();
+        assert_eq!(s.port, 443);
+        assert!(matches!(&s.security, Security::Tls { alpn, sni, .. }
+            if alpn == &vec!["h2".to_owned(), "http/1.1".to_owned()] && sni.as_deref() == Some("123")));
+        // Out-of-range numbers are rejected or ignored, never truncated.
+        for port in ["65536", "\"70000\"", "4294967739", "-1", "null", "\"\""] {
+            let r = vmess(&format!(r#"{{"add":"h","port":{port},"id":"{UUID}"}}"#));
+            assert!(matches!(r, Err(Error::MalformedLink(_))), "port {port}");
+        }
+        let s = vmess(&format!(
+            r#"{{"add":"h","port":1,"id":"{UUID}","aid":4294967297}}"#
+        ))
+        .unwrap();
+        assert!(matches!(s.auth, Auth::Vmess { alter_id: 0, .. }));
+        // Blank `add`/`id` are as bad as missing ones.
+        assert!(vmess(r#"{"add":" ","port":1,"id":"x"}"#).is_err());
+        assert!(vmess(r#"{"add":"h","port":1,"id":null}"#).is_err());
+        // REALITY cannot be described by the JSON form.
+        assert!(
+            vmess(&format!(
+                r#"{{"add":"h","port":1,"id":"{UUID}","tls":"reality"}}"#
+            ))
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn vmess_json_modes_and_insecure_round_trip() {
+        let s = vmess(&format!(
+            r#"{{"add":"g.example","port":443,"id":"{UUID}","net":"grpc","type":"multi","path":"svc","tls":"tls","insecure":"1"}}"#
+        ))
+        .unwrap();
+        assert_eq!(
+            s.transport,
+            Transport::Grpc {
+                service_name: Some("svc".into()),
+                mode: Some("multi".into())
+            }
+        );
+        assert!(matches!(
+            s.security,
+            Security::Tls {
+                allow_insecure: true,
+                ..
+            }
+        ));
+        let link = to_link(&s);
+        assert!(link.starts_with("vmess://ey"), "json form expected: {link}");
+        assert_eq!(parse_link(&link).unwrap(), s);
+
+        let x = vmess(&format!(
+            r#"{{"add":"x.example","port":443,"id":"{UUID}","net":"xhttp","type":"packet-up","path":"/x"}}"#
+        ))
+        .unwrap();
+        assert!(
+            matches!(&x.transport, Transport::Xhttp { mode, .. } if mode.as_deref() == Some("packet-up"))
+        );
+        assert_eq!(parse_link(&to_link(&x)).unwrap(), x);
+    }
+
+    #[test]
+    fn vmess_reality_exports_url_form() {
+        let link = format!(
+            "vmess://{UUID}@v.example:443?encryption=aes-128-gcm&aid=8&security=reality&pbk=PBK&sid=ab&spx=%2Fs&type=xhttp&mode=auto&extra=%7B%22a%22%3A1%7D#VR"
+        );
+        let s = parse_link(&link).unwrap();
+        assert!(
+            matches!(s.auth, Auth::Vmess { alter_id: 8, ref security, .. } if security == "aes-128-gcm")
+        );
+        let out = to_link(&s);
+        assert!(out.starts_with(&format!("vmess://{UUID}@")), "{out}");
+        assert_eq!(parse_link(&out).unwrap(), s);
+    }
+
+    #[test]
+    fn xhttp_extra_is_parsed_canonically_and_validated() {
+        let s = parse_link(&format!(
+            "vless://{UUID}@h.example:443?type=xhttp&extra=%7B%20%22xPaddingBytes%22%20%3A%20%22100-1000%22%20%7D"
+        ))
+        .unwrap();
+        assert!(matches!(&s.transport, Transport::Xhttp { extra, .. }
+            if extra.as_deref() == Some(r#"{"xPaddingBytes":"100-1000"}"#)));
+        assert_eq!(parse_link(&to_link(&s)).unwrap(), s);
+        for bad in ["%5B1%5D", "%7B", "null", "1", "%22x%22"] {
+            let err = parse_link(&format!(
+                "vless://{UUID}@h.example:443?type=xhttp&extra={bad}"
+            ))
+            .unwrap_err();
+            assert!(
+                matches!(&err, Error::MalformedLink(m) if m.contains("extra")),
+                "{bad}"
+            );
+        }
+        // A broken `extra` in a hand-edited profile fails validation.
+        let mut s = s;
+        if let Transport::Xhttp { extra, .. } = &mut s.transport {
+            *extra = Some("[]".into());
+        }
+        assert!(s.validate().is_err());
+    }
+
+    #[test]
+    fn reality_pqv_and_tls_pinning_round_trip() {
+        let s = parse_link(&format!(
+            "vless://{UUID}@h.example:443?security=reality&pbk=PBK&pqv=PQKEY&sni=a.example"
+        ))
+        .unwrap();
+        assert!(
+            matches!(&s.security, Security::Reality { mldsa65_verify, .. }
+            if mldsa65_verify.as_deref() == Some("PQKEY"))
+        );
+        assert_eq!(parse_link(&to_link(&s)).unwrap(), s);
+        let t = parse_link("trojan://pw@h.example:443?pcs=AB12,CD34&vcn=real.example").unwrap();
+        assert!(
+            matches!(&t.security, Security::Tls { pinned_peer_cert_sha256, verify_peer_cert_by_name, .. }
+            if pinned_peer_cert_sha256.as_deref() == Some("AB12,CD34")
+                && verify_peer_cert_by_name.as_deref() == Some("real.example"))
+        );
+        assert_eq!(parse_link(&to_link(&t)).unwrap(), t);
+    }
+
+    #[test]
+    fn shadowsocks_plugin_is_rejected() {
+        let userinfo = URL_SAFE_NO_PAD.encode("aes-256-gcm:secret");
+        let err = parse_link(&format!(
+            "ss://{userinfo}@h.example:8388?plugin=obfs-local%3Bobfs%3Dhttp%3Bobfs-host%3Dx#S"
+        ))
+        .unwrap_err();
+        assert!(
+            matches!(&err, Error::MalformedLink(m) if m.contains("plugin") && m.contains("obfs-local") && !m.contains("obfs-host")),
+            "{err:?}"
+        );
+        // An empty `plugin=` is no plugin.
+        assert!(parse_link(&format!("ss://{userinfo}@h.example:8388?plugin=#S")).is_ok());
+    }
+
+    #[test]
+    fn legacy_shadowsocks_without_at_does_not_recurse() {
+        for link in ["ss://#x", "ss://", "ss://Zm9v#x", "ss://    #y"] {
+            assert!(parse_link(link).is_err(), "{link}");
+        }
+        // base64 of base64 is not unwrapped twice.
+        let twice = STANDARD.encode(STANDARD.encode("aes-256-gcm:pw@h.example:1"));
+        assert!(parse_link(&format!("ss://{twice}")).is_err());
+    }
+
+    #[test]
+    fn socks_user_that_looks_like_base64_stays_literal() {
+        let s = parse_link("socks://abcd@s.example:1080#S").unwrap();
+        assert_eq!(
+            s.auth,
+            Auth::UserPass {
+                user: Some("abcd".into()),
+                pass: None
+            }
+        );
+        assert_eq!(parse_link(&to_link(&s)).unwrap(), s);
+    }
+
+    #[test]
+    fn uuid_whitespace_is_trimmed() {
+        let s = parse_link(&format!("vless://%20{UUID}%20@h.example:443")).unwrap();
+        assert!(matches!(&s.auth, Auth::Vless { uuid, .. } if uuid == UUID));
+        assert!(parse_link("vless://%20%20@h.example:443").is_err());
+    }
+
+    #[test]
+    fn lenient_base64_ignores_line_breaks() {
+        let wrapped = "aGVs\nbG8g\r\nd29y bGQ=";
+        assert_eq!(decode_base64_lenient(wrapped).unwrap(), b"hello world");
+        assert_eq!(decode_base64_lenient("aGVsbG8").unwrap(), b"hello");
+        assert_eq!(decode_base64_lenient("-_8").unwrap(), vec![0xfb, 0xff]);
+        assert!(decode_base64_lenient("@@@").is_none());
     }
 }

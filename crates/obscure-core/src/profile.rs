@@ -127,7 +127,9 @@ pub fn looks_like_subscription_url(text: &str) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Profiles {
     pub version: u32,
-    #[serde(default)]
+    /// Entries that cannot be used (unreadable, or a protocol with another
+    /// protocol's credentials after a hand edit) are dropped on load.
+    #[serde(default, deserialize_with = "lenient_servers")]
     pub servers: Vec<ServerEntry>,
     #[serde(default)]
     pub subscriptions: Vec<Subscription>,
@@ -157,6 +159,34 @@ pub struct Profiles {
     /// Raw Xray JSON that replaces the generated configuration when set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config_override: Option<String>,
+}
+
+/// Reads the server list entry by entry, so one bad entry (hand-edited, or
+/// written by a newer version) costs only itself instead of the whole file.
+fn lenient_servers<'de, D>(d: D) -> std::result::Result<Vec<ServerEntry>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = Vec::<serde_json::Value>::deserialize(d)?;
+    Ok(raw
+        .into_iter()
+        .enumerate()
+        .filter_map(|(i, value)| {
+            // The serde message may quote field values (credentials), so
+            // only the position is logged.
+            let Ok(entry) = serde_json::from_value::<ServerEntry>(value) else {
+                tracing::warn!("profiles: dropping unreadable server entry #{i}");
+                return None;
+            };
+            match entry.server.validate() {
+                Ok(()) => Some(entry),
+                Err(e) => {
+                    tracing::warn!("profiles: dropping server entry #{i} ({}): {e}", entry.id);
+                    None
+                }
+            }
+        })
+        .collect())
 }
 
 pub const DEFAULT_DNS: &str = "https://1.1.1.1/dns-query";
@@ -648,6 +678,49 @@ mod tests {
         Profiles::default().save(&path).unwrap();
         let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
         assert_eq!(mode, 0o600);
+    }
+
+    #[test]
+    fn invalid_server_entries_are_dropped_on_load() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("profiles.json");
+        let mut p = Profiles::default();
+        p.add_servers([sample(1), sample(2)]);
+        let good = p.servers[0].id.clone();
+        let bad = p.servers[1].id.clone();
+        p.selected = Some(bad.clone());
+        p.save(&path).unwrap();
+        // Hand edits: the second server gets Shadowsocks credentials, and an
+        // entry with an unknown transport is appended.
+        let mut json: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        json["servers"][1]["auth"] =
+            serde_json::json!({ "kind": "shadowsocks", "method": "aes-256-gcm", "password": "x" });
+        let mut alien = json["servers"][0].clone();
+        alien["id"] = "alien".into();
+        alien["transport"] = serde_json::json!({ "kind": "quic" });
+        json["servers"].as_array_mut().unwrap().push(alien);
+        json["servers"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!(42));
+        std::fs::write(&path, serde_json::to_vec(&json).unwrap()).unwrap();
+
+        let loaded = Profiles::load(&path).unwrap();
+        assert_eq!(loaded.servers.len(), 1);
+        assert_eq!(loaded.servers[0].id, good);
+        assert_eq!(
+            loaded.selected, None,
+            "selection of a dropped entry is cleared"
+        );
+        // The kept server still builds a config.
+        let cfg = crate::config::build(&crate::config::ConfigOptions::new(
+            &loaded.servers[0].server,
+        ));
+        assert_eq!(cfg["outbounds"][0]["protocol"], "vless");
+        // A non-array `servers` is still a corrupt file.
+        std::fs::write(&path, r#"{"version":1,"servers":{}}"#).unwrap();
+        assert!(matches!(Profiles::load(&path), Err(Error::Json(_))));
     }
 
     #[test]

@@ -5,14 +5,12 @@
 use std::cell::Cell;
 use std::time::Duration;
 
-use base64::Engine;
-use base64::engine::general_purpose::{STANDARD, STANDARD_NO_PAD, URL_SAFE, URL_SAFE_NO_PAD};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::error::{Error, Result};
-use crate::links::{Server, parse_many};
+use crate::links::{Server, decode_base64_lenient, parse_many};
 
 /// Quota information from `subscription-userinfo`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -87,16 +85,13 @@ pub fn decode_body(body: &str) -> Result<String> {
     if trimmed.contains("://") {
         return Ok(trimmed.to_owned());
     }
-    let compact: String = trimmed.chars().filter(|c| !c.is_whitespace()).collect();
-    for engine in [&STANDARD, &STANDARD_NO_PAD, &URL_SAFE, &URL_SAFE_NO_PAD] {
-        if let Ok(bytes) = engine.decode(&compact) {
-            let text = String::from_utf8_lossy(&bytes).into_owned();
-            if looks_like_clash_yaml(&text) {
-                return Err(Error::ClashYaml);
-            }
-            if text.contains("://") {
-                return Ok(text);
-            }
+    if let Some(bytes) = decode_base64_lenient(trimmed) {
+        let text = String::from_utf8_lossy(&bytes).into_owned();
+        if looks_like_clash_yaml(&text) {
+            return Err(Error::ClashYaml);
+        }
+        if text.contains("://") {
+            return Ok(text);
         }
     }
     Err(Error::Subscription(
@@ -117,12 +112,8 @@ pub fn decode_title(header: &str) -> Option<String> {
         return None;
     }
     if let Some(b64) = h.strip_prefix("base64:") {
-        for engine in [&STANDARD, &STANDARD_NO_PAD, &URL_SAFE, &URL_SAFE_NO_PAD] {
-            if let Ok(bytes) = engine.decode(b64.trim()) {
-                return Some(String::from_utf8_lossy(&bytes).trim().to_owned());
-            }
-        }
-        return None;
+        return decode_base64_lenient(b64)
+            .map(|bytes| String::from_utf8_lossy(&bytes).trim().to_owned());
     }
     Some(h.to_owned())
 }
@@ -241,6 +232,8 @@ pub async fn fetch(client: &reqwest::Client, url: &str) -> Result<Fetched> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::Engine;
+    use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     const UUID: &str = "2b1e4a3c-6f7d-4e8a-9b0c-1d2e3f4a5b6c";
