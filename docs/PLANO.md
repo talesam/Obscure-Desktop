@@ -348,9 +348,34 @@ Verificado localmente: janela abre, `meson test` (4/4), `cargo test`, `cargo cli
   reconexão mantendo Alpha com Automático ligado, órfão encerrado após `kill -9`, Cancelar durante
   o pkexec simulado, log bruto sem linhas de acesso, "Limpar" persistente, 1100 conexões → 1000
   linhas.
-- Ainda não aplicado (baixa prioridade): QR na thread da UI, busca linear no geoip, hardening do
-  `obscure-helper.service`, `unreachable!` com dados do `profiles.json`, fallback de `HOME` para
-  `/tmp`, debounce da porta nas Preferências, notificação "Conectado" a cada restart do core.
+- Prioridade baixa: aplicada em seguida (ver bloco abaixo).
+
+### Revisão geral 2026-10-10 (itens de prioridade baixa + mais testes)
+- **Xray 26.9.9 recusa a configuração inteira com `"allowInsecure": true`** (removido em favor de
+  `pinnedPeerCertSha256`/`verifyPeerCertByName`). A chave nunca é emitida; links com
+  `allowInsecure=1` passam a verificar o certificado (aviso no log). `pcs`/`vcn`, `pqv`
+  (`mldsa65Verify`) e `extra` do XHTTP são suportados. Plugin do Shadowsocks → erro claro.
+- Links/config: `Profiles::load` descarta entradas inconsistentes (sem pânico); VMess aceita
+  `null`/número/string; SNI usa o `host` do transporte quando o endereço é IP; exportação sem perda
+  (ida e volta testada em 39 links); regra do próprio servidor vira `ip:` quando é IP; sem `uot`.
+- Runtime: geoip indexado (busca ~2600× mais rápida, idêntica ao algoritmo antigo no arquivo real);
+  instalação do core com temporários únicos, fsync, VERSION por último, limite por entrada do zip,
+  espera de ETXTBSY; geo com recuo de 1 h após falha; versões com sufixo (`-rc1`) ordenadas;
+  `state.json` corrompido vai para quarentena; GSettings em `spawn_blocking`; sem `HOME` usa
+  `home_dir()`; parser do access log corrigido para IPv6 sem tags.
+- App/helper: QR fora da thread da UI; porta aplicada só quando para de mudar; "Adicionar regra"
+  validado; restart do core não renotifica e, no túnel, espera a rota; link aberto com
+  `--start-minimized` mostra a janela; handlers da janela desconectados no `dispose`; import de
+  arquivo limitado a 8 MiB; helper D-Bus sai após 60 s ocioso; `obscure-helper.service` endurecido
+  (`systemd-analyze security`: 1.7 OK; seccomp conferido com `systemd-run --user`).
+- Testes novos: fuzz sem pânico (links, VMess JSON, access log, stats), round-trip de links,
+  opt-in `OBSCURE_TEST_XRAY=<dir do core>` (`tests/xray_config_check.rs`: o Xray real valida as
+  configs do corpus) e `OBSCURE_TEST_GEOIP=<geoip.dat>` (`tests/geoip_real.rs`). UI (AT-SPI):
+  `--start-minimized` + link, bandeja coerente após alternâncias rápidas, validação de regra,
+  notificação única com restart do core. Perfis reais do usuário: 3/3 carregam, ida e volta
+  idêntica, 3/3 aceitos pelo Xray.
+- Não testado na UI: atraso da porta (o AT-SPI não expõe o `AdwSpinRow` e o XWayland recusou o
+  ponteiro sintético), import de arquivo grande e QR (exigem o seletor de arquivos).
 
 ### Correções 2026-09-25 (túnel: lentidão e crash)
 - **Primeiro tráfego demorava ~20 s** em modo túnel: com `dns.queryStrategy: UseIP` a discagem do
